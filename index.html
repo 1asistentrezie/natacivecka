@@ -420,6 +420,13 @@ button{cursor:pointer}
 .cdone{color:var(--go)}.cmoved{color:var(--late)}.croll{color:var(--roll)}
 .cnone{font-size:12px;color:var(--muted);font-style:italic}
 @media (max-width:640px){.chr{grid-template-columns:70px 70px minmax(0,1fr)}.cwhen{grid-column:1 / -1;align-items:flex-start;flex-direction:row;flex-wrap:wrap}}
+.pagesh{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.pagesh>div:first-child{display:flex;flex-direction:column;gap:2px}
+.pagesh>div:first-child span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.pagesh .grp{display:flex;gap:8px;flex-wrap:wrap}
+.pagesh .btn{display:inline-flex;align-items:center;text-decoration:none}
+.pagesh a.btn:not(.wa){color:var(--ink)}
+.shh{margin:6px 0 0;font-family:var(--f-display);font-size:19px;letter-spacing:.03em}
 .loginbar{display:flex;justify-content:center;padding:28px 0 8px}
 .linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px;padding:8px}
 </style>
@@ -429,7 +436,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="2. 11. 16:00";
+var APP_BUILD="2. 11. 17:15";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Skončil herec","KONEC NATÁČENÍ",ALERT_KIND,"Závazek","Jiné"];
 var KIND_LEN = {"Cestovní čas":15,"Příprava":30,"Stěhování":60,"Oběd":45,"Skončil herec":0,"KONEC NATÁČENÍ":0,"POZOR ZMĚNA PROGRAMU:":0,"Závazek":0,"Jiné":0};
@@ -628,6 +635,8 @@ function shareLine(r){
   if(r.status==="moved")return k+" zrušeno / přesunuto"+P(r.doneAt)+tx;
   return k+P(t)+tx;
 }
+var SHARE_URL="https://claude.ai/artifact/8kgeGhyfyTUn7JJrkRW2Y9";
+function pageUrl(){try{if(typeof WEB!=="undefined"&&WEB)return location.origin+location.pathname;}catch(_){}return SHARE_URL;}
 function shareItems(d){return d.rows.map(function(r){return {id:r.id,text:shareLine(r),now:r.status==="rolling"};});}
 function shareText(d,sel){return d.rows.filter(function(r){return sel[r.id];}).map(shareLine).join("\n");}
 function updWa(){var a=document.getElementById("waLink"),ta=document.getElementById("fShareText");if(!a||!ta)return;var v=ta.value.trim();a.href="https://wa.me/?text="+encodeURIComponent(v);a.setAttribute("aria-disabled",v?"false":"true");}
@@ -718,7 +727,15 @@ function sheetHTML(){
   }
   if(s.kind==="share"){
     var sd=day(), items=shareItems(sd);
-    b='<h2>Sdílet</h2><span class="hint">Zaškrtněte, co chcete poslat. Text můžete před odesláním upravit.</span>'+
+    var su=pageUrl(), sm="Natáčecí den"+(S.project?" – "+S.project:"")+": "+su;
+    b='<h2>Sdílet</h2>'+
+      '<div class="pagesh"><div><b>Odkaz na tuto stránku</b><span>'+esc(su)+'</span></div>'+
+      '<div class="grp"><button class="btn primary" data-act="sharepage">Sdílet stránku…</button>'+
+      '<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(sm)+'">WhatsApp</a>'+
+      '<a class="btn" href="sms:&body='+encodeURIComponent(sm)+'">iMessage</a>'+
+      '<button class="btn" data-act="copylink">Kopírovat odkaz</button></div>'+
+      '<span class="hint">„Sdílet stránku…“ otevře nabídku iPadu / iPhonu s AirDropem, Zprávami, WhatsAppem a dalšími.</span></div>'+
+      '<h3 class="shh">Poslat stav programu</h3><span class="hint">Zaškrtněte, co chcete poslat. Text můžete před odesláním upravit.</span>'+
       (items.length?'<div class="shlist">'+items.map(function(it){return '<label class="shrow'+(it.now?' now':'')+'"><input type="checkbox" data-shid="'+it.id+'"'+(s.sel[it.id]?' checked':'')+'><span>'+esc(it.text)+'</span></label>';}).join("")+'</div>':'<div class="empty">Program tohoto dne je prázdný.</div>')+
       '<label class="f"><span class="lab">Text zprávy</span><textarea id="fShareText" class="shtext">'+esc(shareText(sd,s.sel))+'</textarea></label>'+
       '<div class="actions"><div class="grp"><button class="btn" data-act="sharecopy">Kopírovat text</button></div><div class="grp"><button class="btn" data-act="close">Zavřít</button><a id="waLink" class="btn wa" target="_blank" rel="noopener" href="#">Poslat na WhatsApp</a></div></div>';
@@ -1644,6 +1661,9 @@ function act(a,id,el){
     case "saveshiftloc": d.shiftFrom=val("fShiftFrom"); d.shiftTo=val("fShiftTo"); d.location=val("fLoc"); ui.sheet=null; changed(); break;
     case "menu": ui.sheet={kind:"menu"}; render(); break;
     case "share": var sel0={}; day().rows.forEach(function(r){if(r.status==="rolling")sel0[r.id]=1;}); ui.sheet={kind:"share",sel:sel0}; render(); updWa(); break;
+    case "sharepage":{ var u0=pageUrl(), t0="Natáčecí den"+(S.project?" – "+S.project:"");
+      if(navigator.share){navigator.share({title:t0,text:t0,url:u0}).catch(function(e){if(!e||e.name!=="AbortError")act("copylink");});} else act("copylink"); break;}
+    case "copylink":{ var u1=pageUrl(); try{navigator.clipboard.writeText(u1).then(function(){toast("Odkaz zkopírován");},function(){toast(u1);});}catch(_){toast(u1);} break;}
     case "sharecopy": var ta=document.getElementById("fShareText"); if(ta){var tx=ta.value; try{navigator.clipboard.writeText(tx).then(function(){toast("Text zkopírován");},function(){ta.focus();ta.select();toast("Text je označený – zkopírujte ho");});}catch(_){ta.focus();ta.select();toast("Text je označený – zkopírujte ho");}} break;
     case "refresh": poll(true); break;
     case "exportjson": ui.sheetPrev=ui.sheet; ui.sheet={kind:"saveas",ext:"json",back:ui.sheet&&ui.sheet.kind}; render(); selName(); break;
@@ -1751,7 +1771,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","share","sharecopy","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","share","sharecopy","sharepage","copylink","book","lupa","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
