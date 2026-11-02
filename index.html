@@ -587,6 +587,18 @@ function tickCd(){
     var box=els[i].parentNode; if(box&&box.classList)box.classList.toggle("late",Date.now()>e);}
 }
 /* time change of one row shifts every following row by the same difference, keeping their lengths */
+/* after a row moves (or is added/removed) the times follow the order: each row starts where the previous one ends and keeps its length */
+function rowLen(r){var m=spanMin(r.from,r.to);if(m==null||m>720)return 0;return m;}
+function retimeFrom(d,i){
+  if(i<0)i=0; var t=null,k;
+  for(k=i-1;k>=0;k--){var p=d.rows[k];if(isCommit(p))continue;var e=toMin(p.to)!=null?toMin(p.to):toMin(p.from);if(e!=null){t=e;break;}}
+  if(t==null){for(k=i;k<d.rows.length;k++){if(!isCommit(d.rows[k])&&toMin(d.rows[k].from)!=null){t=toMin(d.rows[k].from);break;}}}
+  if(t==null)t=toMin(d.shiftFrom); if(t==null)return 0;
+  var n=0;
+  for(k=i;k<d.rows.length;k++){var r=d.rows[k]; if(isCommit(r))continue; var L=rowLen(r), f=hm(t), to=hm(t+L);
+    if(r.from!==f||r.to!==to){r.from=f;r.to=to;n++;} t+=L;}
+  return n;
+}
 function endMin(r){var t=toMin(r.to);return t!=null?t:toMin(r.from);}
 function reflowAfter(d,i,oldEnd){
   var ne=endMin(d.rows[i]); if(oldEnd==null||ne==null)return null;
@@ -1519,15 +1531,15 @@ function act(a,id,el){
       var r=ui.sheet.data, old0=ui.sheet.isNew?null:rowById(r.id), oldEnd=old0?endMin(old0.r):null; r.from=val("fFrom"); r.to=val("fTo");
       if(r.type==="shot"){r.scene=val("fScene");r.motif=val("fMotif");r.tod=val("fTod");r.den=val("fDen");r.len=val("fLen");r.roles=sortRoles(val("fRoles").split(",").map(function(x){return x.trim();}).filter(Boolean)).join(", ");r.note=val("fNote");if(fin(r))r.doneAt=val("fDoneAt");}
       else {r.kind=val("fKind");r.text=val("fText");if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
-      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);d.rows.push(r);} else {var y=rowById(r.id); if(y){d.rows[y.i]=r; var sh=reflowAfter(d,y.i,oldEnd); if(sh){ui.sheet=null; changed(); toast("Časy dalších "+sh.n+" řádků posunuty o "+(sh.delta>0?"+":"−")+fmtDur(Math.abs(sh.delta))); break;}}}
+      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);d.rows.push(r);} else {var y=rowById(r.id); if(y){d.rows[y.i]=r; var shn=isCommit(r)?0:retimeFrom(d,y.i+1); if(shn){ui.sheet=null; changed(); toast("Časy dalších řádků přepočítány ("+shn+")"); break;}}}
       ui.sheet=null; changed(); break;}
     case "up": case "down":{
       var y=rowById(ui.sheet.id), j=y.i+(a==="up"?-1:1);
       if(j<0||j>=d.rows.length)return;
-      var t=d.rows[j]; d.rows[j]=d.rows[y.i]; d.rows[y.i]=t; ui.sheet=null; changed(); break;}
+      var t=d.rows[j]; d.rows[j]=d.rows[y.i]; d.rows[y.i]=t; retimeFrom(d,Math.min(j,y.i)); ui.sheet=null; changed(); break;}
     case "del":
       if(ui.arm!=="del"){ui.arm="del";render();return;}
-      ui.arm=null; d.rows.splice(rowById(ui.sheet.id).i,1); ui.sheet=null; changed(); break;
+      var di0=rowById(ui.sheet.id).i; ui.arm=null; d.rows.splice(di0,1); retimeFrom(d,di0); ui.sheet=null; changed(); break;
     case "project": ui.sheet={kind:"project"}; render(); break;
     case "shiftloc": ui.sheet={kind:"shiftloc"}; render(); break;
     case "editdate": ui.sheet={kind:"date"}; render(); break;
@@ -1552,7 +1564,7 @@ function act(a,id,el){
     case "resetstok": d.rows.forEach(function(r){r.status="";r.doneAt="";delete r.startAt;delete r.startTs;}); ui.sheet=null; ui.showDone=false; changed(); window.scrollTo(0,0); toast("Stavy dne resetovány"); break;
     case "mvup": case "mvdown":{
       var j2=x.i+(a==="mvup"?-1:1); if(j2<0||j2>=d.rows.length)return;
-      var t2=d.rows[j2]; d.rows[j2]=d.rows[x.i]; d.rows[x.i]=t2; changed();
+      var t2=d.rows[j2]; d.rows[j2]=d.rows[x.i]; d.rows[x.i]=t2; retimeFrom(d,Math.min(j2,x.i)); changed();
       var li=document.querySelector('.row[data-id="'+id+'"]'); if(li){li.classList.add("flash");setTimeout(function(){li.classList.remove("flash");},700);
         var bb=li.querySelector('[data-act="'+a+'"]'); if(bb&&!bb.disabled)bb.focus({preventScroll:true});}
       break;}
@@ -1675,8 +1687,10 @@ function endDrag(e){
   ui.drag=null; g.li.classList.remove("dragging");
   var d=day(), order=[].slice.call(document.getElementById("rows").children).filter(function(n){return n.hasAttribute("data-id");}).map(function(n){return n.getAttribute("data-id");});
   var before=d.rows.map(function(r){return r.id;}).join();
+  var bArr=d.rows.map(function(r){return r.id;});
   d.rows.sort(function(a,b){return order.indexOf(a.id)-order.indexOf(b.id);});
-  if(d.rows.map(function(r){return r.id;}).join()!==before)changed(); else render();
+  var aArr=d.rows.map(function(r){return r.id;}), first=-1; for(var q=0;q<aArr.length;q++){if(aArr[q]!==bArr[q]){first=q;break;}}
+  if(first>=0){retimeFrom(d,first);changed();} else render();
 }
 document.addEventListener("pointerup",endDrag);
 document.addEventListener("pointercancel",endDrag);
