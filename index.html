@@ -428,6 +428,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
+var APP_BUILD="2. 11. 15:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Skončil herec","KONEC NATÁČENÍ",ALERT_KIND,"Závazek","Jiné"];
 var KIND_LEN = {"Cestovní čas":15,"Příprava":30,"Stěhování":60,"Oběd":45,"Skončil herec":0,"KONEC NATÁČENÍ":0,"POZOR ZMĚNA PROGRAMU:":0,"Závazek":0,"Jiné":0};
@@ -725,6 +726,7 @@ function sheetHTML(){
   if(s.kind==="menu"){
     var canDl=!!dl||standalone||WEB;
     b='<h2>Menu</h2>'+
+      '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
       (canEdit?'<button class="mitem" data-act="resetst"><b>Resetovat stavy dne</b><span>Vymaže stavy a jejich časy u všech obrazů a poznámek tohoto dne. Program zůstane.</span></button>':'')+
       (canEdit?'<button class="mitem" data-act="plan"><b>Natáčecí plán</b><span>'+(S.plan&&S.plan.version?'Načtena verze: <b>'+esc(S.plan.version)+'</b>. ':'')+'Nahrát natáčecí plán (PDF) a podle něj předběžně připravit natáčecí dny</span></button>':'')+
@@ -1384,9 +1386,12 @@ function readPlanFile(){
   inp.onchange=function(){var f=inp.files&&inp.files[0]; if(!f)return;
     ui.sheet.busy="Načítám "+f.name+"…"; ui.sheet.parsed=null; render();
     f.arrayBuffer().then(function(b){return openPdf(new Uint8Array(b));}).then(function(doc){
-      return planFormat(doc).then(function(fmt){return (fmt==="timed"?parsePlan2:parsePlan)(doc,function(pg,n,c){if(ui.sheet&&ui.sheet.kind==="plan"){ui.sheet.busy="Procházím plán… strana "+pg+" z "+n+" · "+c+" natáčecích dnů";render();}});});
+      var prog=function(pg,n,c){if(ui.sheet&&ui.sheet.kind==="plan"){ui.sheet.busy="Procházím plán… strana "+pg+" z "+n+" · "+c+" natáčecích dnů";render();}};
+      return planFormat(doc).then(function(fmt){var a=fmt==="timed"?parsePlan2:parsePlan, b=fmt==="timed"?parsePlan:parsePlan2;
+        return a(doc,prog).then(function(pp){if(pp.days.length)return pp;return b(doc,prog).then(function(p2){if(p2.days.length)return p2;
+          return doc.getPage(1).then(function(pg){return pg.getTextContent();}).then(function(tc){pp.sample=tc.items.map(function(i){return i.str;}).filter(function(x){return x.trim();}).slice(0,12).join(" | ");pp.fmt=fmt;return pp;});});});});
     }).then(function(pp){if(!ui.sheet||ui.sheet.kind!=="plan")return; pp.name=f.name; ui.sheet.busy="";
-      if(!pp.days.length){ui.sheet.err="V souboru jsem nenašel žádný natáčecí den (řádky typu „Sat 31/10/2026 07:30–19:30: Day #15 - …“).";render();return;}
+      if(!pp.days.length){ui.sheet.err="V souboru jsem nenašel žádný natáčecí den (řádky typu „Day #15 …“). Ukázka textu ("+(window.__pdfv||"pdf")+"): "+(pp.sample||"(PDF neobsahuje text)");render();return;}
       ui.sheet.parsed=pp; ui.sheet.err=""; render();
     }).catch(function(e){if(ui.sheet){ui.sheet.busy="";ui.sheet.err="Plán se nepodařilo přečíst: "+(e&&e.message?e.message:String(e));render();}});
   };
