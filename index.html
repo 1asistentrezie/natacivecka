@@ -428,7 +428,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="2. 11. 15:40";
+var APP_BUILD="2. 11. 16:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Skončil herec","KONEC NATÁČENÍ",ALERT_KIND,"Závazek","Jiné"];
 var KIND_LEN = {"Cestovní čas":15,"Příprava":30,"Stěhování":60,"Oběd":45,"Skončil herec":0,"KONEC NATÁČENÍ":0,"POZOR ZMĚNA PROGRAMU:":0,"Závazek":0,"Jiné":0};
@@ -1044,6 +1044,12 @@ function loadScript(src){return new Promise(function(ok,no){var t=document.creat
 function pdfjsOld(){var B="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
   return loadScript(B+"pdf.min.js").then(function(){return loadScript(B+"pdf.worker.min.js");}).then(function(){var L=window.pdfjsLib;if(!L)throw new Error("knihovna PDF se nenačetla");L.GlobalWorkerOptions.workerSrc=B+"pdf.worker.min.js";return L;});}
 function pdfjs(){
+  if(!pdfLibP&&WEB){var LB=new URL("lib/",location.href).href;
+    pdfLibP=import(LB+"pdf.min.mjs").then(function(L){L.GlobalWorkerOptions.workerSrc=LB+"pdf.worker.min.mjs";window.__pdfv="pdf.js "+(L.version||"6")+" (vlastní)";return L;}).catch(function(e){window.__pdf6err=String(e&&e.message||e);pdfLibP=null;return null;}).then(function(L){if(L)return L;pdfLibP=null;return pdfjsCdn();});
+    return pdfLibP;}
+  return pdfjsCdn();
+}
+function pdfjsCdn(){
   if(!pdfLibP){var J="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/";
     pdfLibP=import(J+"pdf.min.mjs").then(function(L){L=L&&L.getDocument?L:(L&&L.default)||window.pdfjsLib;if(!L||!L.getDocument)throw new Error("pdf.js 4");L.GlobalWorkerOptions.workerSrc=J+"pdf.worker.min.mjs";window.__pdfv="pdf.js "+(L.version||"4");return L;}).catch(function(e){window.__pdf4err=String(e&&e.message||e);return pdfjsOld().then(function(L){window.__pdfv="pdf.js "+(L.version||"3")+" (záloha)";return L;});});
     pdfLibP.catch(function(){pdfLibP=null;});}
