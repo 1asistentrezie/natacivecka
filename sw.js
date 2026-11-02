@@ -1,6 +1,6 @@
 /* Natáčecí den – offline cache. App files: network first (updates arrive at once), libraries: cache first. Supabase data is never cached here. */
-const CACHE = "nd-v7";
-const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const CACHE = "nd-v8";
+const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "nd-icon-192.png", "nd-icon-512.png", "nd-icon-180.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
