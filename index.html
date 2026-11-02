@@ -1770,6 +1770,8 @@ function startLive(db){
 function liveInd(){
   var el=document.getElementById("liveInd"); if(!el)return;
   if(standalone){el.className="live";el.innerHTML="";return;}
+  if(liveState==="poll"){el.className="live";el.title=liveErr||"";el.innerHTML='<i></i>Online'+(canEdit?' · změny se ukládají':' · obnovuje se každých 10 s');return;}
+  if(liveState==="off"&&WEB){el.className="live stale";el.title=liveErr||"";el.innerHTML='<i></i>'+(canEdit?'Bez spojení s databází':'Bez připojení – zobrazuje se poslední uložený program')+(liveErr?' <small>('+esc(liveErr)+')</small>':'');return;}
   if(liveState==="live"){el.className="live";el.innerHTML='<i></i>Živě'+(canEdit?' · změny se posílají všem':' · aktualizuje se samo');}
   else if(liveState==="off"&&!canEdit){el.className="live stale";el.innerHTML=WEB?'<i></i>Bez připojení – zobrazuje se poslední uložený program':'<i></i>Pro živé aktualizace se přihlaste na claude.ai';}
   else if(liveState==="off"){el.className="live stale";el.innerHTML='<i></i>Živé posílání nedostupné';}
@@ -1808,16 +1810,26 @@ function webSave(){
   });
 }
 function snapOf(rec){return {exists:!!rec,hasPendingWrites:false,data:function(){return {json:JSON.stringify(rec.json),savedAt:+rec.saved_at||0};}};}
+var liveErr="", rtOk=false, pollT=null;
 function webFetch(){
   return SB.from("plan").select("json,saved_at").eq("id",liveRow).maybeSingle().then(function(r){
-    if(r.error){liveState="off";liveInd();return;}
-    applyLive(snapOf(r.data)); if(r.data)cacheSave();
-  },function(){liveState="off";liveInd();});
+    if(r.error){liveErr="čtení: "+r.error.message;liveState="off";liveInd();return;}
+    if(!rtOk){liveState="poll";}
+    applyLive(snapOf(r.data)); if(rtOk)liveState="live"; else liveState="poll"; liveInd(); if(r.data)cacheSave();
+  },function(e){liveErr="síť: "+(e&&e.message||e);liveState="off";liveInd();});
 }
+/* realtime pushes changes instantly; if it is not available, the page asks for news every 10 s */
+function startPoll(){if(pollT)return;pollT=setInterval(function(){if(document.visibilityState==="visible"&&!rtOk)webFetch();},10000);}
 function webSubscribe(){
-  if(liveChan){SB.removeChannel(liveChan);liveChan=null;}
-  liveChan=SB.channel("plan-"+liveRow).on("postgres_changes",{event:"*",schema:"public",table:"plan",filter:"id=eq."+liveRow},function(p){if(p.new&&p.new.json){applyLive(snapOf(p.new));cacheSave();}})
-    .subscribe(function(st){if(st==="SUBSCRIBED"){liveState="live";webFetch();}else if(st==="CHANNEL_ERROR"||st==="TIMED_OUT"||st==="CLOSED"){liveState="off";}liveInd();});
+  var old=liveChan; liveChan=null; rtOk=false; if(old){try{SB.removeChannel(old);}catch(_){}}
+  var ch=SB.channel("plan-"+liveRow+"-"+Date.now());
+  liveChan=ch;
+  ch.on("postgres_changes",{event:"*",schema:"public",table:"plan",filter:"id=eq."+liveRow},function(p){if(ch!==liveChan)return;if(p.new&&p.new.json){applyLive(snapOf(p.new));cacheSave();}})
+    .subscribe(function(st,err){if(ch!==liveChan)return;
+      if(st==="SUBSCRIBED"){rtOk=true;liveErr="";}
+      else if(st==="CHANNEL_ERROR"||st==="TIMED_OUT"||st==="CLOSED"){rtOk=false;liveErr="realtime: "+st+(err&&err.message?" – "+err.message:"");}
+      webFetch();});
+  webFetch(); startPoll();
 }
 function becomeEditor(user){
   sbUser=user; canEdit=true; liveRow="main"; ui.sheet=null;
