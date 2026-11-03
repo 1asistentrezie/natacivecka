@@ -447,10 +447,11 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="3. 11. 21:05";
+var APP_BUILD="3. 11. 21:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
-var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Skončil herec","KONEC NATÁČENÍ",ALERT_KIND,"Závazek","Jiné"];
-var KIND_LEN = {"Cestovní čas":15,"Příprava":30,"Stěhování":60,"Oběd":45,"Skončil herec":0,"KONEC NATÁČENÍ":0,"POZOR ZMĚNA PROGRAMU:":0,"Závazek":0,"Jiné":0};
+var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
+var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
+var KIND_LEN = {"Cestovní čas":15,"Příprava":30,"Stěhování":60,"Oběd":45,"Skončil herec":0,"KONEC NATÁČENÍ":0,"POZOR ZMĚNA PROGRAMU:":0,"Závazek":0,"Jiné":0,"Likvidace":20,"MARTINI SHOT!":0,"KONEC NATÁČENÍ, DĚKUJI VŠEM!":0};
 var S = JSON.parse(document.getElementById("state").textContent);
 function migrate(o){(o.days||[]).forEach(function(d){(d.rows||[]).forEach(function(r){if(r.status===undefined){r.status=r.done?"done":(r.current?"rolling":"");delete r.done;delete r.current;}});});}
 migrate(S);
@@ -579,11 +580,14 @@ function mvHTML(r){
 function hiddenRows(d){
   var rows=d.rows, last=-1, h={};
   for(var i=0;i<rows.length;i++)if(rows[i].type==="shot"&&fin(rows[i]))last=i;
-  if(last<0){for(var k=0;k<rows.length&&rows[k].type==="note"&&fin(rows[k]);k++)h[rows[k].id]=1;return h;}
+  if(last<0){for(var k=0;k<rows.length&&rows[k].type==="note"&&fin(rows[k]);k++)h[rows[k].id]=1;keepCommits(d,h);return h;}
   var j=last+1; while(j<rows.length&&rows[j].type==="note"&&fin(rows[j]))j++;
   for(var m=0;m<j;m++)if(rows[m].status!=="rolling")h[rows[m].id]=1;
+  keepCommits(d,h);
   return h;
 }
+function keepCommits(d,h){var ended=null;d.rows.forEach(function(r){if(!isCommit(r)||!h[r.id])return;ended=ended||endedActors(d,null);
+  var rl=commitRoles(d,r); if(!rl.length||rl.some(function(a){return !ended[fold(a)];}))delete h[r.id];});}
 function doneSummary(d,h){
   var sh=0,mv=0,nt=0; d.rows.forEach(function(r){if(!h[r.id])return; if(r.type==="shot"){if(r.status==="moved")mv++;else sh++;}else nt++;});
   var p=[]; if(sh)p.push(sh+" natočeno"); if(mv)p.push(mv+" přesunuto"); if(nt)p.push(nt+(nt===1?" poznámka":nt<5?" poznámky":" poznámek"));
@@ -610,14 +614,18 @@ function tickCd(){
 }
 /* time change of one row shifts every following row by the same difference, keeping their lengths */
 /* after a row moves (or is added/removed) the times follow the order: each row starts where the previous one ends and keeps its length */
+function isMartini(r){return r&&r.type==="note"&&r.kind===MARTINI_KIND;}
+function isKonec(r){return r&&r.type==="note"&&r.kind===KONEC_KIND;}
+/* rows that keep their own time (or have none) and are skipped when times follow the order */
+function fixedRow(r){return isCommit(r)||isMartini(r)||isKonec(r)||!!(r&&r.noTime);}
 function rowLen(r){var m=spanMin(r.from,r.to);if(m==null||m>720)return 0;return m;}
 function retimeFrom(d,i){
   if(i<0)i=0; var t=null,k;
-  for(k=i-1;k>=0;k--){var p=d.rows[k];if(isCommit(p))continue;var e=toMin(p.to)!=null?toMin(p.to):toMin(p.from);if(e!=null){t=e;break;}}
-  if(t==null){for(k=i;k<d.rows.length;k++){if(!isCommit(d.rows[k])&&toMin(d.rows[k].from)!=null){t=toMin(d.rows[k].from);break;}}}
+  for(k=i-1;k>=0;k--){var p=d.rows[k];if(fixedRow(p))continue;var e=toMin(p.to)!=null?toMin(p.to):toMin(p.from);if(e!=null){t=e;break;}}
+  if(t==null){for(k=i;k<d.rows.length;k++){if(!fixedRow(d.rows[k])&&toMin(d.rows[k].from)!=null){t=toMin(d.rows[k].from);break;}}}
   if(t==null)t=toMin(d.shiftFrom); if(t==null)return 0;
   var n=0;
-  for(k=i;k<d.rows.length;k++){var r=d.rows[k]; if(isCommit(r))continue; var L=rowLen(r), f=hm(t), to=hm(t+L);
+  for(k=i;k<d.rows.length;k++){var r=d.rows[k]; if(fixedRow(r))continue; var L=rowLen(r), f=hm(t), to=hm(t+L);
     if(r.from!==f||r.to!==to){r.from=f;r.to=to;n++;} t+=L;}
   return n;
 }
@@ -670,6 +678,9 @@ function rowHTML(r){
   var h = canEdit ? '<button class="handle" data-handle="'+r.id+'" aria-label="Přesunout">'+GRIP+'</button>' : '<span class="handle" aria-hidden="true"></span>';
   var time = esc(r.from||"")+(r.to?"–"+esc(r.to):"");
   var tapAttr = canEdit ? ' class="tap" data-act="edit" data-id="'+r.id+'"' : '';
+  if(isMartini(r)||isKonec(r)){
+    return '<li class="row note commit redbox" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(isKonec(r)&&r.from?' '+esc(r.from):'')+(r.text?' '+esc(r.text):'')+'</span>'+mvHTML(r)+'<span class="state"></span></li>';
+  }
   if(isCommit(r)){
     var cr=commitRoles(day(),r);
     return '<li class="row note commit" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>ZÁVAZEK</b> '+esc(commitText(r))+(cr.length&&commitText(r).indexOf(bareRole(cr[0]))<0?' · '+cr.map(esc).join(", "):'')+'</span>'+mvHTML(r)+'<span class="state"></span></li>';
@@ -678,8 +689,8 @@ function rowHTML(r){
     var NL={"":"STAV",rolling:"PROBÍHÁ",done:"SKONČENO",moved:"ZRUŠENO / PŘESUNUTO"};
     var nin='<span>'+NL[r.status||""]+'</span>'+(fin(r)&&r.doneAt?'<span class="t">'+esc(r.doneAt)+'</span>':'');
     var ns=canEdit?'<button class="stav s-'+(r.status||"none")+'" data-act="state" data-id="'+r.id+'">'+nin+'</button>':(r.status?'<span class="stav s-'+r.status+'">'+nin+'</span>':'<span class="wait">—</span>');
-    var nd=spanMin(r.from,r.to);
-    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+'<span class="time"'+tapAttr+'><span>'+(time||"—")+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+'</span>'+
+    var nd=r.noTime?null:spanMin(r.from,r.to); if(r.noTime)time="";
+    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+'<span class="time"'+tapAttr+'><span>'+(r.noTime?"":(time||"—"))+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+'</span>'+
       '<span class="kind"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(isActorEnd(r.kind)&&r.actors&&r.actors.length?r.actors.map(function(a){var t=endTime(r,a);return '<span class="role endrole">'+esc(a)+(t?'<small>skončil '+esc(t)+'</small>':'')+'</span>';}).join(""):'')+'<span>'+esc(r.text)+'</span>'+lunchCd(r)+'</span>'+mvHTML(r)+'<span class="state">'+ns+'</span></li>';
   }
   var rd=day(), roles=sortRoles((r.roles||"").split(",").map(function(x){return x.trim();}).filter(Boolean)).map(function(x){return roleChip(x,rd,r);}).join("");
@@ -959,7 +970,7 @@ function sheetHTML(){
       b+=(s.isNew?obrPick():"")+field("fScene","Číslo obrazu",r.scene,"text",' inputmode="text"')+motifPick(r.motif)+field("fMotif","Název motivu",r.motif)+todSelect(r.tod||"")+'<div class="pair">'+field("fDen","Skript den",shotMeta(r).den,"text",' placeholder="např. Den 3"')+field("fLen","Počet stran",shotMeta(r).len,"text",' placeholder="např. 1 1/8"')+'</div>'+rolePicks(r.roles)+field("fRoles","Role (oddělené čárkou, můžete dopsat i další)",r.roles)+field("fNote","Poznámka (nepovinné)",r.note);
       if(r.status==="done"||r.status==="moved")b+=field("fDoneAt",r.status==="done"?"Natočeno v":"Uzavřeno v",r.doneAt,"time");
     } else {
-      b+=field("fText","Text",r.text)+(fin(r)?field("fDoneAt",r.status==="done"?"Skončeno v":"Uzavřeno v",r.doneAt,"time"):"");
+      b+='<label class="chk"><input type="checkbox" id="fNoTime"'+(r.noTime?' checked':'')+'> Nezobrazovat u poznámky čas</label>'+field("fText","Text",r.text)+(fin(r)?field("fDoneAt",r.status==="done"?"Skončeno v":"Uzavřeno v",r.doneAt,"time"):"");
     }
     b+='<div class="actions"><div class="grp">'+(s.isNew?'':'<button class="btn" data-act="up">↑ Výš</button><button class="btn" data-act="down">↓ Níž</button><button class="btn danger'+(ui.arm==="del"?" armed":"")+'" data-act="del">'+(ui.arm==="del"?"Opravdu smazat?":"Smazat")+'</button>')+'</div>'+
       '<div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="saverow">Uložit</button></div></div>';
@@ -1655,8 +1666,9 @@ function act(a,id,el){
     case "saverow":{
       var r=ui.sheet.data, old0=ui.sheet.isNew?null:rowById(r.id), oldEnd=old0?endMin(old0.r):null; r.from=val("fFrom"); r.to=val("fTo");
       if(r.type==="shot"){r.scene=val("fScene");r.motif=val("fMotif");r.tod=val("fTod");r.den=val("fDen");r.len=val("fLen");r.roles=sortRoles(val("fRoles").split(",").map(function(x){return x.trim();}).filter(Boolean)).join(", ");r.note=val("fNote");if(fin(r))r.doneAt=val("fDoneAt");}
-      else {r.kind=val("fKind");r.text=val("fText");if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
-      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);d.rows.push(r);} else {var y=rowById(r.id); if(y){d.rows[y.i]=r; var shn=isCommit(r)?0:retimeFrom(d,y.i+1); if(shn){ui.sheet=null; changed(); toast("Časy dalších řádků přepočítány ("+shn+")"); break;}}}
+      else {r.kind=val("fKind");r.text=val("fText");var nt=document.getElementById("fNoTime");if(nt&&nt.checked)r.noTime=true;else delete r.noTime;
+        if(r.kind===KONEC_KIND&&ui.sheet.isNew){r.from=nowHM();r.to=r.from;}if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
+      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);d.rows.push(r);} else {var y=rowById(r.id); if(y){d.rows[y.i]=r; var shn=fixedRow(r)?0:retimeFrom(d,y.i+1); if(shn){ui.sheet=null; changed(); toast("Časy dalších řádků přepočítány ("+shn+")"); break;}}}
       ui.sheet=null; changed(); break;}
     case "up": case "down":{
       var y=rowById(ui.sheet.id), j=y.i+(a==="up"?-1:1);
