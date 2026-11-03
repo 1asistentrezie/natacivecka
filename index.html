@@ -448,7 +448,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="3. 11. 21:30";
+var APP_BUILD="3. 11. 21:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -685,7 +685,10 @@ function infoHTML(r,tapAttr){var m=shotMeta(r);
   return '<span class="info"'+tapAttr+'>'+(r.tod?todChip(r.tod).replace("/","/<wbr>"):'<span class="tod none">—</span>')+
     '<span class="sd'+(m.den?'':' none')+'">'+(m.den?esc(m.den):'den —')+'</span>'+
     '<span class="pg'+(m.len?'':' none')+'">'+(m.len?esc(m.len)+' str.':'str. —')+'</span></span>';}
-function rowUnlocked(r){var d=day(),i=d.rows.indexOf(r);for(var k=0;k<i;k++){var x=d.rows[k];if(x.type==="shot"&&!fin(x))return false;}return true;}
+var MAX_ROLL=5;
+function rollingShots(d,exceptId){return d.rows.filter(function(z){return z.type==="shot"&&z.status==="rolling"&&z.id!==exceptId;});}
+/* a shot can be set once every earlier shot is closed or is being shot right now (up to 5 shots can roll together) */
+function rowUnlocked(r){var d=day(),i=d.rows.indexOf(r);if(r.status)return true;for(var k=0;k<i;k++){var x=d.rows[k];if(x.type==="shot"&&!fin(x)&&x.status!=="rolling")return false;}return true;}
 function rowHTML(r){
   var h = canEdit ? '<button class="handle" data-handle="'+r.id+'" aria-label="Přesunout">'+GRIP+'</button>' : '<span class="handle" aria-hidden="true"></span>';
   var time = esc(r.from||"")+(r.to?"–"+esc(r.to):"");
@@ -755,8 +758,10 @@ function sheetHTML(){
   if(s.kind==="state"){
     var sr=rowById(s.id).r, isN=sr.type==="note";
     b='<h2>'+(isN?'Stav · '+esc(sr.kind):'Stav obrazu '+esc(sr.scene))+'</h2><span class="memo2">'+esc(isN?sr.text||"":sr.motif||"")+'</span>'+
-      '<button class="pick p-rolling'+(sr.status==="rolling"?" sel":"")+'" data-act="set" data-v="rolling">'+(isN?'PROBÍHÁ':'NATÁČÍ SE')+'</button>'+
-      '<button class="pick p-done'+(sr.status==="done"?" sel":"")+'" data-act="set" data-v="done">'+(isN?'SKONČENO':'NATOČENO')+'<small>uloží se čas '+nowHM()+'</small></button>'+
+      (function(){var others=isN?[]:rollingShots(day(),sr.id);
+        return '<button class="pick p-rolling'+(sr.status==="rolling"?" sel":"")+'" data-act="set" data-v="rolling">'+(isN?'PROBÍHÁ':'NATÁČÍ SE')+(others.length&&sr.status!=="rolling"?'<small>spolu s O:'+others.map(function(z){return esc(z.scene);}).join(", O:")+' ('+(others.length+1)+' z max. '+MAX_ROLL+')</small>':'')+'</button>'+
+        '<button class="pick p-done'+(sr.status==="done"?" sel":"")+'" data-act="set" data-v="done">'+(isN?'SKONČENO':'NATOČENO')+'<small>uloží se čas '+nowHM()+'</small></button>'+
+        (sr.status==="rolling"&&others.length?'<button class="pick p-done" data-act="set" data-v="done" data-all="1">NATOČENO VŠECHNY SOUČASNĚ<small>O:'+[sr].concat(others).map(function(z){return esc(z.scene);}).join(", O:")+' · '+nowHM()+'</small></button>':'');})()+
       '<button class="pick p-moved'+(sr.status==="moved"?" sel":"")+'" data-act="set" data-v="moved">'+(isN?'ZRUŠENO / PŘESUNUTO':'NENATOČENO / PŘESUNUTO')+'<small>uloží se čas '+nowHM()+'</small></button>'+
       '<div class="actions"><div class="grp">'+(sr.status?'<button class="btn" data-act="set" data-v="">Vymazat stav</button>':'')+'</div><div class="grp"><button class="btn" data-act="close">Zpět</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
@@ -1654,10 +1659,12 @@ function act(a,id,el){
       ui.sheet={kind:"state",id:id}; render(); break;
     case "set":{
       var sr=rowById(ui.sheet.id).r, v=el.getAttribute("data-v");
-      if(v==="rolling")d.rows.forEach(function(z){if(z.type===sr.type&&z.status==="rolling")z.status="";});
+      if(v==="rolling"&&sr.type==="note")d.rows.forEach(function(z){if(z.type==="note"&&z.status==="rolling")z.status="";});
+      if(v==="rolling"&&sr.type==="shot"&&sr.status!=="rolling"&&rollingShots(d,sr.id).length>=MAX_ROLL){toast("Najednou se může natáčet nejvýš "+MAX_ROLL+" obrazů");return;}
+      if(el.getAttribute("data-all")==="1"&&v==="done"){var tAll=nowHM(),last=-1;rollingShots(d,sr.id).forEach(function(z){z.status="done";z.doneAt=tAll;last=Math.max(last,d.rows.indexOf(z));});}
       if(v&&!d.rows.some(function(z){return z.status;}))snapLunch(d);
       sr.status=v; sr.doneAt=(v==="done"||v==="moved")?nowHM():"";
-      var shiftedN=0; if(v==="done"&&!fixedRow(sr)){var si=d.rows.indexOf(sr); if(si>=0&&toMin(sr.to)!==toMin(sr.doneAt))shiftedN=retimeAfterDone(d,si);}
+      var shiftedN=0; if(v==="done"&&!fixedRow(sr)){var si=Math.max(d.rows.indexOf(sr),last>=0?last:-1); if(si>=0&&toMin(d.rows[si].to)!==toMin(sr.doneAt)){d.rows[si].doneAt=d.rows[si].doneAt||sr.doneAt;shiftedN=retimeAfterDone(d,si);}}
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
       ui.sheet=null; changed();
       if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
