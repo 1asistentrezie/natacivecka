@@ -442,6 +442,19 @@ button{cursor:pointer}
 .donebtn .unf{color:var(--muted);font-weight:600}
 .row.note .kind .orig{font-size:13px;font-weight:700;color:#5A1A12;background:#F3D2CE;border:1px solid #C9867D;border-radius:4px;padding:0 6px}
 .shfold{display:block;width:100%;text-align:left;background:none;border:0;color:var(--muted);font-weight:700;font-size:14px;padding:6px 8px}
+.annbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
+.annt{min-height:34px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);padding:0 10px;font-weight:600;font-size:14px}
+.annt.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.annt.armed{background:var(--late);border-color:var(--late);color:#fff}
+.annc{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);padding:0}
+.annc.on{outline:3px solid var(--ink);outline-offset:1px}
+.annsep{width:1px;height:24px;background:var(--line);margin:0 2px}
+.annhint{font-size:11px;color:var(--muted);flex:1 1 100%}
+.pgwrap{position:relative;line-height:0}
+.pgwrap canvas{display:block}
+.pdfpages canvas.ann{position:absolute;inset:0;width:100%;height:100%;background:transparent!important;box-shadow:none!important;pointer-events:none;touch-action:auto}
+.pdfpages.drawing canvas.ann{pointer-events:auto;touch-action:none;cursor:crosshair}
+.anninput{position:absolute;min-width:120px;font:700 15px -apple-system,Helvetica,Arial,sans-serif;line-height:1.2;background:rgba(255,255,255,.92);border:1px dashed #888;border-radius:4px;padding:2px 4px;resize:none;z-index:2}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -449,7 +462,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="3. 11. 21:50";
+var APP_BUILD="3. 11. 22:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1538,8 +1551,8 @@ function showPdf(r,k){
   var url=blobUrl(sc.id), from=+f.from||1, to=Math.max(from,+f.to||from);
   closePdf();
   var pn=document.createElement("div");pn.className="pdfpanel";pn.id="pdfPanel";
-  pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span><button class="btn" id="pdfClose">Zavřít</button></div><div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
-  document.body.appendChild(pn);
+  pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
+  document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   document.getElementById("pdfClose").onclick=closePdf;
   openPdf(url).then(function(doc){
     var box=document.getElementById("pdfPages"); if(!box)return; box.innerHTML="";
@@ -1547,9 +1560,69 @@ function showPdf(r,k){
     for(var p=from;p<=Math.min(to,doc.numPages);p++)(function(pg){chain=chain.then(function(){return doc.getPage(pg).then(function(page){
       var v0=page.getViewport({scale:1}), sc2=w/v0.width*dpr, v=page.getViewport({scale:sc2});
       var c=document.createElement("canvas");c.width=v.width;c.height=v.height;c.setAttribute("aria-label","Strana "+pg);
-      if(document.getElementById("pdfPages"))box.appendChild(c);
-      return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise;});});})(p);
+      var wrap=document.createElement("div");wrap.className="pgwrap";wrap.appendChild(c);
+      var ov=document.createElement("canvas");ov.className="ann";ov.width=v.width;ov.height=v.height;ov.setAttribute("data-pg",pg);wrap.appendChild(ov);
+      if(document.getElementById("pdfPages"))box.appendChild(wrap);
+      return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){annDraw(ov);});});});})(p);
   },function(e){var box=document.getElementById("pdfPages");if(box)box.innerHTML='<div class="pdfmsg">Soubor se nepodařilo otevřít ('+esc(e&&e.message?e.message:"chyba")+'). Zkuste stránku obnovit.</div>';});
+}
+
+/* ---------- annotations on script / breakdown pages: pen, highlighter, text; kept on this device ---------- */
+var ANN={doc:null,tool:"move",color:"#E5483D",undo:[],cur:null};
+var ANN_COLORS=["#E5483D","#1D69BF","#111111","#2FA862"];
+function annKey(pg){return "nd.ann."+ANN.doc+"."+pg;}
+function annGet(pg){try{return JSON.parse(localStorage.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
+function annPut(pg,list,noUndo){try{if(!noUndo)ANN.undo.push({pg:pg,prev:localStorage.getItem(annKey(pg))});if(list.length)localStorage.setItem(annKey(pg),JSON.stringify(list));else localStorage.removeItem(annKey(pg));}catch(_){toast("Poznámku se nepodařilo uložit");}}
+function annBarHTML(){
+  var T=[["move","Posun"],["pen","Pero"],["hl","Zvýraznit"],["text","Text"]];
+  return '<div class="annbar" id="annBar">'+T.map(function(t){return '<button class="annt" data-ann="'+t[0]+'">'+t[1]+'</button>';}).join("")+
+    '<span class="annsep"></span>'+ANN_COLORS.map(function(c){return '<button class="annc" data-annc="'+c+'" style="background:'+c+'" aria-label="Barva"></button>';}).join("")+
+    '<span class="annsep"></span><button class="annt" data-ann="undo">Zpět</button><button class="annt" data-ann="clear">Smazat vše</button>'+
+    '<span class="annhint">Poznámky se ukládají jen v tomto zařízení</span></div>';
+}
+function annBarSync(){var b=document.getElementById("annBar");if(!b)return;
+  [].forEach.call(b.querySelectorAll("[data-ann]"),function(x){x.classList.toggle("on",x.getAttribute("data-ann")===ANN.tool);});
+  [].forEach.call(b.querySelectorAll("[data-annc]"),function(x){x.classList.toggle("on",x.getAttribute("data-annc")===ANN.color);});
+  var pp=document.getElementById("pdfPages");if(pp)pp.classList.toggle("drawing",ANN.tool!=="move");}
+function annDraw(ov){var g=ov.getContext("2d"),W=ov.width,H=ov.height,list=annGet(+ov.getAttribute("data-pg"));g.clearRect(0,0,W,H);
+  list.forEach(function(a){
+    if(a.t==="text"){g.globalAlpha=1;g.fillStyle=a.c;g.font="700 "+Math.round(a.s*W)+"px -apple-system,Helvetica,Arial,sans-serif";g.textBaseline="top";
+      String(a.text).split("\n").forEach(function(line,i){g.fillText(line,a.x*W,a.y*H+i*a.s*W*1.2);});return;}
+    g.globalAlpha=a.t==="hl"?0.35:1;g.strokeStyle=a.c;g.lineWidth=a.w*W;g.lineCap="round";g.lineJoin="round";g.beginPath();
+    a.pts.forEach(function(p,i){if(i)g.lineTo(p[0]*W,p[1]*H);else g.moveTo(p[0]*W,p[1]*H);});
+    if(a.pts.length===1)g.lineTo(a.pts[0][0]*W+0.5,a.pts[0][1]*H);g.stroke();});
+  g.globalAlpha=1;}
+function annRedrawAll(){[].forEach.call(document.querySelectorAll("#pdfPages canvas.ann"),annDraw);}
+function annPos(ov,e){var r=ov.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height];}
+document.addEventListener("click",function(e){
+  var t=e.target.closest("[data-ann]"),c=e.target.closest("[data-annc]");
+  if(c){ANN.color=c.getAttribute("data-annc");if(ANN.tool==="move")ANN.tool="pen";annBarSync();return;}
+  if(!t)return; var a=t.getAttribute("data-ann");
+  if(a==="undo"){var u=ANN.undo.pop();if(!u){toast("Není co vrátit");return;}try{if(u.prev)localStorage.setItem(annKey(u.pg),u.prev);else localStorage.removeItem(annKey(u.pg));}catch(_){}annRedrawAll();return;}
+  if(a==="clear"){if(ANN.arm!=="clear"){ANN.arm="clear";t.textContent="Opravdu smazat?";t.classList.add("armed");setTimeout(function(){ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");},4000);return;}
+    ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");[].forEach.call(document.querySelectorAll("#pdfPages canvas.ann"),function(ov){var pg=+ov.getAttribute("data-pg");if(annGet(pg).length)annPut(pg,[]);});annRedrawAll();return;}
+  ANN.tool=a; annBarSync();
+});
+document.addEventListener("pointerdown",function(e){
+  var ov=e.target.closest&&e.target.closest("canvas.ann"); if(!ov||ANN.tool==="move")return;
+  e.preventDefault(); var pg=+ov.getAttribute("data-pg"), p=annPos(ov,e);
+  if(ANN.tool==="text"){annText(ov,pg,p);return;}
+  ANN.cur={ov:ov,pg:pg,pid:e.pointerId,a:{t:ANN.tool,c:ANN.tool==="hl"&&ANN.color==="#E5483D"?"#F4C631":ANN.color,w:ANN.tool==="hl"?0.022:0.0045,pts:[p]}};
+  try{ov.setPointerCapture(e.pointerId);}catch(_){}
+},{passive:false});
+document.addEventListener("pointermove",function(e){var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;e.preventDefault();c.a.pts.push(annPos(c.ov,e));
+  var list=annGet(c.pg).concat([c.a]);var g=c.ov.getContext("2d");annDrawList(c.ov,list);},{passive:false});
+function annDrawList(ov,list){var keep=annGet;annGet=function(){return list;};annDraw(ov);annGet=keep;}
+function annEnd(e){var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;ANN.cur=null;var list=annGet(c.pg);list.push(c.a);annPut(c.pg,list);annDraw(c.ov);}
+document.addEventListener("pointerup",annEnd);document.addEventListener("pointercancel",annEnd);
+function annText(ov,pg,p){
+  var wrap=ov.parentNode, old=wrap.querySelector(".anninput"); if(old)old.blur();
+  var inp=document.createElement("textarea");inp.className="anninput";inp.rows=1;inp.style.left=(p[0]*100)+"%";inp.style.top=(p[1]*100)+"%";inp.style.color=ANN.color;
+  wrap.appendChild(inp); inp.focus(); setTimeout(function(){inp.focus();},30);
+  var done=false; function commit(){if(done)return;done=true;var v=inp.value.trim();inp.remove();
+    if(v){var list=annGet(pg);list.push({t:"text",c:ANN.color,x:p[0],y:p[1],s:0.028,text:v});annPut(pg,list);annDraw(ov);}}
+  inp.addEventListener("blur",commit);
+  inp.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();inp.blur();}if(ev.key==="Escape"){inp.value="";inp.blur();}});
 }
 function closePdf(){var p=document.getElementById("pdfPanel");if(p)p.remove();}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closePdf();});
