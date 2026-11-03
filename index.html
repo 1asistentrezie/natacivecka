@@ -465,7 +465,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="3. 11. 22:20";
+var APP_BUILD="3. 11. 22:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -716,7 +716,7 @@ function rowHTML(r){
   var time = esc(r.from||"")+(r.to?"–"+esc(r.to):"");
   var tapAttr = canEdit ? ' class="tap" data-act="edit" data-id="'+r.id+'"' : '';
   if(isMartini(r)||isKonec(r)){
-    return '<li class="row note commit redbox" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(isKonec(r)&&r.from?' '+esc(r.from):'')+(r.text?' '+esc(r.text):'')+'</span>'+mvHTML(r)+'<span class="state"></span></li>';
+    return '<li class="row note commit redbox" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(r.from?' '+esc(r.from):'')+(r.text?' '+esc(r.text):'')+'</span>'+mvHTML(r)+'<span class="state"></span></li>';
   }
   if(isCommit(r)){
     var cr=commitRoles(day(),r);
@@ -1794,7 +1794,7 @@ function act(a,id,el){
       var r=ui.sheet.data, old0=ui.sheet.isNew?null:rowById(r.id), oldEnd=old0?endMin(old0.r):null; r.from=val("fFrom"); r.to=val("fTo");
       if(r.type==="shot"){r.scene=val("fScene");r.motif=val("fMotif");r.tod=val("fTod");r.den=val("fDen");r.len=val("fLen");r.roles=sortRoles(val("fRoles").split(",").map(function(x){return x.trim();}).filter(Boolean)).join(", ");r.note=val("fNote");if(fin(r))r.doneAt=val("fDoneAt");}
       else {r.kind=val("fKind");r.text=val("fText");var nt=document.getElementById("fNoTime");if(nt&&nt.checked)r.noTime=true;else delete r.noTime;
-        if(r.kind===KONEC_KIND&&ui.sheet.isNew){r.from=nowHM();r.to=r.from;}if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
+        if((r.kind===KONEC_KIND||r.kind===MARTINI_KIND)&&(ui.sheet.isNew||!r.from)){r.from=nowHM();r.to=r.from;}if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
       if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);d.rows.push(r);} else {var y=rowById(r.id); if(y){d.rows[y.i]=r; var shn=fixedRow(r)?0:retimeFrom(d,y.i+1); if(shn){ui.sheet=null; changed(); toast("Časy dalších řádků přepočítány ("+shn+")"); break;}}}
       ui.sheet=null; changed(); break;}
     case "up": case "down":{
