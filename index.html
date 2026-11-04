@@ -475,7 +475,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 11:05";
+var APP_BUILD="4. 11. 11:10";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -788,7 +788,7 @@ function paceOf(r){if(r.status!=="rolling"||!r.origFrom)return null;var d=day();
   if(now<=b)return {k:"ok"};
   return {k:"late",t:"+"+fmtDur(Math.max(1,Math.floor(now-b)))};}
 function paceHTML(r){var pc=paceOf(r);return '<span class="pace" data-pace="'+r.id+'">'+(pc&&pc.t?'<span class="tb '+pc.k+'">'+pc.t+'</span>':'')+'</span>';}
-function planLine(r){return r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<span class="origplan">původní plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</span>':'';}
+function planLine(r){return r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<span class="origplan">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</span>':'';}
 function tickPace(){var d=day();[].forEach.call(document.querySelectorAll("[data-pace]"),function(el){var id=el.getAttribute("data-pace"),r=null;for(var i=0;i<d.rows.length;i++)if(d.rows[i].id===id){r=d.rows[i];break;}
   if(!r)return;var pc=paceOf(r),h=pc&&pc.t?'<span class="tb '+pc.k+'">'+pc.t+'</span>':'';if(el.innerHTML!==h)el.innerHTML=h;var t=el.closest(".time");if(t)t.classList.toggle("ontime",!!(pc&&pc.k==="ok"));});}
 function tick(){tickCd();tickPace();var b=document.getElementById("bar");if(b&&!ui.drag){b.innerHTML=headerHTML(day());b.classList.toggle("tracking",!!ui.track);}}
