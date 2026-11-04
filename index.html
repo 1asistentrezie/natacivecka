@@ -477,7 +477,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 11:15";
+var APP_BUILD="4. 11. 11:25";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -654,10 +654,12 @@ function setTimes(r,f,to){if(r.from===f&&r.to===to)return false;r.from=f;r.to=to
 function snapLunch(d){d.rows.forEach(function(r){if(isLunch(r)){r.origFrom=r.from||"";r.origTo=r.to||r.from||"";}});}
 /* when a row is closed earlier or later than planned, everything after it moves so the next row starts at that moment */
 function retimeAfterDone(d,i){
-  var t=toMin(d.rows[i].doneAt); if(t==null)return 0; var n=0;
-  for(var k=i+1;k<d.rows.length;k++){var r=d.rows[k]; if(fixedRow(r)||fin(r)||r.status==="rolling")continue; var L=rowLen(r);
-    if(setTimes(r,hm(t),hm(t+L)))n++; t+=L;}
-  return n;
+  /* only the next row moves to start when this one ended; everything after it keeps its planned time */
+  var t=toMin(d.rows[i].doneAt); if(t==null)return 0;
+  for(var k=i+1;k<d.rows.length;k++){var r=d.rows[k]; if(fixedRow(r)||fin(r)||r.status==="rolling")continue;
+    if(toMin(r.from)==null)return 0; var L=rowLen(r); if(!r.origFrom){r.origFrom=r.from;r.origTo=r.to||r.from;}
+    return setTimes(r,hm(t),hm(t+L))?1:0;}
+  return 0;
 }
 function rowLen(r){var m=spanMin(r.from,r.to);if(m==null||m>720)return 0;return m;}
 function retimeFrom(d,i){
@@ -784,7 +786,9 @@ function render(){
   if(typeof liveInd==="function")liveInd();
 }
 /* row in progress: yellow = minutes left until the originally planned start, green frame = on plan, red = minutes past the planned end */
-function paceOf(r){if(r.status!=="rolling"||!r.origFrom)return null;var d=day();if(d.date&&d.date!==todayISO())return null;
+function paceOf(r){if(!r.origFrom||fin(r))return null;
+  if(r.status!=="rolling"){var df=toMin(r.origFrom)-toMin(r.from);if(isNaN(df)||!df)return null;if(df>720)df-=1440;if(df<-720)df+=1440;return df>0?{k:"ahead",t:"+"+fmtDur(df)}:{k:"late",t:"+"+fmtDur(-df)};}
+  var d=day();if(d.date&&d.date!==todayISO())return null;
   var now=nowMin(),a=toMin(r.origFrom),b=toMin(r.origTo||r.origFrom);if(a==null)return null;if(b==null)b=a;
   if(now<a)return {k:"ahead",t:"+"+fmtDur(Math.ceil(a-now))};
   if(now<=b)return {k:"ok"};
@@ -1799,7 +1803,7 @@ function act(a,id,el){
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
       ui.sheet=null; changed();
       if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
-      else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · časy dalších řádků upraveny":"")); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
+      else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
       break;}
     case "end": x.r.done=true; x.r.doneAt=nowHM(); changed(); toast((x.r.kind||"Poznámka")+" skončeno v "+x.r.doneAt); break;
     case "done":{
