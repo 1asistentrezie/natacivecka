@@ -466,7 +466,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 8:35";
+var APP_BUILD="4. 11. 8:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -553,9 +553,9 @@ function status(d){
   if(left!=null&&left<0){var n=shots.filter(function(r){return !fin(r);}).length;return {k:"late",w:"Přes směnu +"+dur(-left),s:"Zbývá "+n+(n===1?" obraz":n<5?" obrazy":" obrazů")};}
   /* ahead (yellow, counts down to planned start) · in time (green, counts down to planned end) · late (red, counts up) */
   var end=endOf(d,cur), start=toMin(cur.from), lbl="Obraz "+(cur.scene||"");
-  if(start!=null && now<start) return {k:"ahead",c:"O:"+(cur.scene||"?")+" "+cur.from,w:"−"+mins(Math.ceil(start-now)),s:"Předstih · "+lbl+" má podle plánu začít v "+cur.from+(cur.status==="rolling"?" · už se točí":"")};
-  if(end!=null && now>end) return {k:"late",c:"O:"+(cur.scene||"?")+" "+hm(end),w:"+"+mins(Math.max(1,Math.floor(now-end))),s:"Zpoždění · "+lbl+" měl skončit v "+hm(end)};
-  if(end!=null) return {k:"ok",c:"O:"+(cur.scene||"?")+" "+hm(end),w:mins(Math.ceil(end-now)),s:"V čase · "+lbl+" do "+hm(end)};
+  if(start!=null && now<start) return {k:"ahead",c:"O:"+(cur.scene||"?")+" od "+cur.from,w:"−"+mins(Math.ceil(start-now)),s:"Předstih · "+lbl+" má podle plánu začít v "+cur.from+(cur.status==="rolling"?" · už se točí":"")};
+  if(end!=null && now>end) return {k:"late",c:"O:"+(cur.scene||"?")+" do "+hm(end),w:"+"+mins(Math.max(1,Math.floor(now-end))),s:"Zpoždění · "+lbl+" měl skončit v "+hm(end)};
+  if(end!=null) return {k:"ok",c:"O:"+(cur.scene||"?")+" do "+hm(end),w:mins(Math.ceil(end-now)),s:"V čase · "+lbl+" do "+hm(end)};
   return {k:"ok",w:"V čase",s:lbl};
 }
 
