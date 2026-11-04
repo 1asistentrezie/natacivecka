@@ -468,6 +468,8 @@ button{cursor:pointer}
 .row.note .time{flex-wrap:wrap;row-gap:2px}
 .row.note .origplan{white-space:nowrap}
 @media (max-width:759px){.row.note .origplan{display:block;flex-basis:100%}}
+.btn.rfed{display:inline-flex;align-items:center;gap:6px}
+.btn.rfed svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -475,7 +477,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 11:10";
+var APP_BUILD="4. 11. 11:15";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -767,7 +769,7 @@ function render(){
   var opts=S.days.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+esc((x.label||"Natáčecí den")+" – "+(x.date?fmtDate(x.date):"bez data"))+'</option>';}).join("");
   var tools=(canEdit||standalone?'<select id="daySel" aria-label="Natáčecí den">'+opts+'</select>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
-    (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<button class="btn" data-act="chrono">Chronologie</button>':'')+(canEdit?'<button class="btn" data-act="editday">Upravit den</button><button class="btn" data-act="newday">+ Nový den</button>':'<span class="ro">Jen pro čtení</span>')+
+    (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<button class="btn" data-act="chrono">Chronologie</button>':'')+(canEdit?'<button class="btn" data-act="editday">Upravit den</button><button class="btn" data-act="newday">+ Nový den</button><button class="btn rfed" data-act="reload" aria-label="Obnovit stránku">'+REFRESH+'<span>Obnovit</span></button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
     '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
   var hid=hiddenRows(d), nh=0; for(var hk in hid)nh++;
@@ -1939,6 +1941,7 @@ function act(a,id,el){
     case "login": ui.sheet={kind:"login"}; render(); setTimeout(function(){var e=document.getElementById("fEmail");if(e)e.focus();},50); break;
     case "dologin": webLogin(val("fEmail"),(document.getElementById("fPass")||{}).value||""); break;
     case "logout": SB.auth.signOut().then(function(){location.reload();}); break;
+    case "reload": if(saveTimer!=null||saveMsg==="Ukládám…"){toast("Ukládám změny, za chvíli obnovím…");setTimeout(function(){act("reload");},1500);break;} location.reload(); break;
     case "close": case "veil": ui.sheet=null; ui.arm=null; render(); if(saveTimer==null&&saveMsg==="Neuloženo")queueSave(); break;
   }
 }
