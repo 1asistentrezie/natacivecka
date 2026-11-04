@@ -458,6 +458,7 @@ button{cursor:pointer}
 .pgwrap.cur{outline:3px solid var(--roll);outline-offset:2px}
 .pgno{display:block;line-height:1;color:#9AA0A3;font-size:13px;padding:12px}
 .pgwrap{background:#fff;border-radius:2px;flex:none}
+.pdfhead .btn{white-space:nowrap;padding:0 10px;font-size:14px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -465,7 +466,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="3. 11. 22:45";
+var APP_BUILD="4. 11. 8:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1556,7 +1557,7 @@ function showPdf(r,k,full){
   var pn=document.createElement("div");pn.className="pdfpanel";pn.id="pdfPanel";
   var lblAll=k==="brk"?"Celé složky":"Celý scénář";
   pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+
-    '<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
+    (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
@@ -1843,7 +1844,8 @@ function act(a,id,el){
     case "deldoc":{ var dk3=ui.sheet.dk, di=+el.getAttribute("data-i"); if(ui.arm!=="deldoc:"+di){ui.arm="deldoc:"+di;render();return;} ui.arm=null;
       var dl3=docList(dk3), ds=dl3[di], F3=DK[dk3].field, A3=DK[dk3].auto; if(ds){dl3.splice(di,1);if(WEB&&SB)SB.storage.from("docs").remove([ds.id+".pdf"]).catch(function(){}); S.days.forEach(function(dd){dd.rows.forEach(function(r){if(r[F3]&&r[F3].sid===ds.id){delete r[F3];delete r[A3];}});});}
       ui.sheet.summary=""; changed(); toast("Soubor odebrán"); break;}
-    case "book": case "lupa":{ var dkb=a==="lupa"?"brk":"script"; if(canEdit){docList(dkb);ui.sheet={kind:"pages",id:id,dk:dkb};render();} else showPdf(x.r,dkb); break;}
+    case "book": case "lupa":{ var dkb=a==="lupa"?"brk":"script"; if(canEdit&&!hasDoc(x.r,dkb)){docList(dkb);ui.sheet={kind:"pages",id:id,dk:dkb};render();} else showPdf(x.r,dkb); break;}
+    case "pgedit":{ var pe=rowById(el.getAttribute("data-id")); closePdf(); if(pe){docList(el.getAttribute("data-dk"));ui.sheet={kind:"pages",id:pe.r.id,dk:el.getAttribute("data-dk")};render();} break;}
     case "pgsave":{ var dk4=ui.sheet.dk, F4=DK[dk4].field, A4=DK[dk4].auto, pr=rowById(ui.sheet.id).r, f1=parseInt(val("fPgFrom"),10), t1=parseInt(val("fPgTo"),10), sid1=val("fPgSid")||(docList(dk4)[0]&&docList(dk4)[0].id);
       if(f1>0&&sid1){pr[F4]={sid:sid1,from:f1,to:t1>=f1?t1:f1};pr[A4]=false;} else {delete pr[F4];delete pr[A4];}
       ui.sheet=null; changed(); break;}
