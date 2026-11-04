@@ -462,7 +462,25 @@ button{cursor:pointer}
 .time .pace{display:block}
 .time .tb{display:inline-flex;align-items:center;margin-top:4px;border-radius:5px;padding:1px 8px;font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.03em;white-space:nowrap}
 .time .tb.ahead{background:#F4C631;color:#1E1A06}.time .tb.late{background:#E5483D;color:#fff}
-.time.ontime>span:first-child{outline:3px solid #2FA862;outline-offset:3px;border-radius:4px}
+.time .tb{flex-direction:column;align-items:flex-start;line-height:1.05;padding:3px 8px}
+.time .tb small{font-size:10px;letter-spacing:.08em;font-weight:800;opacity:.9}
+.time .tb.ok{background:#2FA862;color:#fff}
+.time[class*=" pc-"]>span:first-child{border-radius:5px;padding:0 5px;margin-left:-5px;align-self:flex-start;width:max-content}
+.time.pc-ahead>span:first-child{background:#F4C631;color:#1E1A06}
+.time.pc-ok>span:first-child{background:#2FA862;color:#fff}
+.time.pc-late>span:first-child{background:#E5483D;color:#fff}
+.row.note .time .tb{flex-direction:row;align-items:center;gap:6px}
+.row.note .time[class*=" pc-"]>span:first-child{margin-left:0}
+@media (max-width:759px){
+  .row.shot .time[class*=" pc-"]{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:7px;align-items:start;justify-items:start}
+  .row.shot .time[class*=" pc-"]>span:first-child{grid-column:1;grid-row:1;margin-left:0}
+  .row.shot .time[class*=" pc-"] .dur{grid-column:1;grid-row:2}
+  .row.shot .time[class*=" pc-"] .pace{grid-column:2;grid-row:1;display:flex}
+  .row.shot .time[class*=" pc-"] .tb{margin-top:0;font-size:15px;padding:2px 6px}
+  .row.shot .time[class*=" pc-"] .tb small{font-size:9px}
+  .row.shot .time[class*=" pc-"]>span:first-child{padding:0 4px}
+  .row.shot .time[class*=" pc-"] .origplan{grid-column:2;grid-row:2;margin-top:2px;font-size:11px;white-space:normal}
+}
 .origplan{display:block;font-size:12px;line-height:1.25;color:#97A2A6;font-family:var(--f-body);font-weight:600;white-space:normal;max-width:100%;margin-top:2px}
 .row.note .time .pace{display:inline}.row.note .time .tb{margin-top:0;font-size:14px}.row.note .origplan{display:inline;margin:0;color:#3F474A}
 .row.note .time{flex-wrap:wrap;row-gap:2px}
@@ -480,7 +498,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 11:35";
+var APP_BUILD="4. 11. 11:58";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -743,7 +761,7 @@ function rowHTML(r){
     var nin='<span>'+NL[r.status||""]+'</span>'+(fin(r)&&r.doneAt?'<span class="t">'+esc(r.doneAt)+'</span>':'');
     var ns=canEdit?'<button class="stav s-'+(r.status||"none")+'" data-act="state" data-id="'+r.id+'">'+nin+'</button>':(r.status?'<span class="stav s-'+r.status+'">'+nin+'</span>':'<span class="wait">—</span>');
     var nd=r.noTime?null:spanMin(r.from,r.to); if(r.noTime)time="";
-    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+'<span class="time'+((paceOf(r)||{}).k==="ok"?' ontime':'')+'"'+tapAttr+'><span>'+(r.noTime?"":(time||"—"))+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+(r.noTime?'':paceHTML(r)+planLine(r))+'</span>'+
+    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+'<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+(r.noTime?"":(time||"—"))+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+(r.noTime?'':paceHTML(r)+planLine(r))+'</span>'+
       '<span class="kind"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(isActorEnd(r.kind)&&r.actors&&r.actors.length?r.actors.map(function(a){var t=endTime(r,a);return '<span class="role endrole">'+esc(a)+(t?'<small>skončil '+esc(t)+'</small>':'')+'</span>';}).join(""):'')+'<span>'+esc(r.text)+'</span>'+lunchCd(r)+'</span>'+mvHTML(r)+'<span class="state">'+ns+'</span></li>';
   }
   var rd=day(), roles=sortRoles((r.roles||"").split(",").map(function(x){return x.trim();}).filter(Boolean)).map(function(x){return roleChip(x,rd,r);}).join("");
@@ -756,7 +774,7 @@ function rowHTML(r){
   else if(canEdit&&locked) state='<span class="stav s-none locked" title="Nejdřív uzavřete předchozí obraz"><span>STAV</span><span class="t">po předchozím</span></span>';
   else state=r.status?'<span class="stav s-'+r.status+'">'+inner+'</span>':'<span class="wait">čeká</span>';
   return '<li class="row shot'+(r.status==="rolling"?' current':'')+(r.status==="done"?' done':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+
-    '<span class="time'+((paceOf(r)||{}).k==="ok"?' ontime':'')+'"'+tapAttr+'><span>'+(time||"—")+'</span>'+(spanMin(r.from,r.to)!=null?'<span class="dur">'+fmtDur(spanMin(r.from,r.to))+'</span>':'')+paceHTML(r)+planLine(r)+'</span>'+
+    '<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+(time||"—")+'</span>'+(spanMin(r.from,r.to)!=null?'<span class="dur">'+fmtDur(spanMin(r.from,r.to))+'</span>':'')+paceHTML(r)+planLine(r)+'</span>'+
     '<span class="no'+(String(r.scene||"").length>6?' sz-l':String(r.scene||"").length>4?' sz-m':'')+'"'+tapAttr+'><small>OBRAZ</small>'+esc(r.scene||"–")+'</span>'+
     infoHTML(r,tapAttr)+
     '<span class="mr"><span class="motif"'+tapAttr+'>'+esc(r.motif||"")+(r.note?'<span class="memo">'+esc(r.note)+'</span>':'')+'</span>'+
@@ -793,12 +811,15 @@ function paceOf(r){if(!r.origFrom||fin(r))return null;
   var d=day();if(d.date&&d.date!==todayISO())return null;
   var now=nowMin(),a=toMin(r.origFrom),b=toMin(r.origTo||r.origFrom);if(a==null)return null;if(b==null)b=a;
   if(now<a)return {k:"ahead",t:"+"+fmtDur(Math.ceil(a-now))};
-  if(now<=b)return {k:"ok"};
+  if(now<=b)return {k:"ok",t:"+"+fmtDur(Math.max(0,Math.ceil(b-now)))};
   return {k:"late",t:"+"+fmtDur(Math.max(1,Math.floor(now-b)))};}
-function paceHTML(r){var pc=paceOf(r);return '<span class="pace" data-pace="'+r.id+'">'+(pc&&pc.t?'<span class="tb '+pc.k+'">'+pc.t+'</span>':'')+'</span>';}
+var PACE_LBL={ahead:"NÁSKOK",ok:"ON TIME",late:"ZPOŽDĚNÍ"};
+function tbHTML(pc){return pc&&pc.t?'<span class="tb '+pc.k+'"><small>'+PACE_LBL[pc.k]+'</small>'+pc.t+'</span>':'';}
+function paceCls(r){var pc=paceOf(r);return pc&&pc.t?' pc-'+pc.k:'';}
+function paceHTML(r){return '<span class="pace" data-pace="'+r.id+'">'+tbHTML(paceOf(r))+'</span>';}
 function planLine(r){return r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<span class="origplan">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</span>':'';}
 function tickPace(){var d=day();[].forEach.call(document.querySelectorAll("[data-pace]"),function(el){var id=el.getAttribute("data-pace"),r=null;for(var i=0;i<d.rows.length;i++)if(d.rows[i].id===id){r=d.rows[i];break;}
-  if(!r)return;var pc=paceOf(r),h=pc&&pc.t?'<span class="tb '+pc.k+'">'+pc.t+'</span>':'';if(el.innerHTML!==h)el.innerHTML=h;var t=el.closest(".time");if(t)t.classList.toggle("ontime",!!(pc&&pc.k==="ok"));});}
+  if(!r)return;var pc=paceOf(r),h=tbHTML(pc);if(el.innerHTML!==h)el.innerHTML=h;var t=el.closest(".time");if(t)["ahead","ok","late"].forEach(function(k){t.classList.toggle("pc-"+k,!!(pc&&pc.t&&pc.k===k));});});}
 function tick(){tickCd();tickPace();var b=document.getElementById("bar");if(b&&!ui.drag){b.innerHTML=headerHTML(day());b.classList.toggle("tracking",!!ui.track);}}
 
 /* ---------- sheets ---------- */
