@@ -477,7 +477,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 11:25";
+var APP_BUILD="4. 11. 11:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -590,8 +590,7 @@ function headerHTML(d){
     '<div class="slot s-loc'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Lokace</span><span class="loc">'+esc(d.location||"—")+'</span></div>'+
     '<div class="slot s-shift'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Směna</span><span class="big">'+(d.shiftFrom||d.shiftTo?esc(d.shiftFrom||"?")+'–'+esc(d.shiftTo||"?"):"—")+'</span></div>'+
     '<div class="slot s-sun" title="'+esc(pl.name)+'"><span class="lab" aria-label="Slunce">'+SUN+'</span><span class="sunl"><i>VÝCHOD</i><span>'+(sun?sun.rise:"—")+'</span><i>ZÁPAD</i><span>'+(sun?sun.set:"—")+'</span></span></div>'+
-    (ui.track?'<div class="s-watch is-open"><button class="status '+st.k+'" data-act="track" aria-label="Zavřít sledování času"><span class="word">'+esc(st.w)+'</span>'+(st.c?'<span class="sub">'+esc(st.c)+'</span>':'')+'</button></div>'
-      :'<div class="s-watch">'+(canEdit?'<button class="sharebtn" data-act="share" aria-label="Sdílet">'+SHARE+'</button>':(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'<button class="watchbtn '+st.k+'" data-act="track" aria-label="Sledování času">'+WATCH+'</button></div>')+
+    '<div class="s-watch">'+(canEdit?'<button class="sharebtn" data-act="share" aria-label="Sdílet">'+SHARE+'</button>':(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
     '<div class="slot s-clock"><span class="lab">Aktuální čas</span><span class="big clock">'+pad(t.getHours())+':'+pad(t.getMinutes())+'<small>:'+pad(t.getSeconds())+'</small></span>'+liveMiniHTML()+'</div>';
 }
 var REFRESH='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16.5 9.5A5 5 0 1 0 17 13.5"/><path d="M17 6.5v3.2h-3.2"/></svg>';
