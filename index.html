@@ -463,6 +463,7 @@ button{cursor:pointer}
 .time .pace{display:block}
 .time .tb{display:inline-flex;align-items:center;margin-top:4px;border-radius:5px;padding:1px 8px;font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.03em;white-space:nowrap}
 .time .tb.ahead{background:#F4C631;color:#1E1A06}.time .tb.late{background:#E5483D;color:#fff}
+.sheet .tb.ahead{background:#F4C631;color:#1E1A06}.sheet .tb.late{background:#E5483D;color:#fff}
 .time .tb{flex-direction:column;align-items:flex-start;line-height:1.05;padding:3px 8px}
 .time .tb small{font-size:10px;letter-spacing:.08em;font-weight:800;opacity:.9}
 .time .tb.ok{background:#2FA862;color:#fff}
@@ -509,7 +510,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 11:00";
+var APP_BUILD="5. 11. 11:10";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1029,6 +1030,14 @@ function sheetHTML(){
       '<span class="hint">'+(isJ?'Záloha celého plánu (všechny dny, herci, stavy).':'Offline kopie aplikace i s daty, funguje bez internetu v prohlížeči na počítači.')+' '+
       (standalone&&window.showSaveFilePicker?'Po klepnutí na Uložit vyberete složku.':'Místo uložení vyberete v dalším kroku: na iPadu a iPhonu v nabídce Uložit do Souborů, na počítači podle nastavení prohlížeče (obvykle složka Stažené).')+'</span>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
+  if(s.kind==="rollupd"){var ux2=rowById(s.id); if(!ux2){ui.sheet=null;return "";} var ur2=ux2.r, UL2=rowLen(ur2), nf=s.t, nt=hm(toMin(nf)+UL2), df2=toMin(ur2.from)-toMin(nf);
+    var nm=ur2.type==="shot"?"obrazu "+esc(ur2.scene||""):"poznámky "+esc(ur2.kind||"");
+    b='<h2>Chceš aktualizovat čas '+nm+'?</h2>'+
+      '<p style="margin:0">Podle plánu '+esc(ur2.from)+(ur2.to?'–'+esc(ur2.to):'')+', začali jste v <b>'+esc(nf)+'</b> – '+(df2>0?'<span class="tb ahead" style="display:inline-block;padding:0 6px;border-radius:5px;font-weight:800">NÁSKOK +'+fmtDur(df2)+'</span>':'<span class="tb late" style="display:inline-block;padding:0 6px;border-radius:5px;font-weight:800">ZPOŽDĚNÍ +'+fmtDur(-df2)+'</span>')+'.</p>'+
+      '<p style="margin:0">Nový čas: <b>'+esc(nf)+'–'+esc(nt)+'</b>. Změní se jen tento řádek, ostatní zůstanou podle plánu.</p>'+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne, nechat plán</button><button class="btn primary" data-act="rollupdok">Ano, aktualizovat</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="basepr"){var bd=day();
@@ -1849,16 +1858,18 @@ function act(a,id,el){
       if(v==="rolling"&&sr.type==="shot"&&sr.status!=="rolling"&&rollingShots(d,sr.id).length>=MAX_ROLL){toast("Najednou se může natáčet nejvýš "+MAX_ROLL+" obrazů");return;}
       if(el.getAttribute("data-all")==="1"&&v==="done"){var tAll=nowHM(),last=-1;rollingShots(d,sr.id).forEach(function(z){z.status="done";z.doneAt=tAll;last=Math.max(last,d.rows.indexOf(z));});}
       if(v&&!d.baseAt&&!d.rows.some(function(z){return z.status;}))snapLunch(d);
-      if(v==="rolling"&&sr.status!=="rolling"&&!fixedRow(sr)&&toMin(sr.from)!=null){var L0=rowLen(sr);if(!sr.origFrom){sr.origFrom=sr.from;sr.origTo=sr.to||sr.from;}
-        var n0=nowHM(); if(sr.from!==n0){sr.from=n0;sr.to=hm(toMin(n0)+L0);sr.rollMoved=true;}}
+      var askUpd=null; if(v==="rolling"&&sr.status!=="rolling"&&!fixedRow(sr)&&toMin(sr.from)!=null){var n0=nowHM(); if(sr.from!==n0)askUpd={kind:"rollupd",id:sr.id,t:n0};}
       if(v===""&&sr.rollMoved&&sr.origFrom){sr.from=sr.origFrom;sr.to=sr.origTo;delete sr.rollMoved;if(!isLunch(sr)&&!d.baseAt){delete sr.origFrom;delete sr.origTo;}}
       sr.status=v; sr.doneAt=(v==="done"||v==="moved")?nowHM():""; d.lastSet=v?sr.id:d.lastSet;
-      var shiftedN=0; if(v==="done"&&!fixedRow(sr)){var si=Math.max(d.rows.indexOf(sr),last>=0?last:-1); if(si>=0&&toMin(d.rows[si].to)!==toMin(sr.doneAt)){d.rows[si].doneAt=d.rows[si].doneAt||sr.doneAt;shiftedN=retimeAfterDone(d,si);}}
+      var shiftedN=0;
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
-      ui.sheet=null; changed();
+      ui.sheet=askUpd; changed();
       if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
       else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
       break;}
+    case "rollupdok":{var uq=ui.sheet&&ui.sheet.kind==="rollupd"?ui.sheet:null,ux=uq&&rowById(uq.id);ui.sheet=null;
+      if(ux&&ux.r.status==="rolling"){var ur=ux.r,UL=rowLen(ur);if(!ur.origFrom){ur.origFrom=ur.from;ur.origTo=ur.to||ur.from;}ur.from=uq.t;ur.to=hm(toMin(uq.t)+UL);ur.rollMoved=true;
+        changed();toast("Čas aktualizován: "+ur.from+"–"+ur.to+" (plán "+ur.origFrom+"–"+ur.origTo+")");} else render(); break;}
     case "end": x.r.done=true; x.r.doneAt=nowHM(); changed(); toast((x.r.kind||"Poznámka")+" skončeno v "+x.r.doneAt); break;
     case "done":{
       if(ui.arm!=="done:"+id){ui.arm="done:"+id;render();setTimeout(function(){if(ui.arm==="done:"+id){ui.arm=null;render();}},8000);return;}
