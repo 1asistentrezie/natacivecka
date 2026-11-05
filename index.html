@@ -390,6 +390,9 @@ button{cursor:pointer}
 .commitbox.tap,.commitbox[data-act]{cursor:pointer}
 .commitbox b{font-family:var(--f-display);letter-spacing:.08em;margin-right:4px}
 .row.note.commit .state{display:none}
+.row.note.commit.mt{grid-template-columns:30px minmax(0,1fr) auto 220px}
+.row.note.commit.mt .state{display:block}.row.note.commit.mt .stav{width:100%}
+@media (max-width:759px){.row.note.commit.mt{grid-template-columns:22px minmax(0,1fr) auto 100px}}
 .role.commit{border-color:var(--late);color:#FFD9D5;background:var(--late-bg)}
 .role.commit small{font-size:12px;font-weight:700;margin-left:4px;color:#FF8A80}
 .bkbtn,.bkbtn.none,.bkbtn.has{background:#F7F1E4;border-color:#D9CBAA;color:#7A4A1C;opacity:1}
@@ -510,7 +513,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 11:50";
+var APP_BUILD="5. 11. 11:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -763,7 +766,9 @@ function rowHTML(r){
   var time = esc(r.from||"")+(r.to?"–"+esc(r.to):"");
   var tapAttr = canEdit ? ' class="tap" data-act="edit" data-id="'+r.id+'"' : '';
   if(isMartini(r)||isKonec(r)){
-    return '<li class="row note commit redbox" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(r.from?' '+esc(r.from):'')+(r.text?' '+esc(r.text):'')+'</span>'+mvHTML(r)+'<span class="state"></span></li>';
+    var mst="";if(isMartini(r)){var ML={"":"STAV",rolling:"PROBÍHÁ",done:"NATOČENO",moved:"ZRUŠENO"},min='<span>'+ML[r.status||""]+'</span>'+(fin(r)&&r.doneAt?'<span class="t">'+esc(r.doneAt)+'</span>':'');
+      mst=canEdit?'<button class="stav s-'+(r.status||"none")+'" data-act="state" data-id="'+r.id+'">'+min+'</button>':(r.status?'<span class="stav s-'+r.status+'">'+min+'</span>':'');}
+    return '<li class="row note commit redbox'+(isMartini(r)?' mt':'')+(r.status==="rolling"?' current':'')+(r.status==="done"?' done':'')+'" data-id="'+r.id+'">'+h+'<span class="commitbox"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(r.from?' '+esc(r.from):'')+(r.text?' '+esc(r.text):'')+'</span>'+mvHTML(r)+'<span class="state">'+mst+'</span></li>';
   }
   if(isCommit(r)){
     var cr=commitRoles(day(),r);
@@ -853,6 +858,11 @@ function sheetHTML(){
   var s=ui.sheet, b='';
   if(s.kind==="state"){
     var sr=rowById(s.id).r, isN=sr.type==="note";
+    if(isMartini(sr)){b='<h2>Stav · '+esc(sr.kind)+'</h2>'+
+      '<button class="pick p-rolling'+(sr.status==="rolling"?" sel":"")+'" data-act="set" data-v="rolling">PROBÍHÁ</button>'+
+      '<button class="pick p-done'+(sr.status==="done"?" sel":"")+'" data-act="set" data-v="done">NATOČENO<small>uloží se čas '+nowHM()+'</small></button>'+
+      '<div class="actions"><div class="grp">'+(sr.status?'<button class="btn" data-act="set" data-v="">Vymazat stav</button>':'')+'</div><div class="grp"><button class="btn" data-act="close">Zpět</button></div></div>';
+      return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';}
     b='<h2>'+(isN?'Stav · '+esc(sr.kind):'Stav obrazu '+esc(sr.scene))+'</h2><span class="memo2">'+esc(isN?sr.text||"":sr.motif||"")+'</span>'+
       (function(){var others=isN?[]:rollingShots(day(),sr.id);
         return '<button class="pick p-rolling'+(sr.status==="rolling"?" sel":"")+'" data-act="set" data-v="rolling">'+(isN?'PROBÍHÁ':'NATÁČÍ SE')+(others.length&&sr.status!=="rolling"?'<small>spolu s O:'+others.map(function(z){return esc(z.scene);}).join(", O:")+' ('+(others.length+1)+' z max. '+MAX_ROLL+')</small>':'')+'</button>'+
@@ -1886,7 +1896,8 @@ function act(a,id,el){
       var shiftedN=0;
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
       ui.sheet=askUpd; changed();
-      if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
+      if(isMartini(sr)){if(v==="done")toast("MARTINI SHOT! natočeno v "+sr.doneAt);}
+      else if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
       else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
       break;}
     case "rollupdok":{var uq=ui.sheet&&ui.sheet.kind==="rollupd"?ui.sheet:null,ux=uq&&rowById(uq.id);ui.sheet=null;
