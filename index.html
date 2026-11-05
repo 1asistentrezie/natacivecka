@@ -487,7 +487,14 @@ button{cursor:pointer}
 .row.note .time{flex-wrap:wrap;row-gap:2px}
 .row.note .origplan{white-space:nowrap}
 @media (max-width:759px){.row.note .origplan{display:block;flex-basis:100%}}
-.btn.rfed{display:inline-flex;align-items:center;gap:6px}
+.btn.rfed{display:inline-grid;place-items:center;padding:0;width:44px;min-width:44px;aspect-ratio:1/1;align-self:stretch}
+.planwrap{position:relative;display:inline-flex}
+.planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
+.planveil{position:fixed;inset:0;z-index:40}
+.planmenu{position:absolute;top:calc(100% + 6px);left:0;z-index:41;display:flex;flex-direction:column;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.planmenu button{all:unset;cursor:pointer;padding:12px 14px;border-radius:7px;font-weight:700;font-size:17px;color:var(--ink)}
+@media (max-width:759px){.tools #daySel{flex:1 1 0;min-width:0}.planmenu{left:auto;right:0}}
+.planmenu button:hover,.planmenu button:active{background:rgba(255,255,255,.07)}
 .btn.rfed svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .sharebtn.shbig{width:auto;height:48px;padding:0 14px;display:inline-flex;gap:8px;align-items:center;border:3px solid #F2A54A;border-radius:10px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;color:var(--ink)}
 .sharebtn.shbig svg{width:24px;height:24px}
@@ -499,7 +506,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="4. 11. 13:30";
+var APP_BUILD="5. 11. 10:50";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -792,7 +799,9 @@ function render(){
   var opts=S.days.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+esc((x.label||"Natáčecí den")+" – "+(x.date?fmtDate(x.date):"bez data"))+'</option>';}).join("");
   var tools=(canEdit||standalone?'<select id="daySel" aria-label="Natáčecí den">'+opts+'</select>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
-    (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<button class="btn" data-act="chrono">Chronologie</button>':'')+(canEdit?'<button class="btn" data-act="editday">Upravit den</button><button class="btn" data-act="newday">+ Nový den</button><button class="btn rfed" data-act="reload" aria-label="Obnovit stránku">'+REFRESH+'<span>Obnovit</span></button>':'<span class="ro">Jen pro čtení</span>')+
+    (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
+      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button></span>':'')+'</span>'+
+      '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
     '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
   var hid=hiddenRows(d), nh=0; for(var hk in hid)nh++;
@@ -1912,7 +1921,9 @@ function act(a,id,el){
     case "pgclear": var dk5=ui.sheet.dk, pc=rowById(ui.sheet.id).r; delete pc[DK[dk5].field]; pc[DK[dk5].auto]=false; ui.sheet=null; changed(); break;
     case "pgview":{ var dk6=ui.sheet.dk, pv=rowById(ui.sheet.id).r, f2=parseInt(val("fPgFrom"),10), t2=parseInt(val("fPgTo"),10), sid2=val("fPgSid")||(docList(dk6)[0]&&docList(dk6)[0].id);
       if(f2>0&&sid2){ui.sheet=null;render();var tmp={scene:pv.scene,motif:pv.motif};tmp[DK[dk6].field]={sid:sid2,from:f2,to:t2>=f2?t2:f2};showPdf(tmp,dk6);} break;}
-    case "chrono": ui.sheet={kind:"chrono",q:"",mode:"all"}; render(); filterChrono(); break;
+    case "planmenu": ui.planMenu=!ui.planMenu; render(); break;
+    case "planclose": ui.planMenu=false; render(); break;
+    case "chrono": ui.planMenu=false; ui.sheet={kind:"chrono",q:"",mode:"all"}; render(); filterChrono(); break;
     case "chromode": ui.sheet.mode=el.getAttribute("data-m"); var sy=(document.querySelector(".chrlist")||{}).scrollTop||0; render(); filterChrono(); break;
     case "chrogo":{ var did=el.getAttribute("data-day"), rid=el.getAttribute("data-id"); ui.dayId=did; ls("nd.day",did); ui.sheet=null; ui.showDone=true; render();
       var li=document.querySelector('.row[data-id="'+rid+'"]'); if(li){li.scrollIntoView({block:"center"});li.classList.add("flash");setTimeout(function(){li.classList.remove("flash");},1500);} break;}
@@ -1962,8 +1973,8 @@ function act(a,id,el){
       render(); queueSave(); toast("Nový prázdný plán založen"); break;}
     case "importok": S=ui.sheet.data; if(WEB)stripDocs(S); S.savedAt=Date.now(); ui.dayId=(S.days.filter(function(z){return z.date===todayISO();})[0]||S.days[0]).id; ui.sheet=null; changed(); toast("Plán načten ze souboru"); break;
     case "saveproject": S.project=val("fProject"); ui.sheet=null; changed(); break;
-    case "editday": ui.sheet={kind:"day",data:{label:d.label,date:d.date,location:d.location,shiftFrom:d.shiftFrom||"",shiftTo:d.shiftTo||"",sunCity:d.sunCity||"auto",sunCoords:d.sunCoords||""}}; render(); break;
-    case "newday":{
+    case "editday": ui.planMenu=false; ui.sheet={kind:"day",data:{label:d.label,date:d.date,location:d.location,shiftFrom:d.shiftFrom||"",shiftTo:d.shiftTo||"",sunCity:d.sunCity||"auto",sunCoords:d.sunCoords||""}}; render(); break;
+    case "newday":{ui.planMenu=false;
       ui.sheet={kind:"day",isNew:true,data:{label:"",date:"",location:"",shiftFrom:"",shiftTo:""}}; render(); break;}
     case "saveday":{
       var data={label:val("fLabel"),date:val("fDate"),location:val("fLoc"),shiftFrom:val("fShiftFrom"),shiftTo:val("fShiftTo"),sunCity:val("fSunCity"),sunCoords:val("fSunCoords")};
