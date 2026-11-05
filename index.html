@@ -510,7 +510,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 11:35";
+var APP_BUILD="5. 11. 11:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1030,6 +1030,13 @@ function sheetHTML(){
       '<span class="hint">'+(isJ?'Záloha celého plánu (všechny dny, herci, stavy).':'Offline kopie aplikace i s daty, funguje bez internetu v prohlížeči na počítači.')+' '+
       (standalone&&window.showSaveFilePicker?'Po klepnutí na Uložit vyberete složku.':'Místo uložení vyberete v dalším kroku: na iPadu a iPhonu v nabídce Uložit do Souborů, na počítači podle nastavení prohlížeče (obvykle složka Stažené).')+'</span>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
+  if(s.kind==="recalc"&&s.mode==="order"){
+    b='<h2>Chceš přepočítat aktuální čas dle změny v plánu?</h2>'+
+      '<p style="margin:0">Pořadí řádků se změnilo. Časy se přepočítají tak, aby řádky od místa změny dál na sebe navazovaly – změní se u <b>'+s.n+'</b> '+(s.n===1?'řádku':'řádků')+'.</p>'+
+      '<p style="margin:0;color:var(--muted)">Přepočítané řádky budou mít nový čas i jako výchozí plán. Když dáš Ne, pořadí zůstane nové, ale časy se nezmění.</p>'+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne, nechat časy</button><button class="btn primary" data-act="recalcok">Ano, přepočítat</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="recalc"){var rcx=rowById(s.id),cnt2=rcx?shiftables(day(),rcx.i).length:0,dl=s.delta;
@@ -1907,11 +1914,13 @@ function act(a,id,el){
       if(rcI>=0&&rcD&&shiftables(d,rcI).length){ui.sheet={kind:"recalc",i:rcI,id:r.id,delta:rcD,isNew:false};changed();break;}
       ui.sheet=null; changed(); break;}
     case "recalcok":{var rq=ui.sheet&&ui.sheet.kind==="recalc"?ui.sheet:null;ui.sheet=null;if(!rq){render();break;}
+      if(rq.mode==="order"){var on=retimeFrom(d,rq.i);for(var ok2=rq.i;ok2<d.rows.length;ok2++){var oz=d.rows[ok2];if(fixedRow(oz)||fin(oz)||oz.status==="rolling"||toMin(oz.from)==null)continue;oz.origFrom=oz.from;oz.origTo=oz.to||oz.from;}
+        changed();toast("Časy přepočítány podle nového pořadí ("+on+")");break;}
       var rx=rowById(rq.id),ri=rx?rx.i:rq.i,rn=shiftAfter(d,ri,rq.delta);changed();toast("Časy přepočítány ("+rn+" "+(rn===1?"řádek":rn<5?"řádky":"řádků")+", "+(rq.delta>0?"+":"−")+fmtDur(Math.abs(rq.delta))+")");break;}
     case "up": case "down":{
       var y=rowById(ui.sheet.id), j=y.i+(a==="up"?-1:1);
       if(j<0||j>=d.rows.length)return;
-      var t=d.rows[j]; d.rows[j]=d.rows[y.i]; d.rows[y.i]=t; retimeFrom(d,Math.min(j,y.i)); ui.sheet=null; changed(); break;}
+      var t=d.rows[j]; d.rows[j]=d.rows[y.i]; d.rows[y.i]=t; ui.sheet=null; afterReorder(d,Math.min(j,y.i)); break;}
     case "del":
       if(ui.arm!=="del"){ui.arm="del";render();return;}
       var di0=rowById(ui.sheet.id).i; ui.arm=null; d.rows.splice(di0,1); retimeFrom(d,di0); ui.sheet=null; changed(); break;
@@ -1943,7 +1952,7 @@ function act(a,id,el){
     case "resetstok": if(d.baseAt)d.rows.forEach(function(r){if(r.origFrom){r.from=r.origFrom;r.to=r.origTo;}delete r.rollMoved;}); delete d.baseAt; delete d.baseAsked; d.rows.forEach(function(r){r.status="";r.doneAt="";delete r.origFrom;delete r.origTo;delete r.startAt;delete r.startTs;}); ui.sheet=null; ui.showDone=false; changed(); window.scrollTo(0,0); toast("Stavy dne resetovány"); break;
     case "mvup": case "mvdown":{
       var j2=x.i+(a==="mvup"?-1:1); if(j2<0||j2>=d.rows.length)return;
-      var t2=d.rows[j2]; d.rows[j2]=d.rows[x.i]; d.rows[x.i]=t2; retimeFrom(d,Math.min(j2,x.i)); changed();
+      var t2=d.rows[j2]; d.rows[j2]=d.rows[x.i]; d.rows[x.i]=t2; afterReorder(d,Math.min(j2,x.i));
       var li=document.querySelector('.row[data-id="'+id+'"]'); if(li){li.classList.add("flash");setTimeout(function(){li.classList.remove("flash");},700);
         var bb=li.querySelector('[data-act="'+a+'"]'); if(bb&&!bb.disabled)bb.focus({preventScroll:true});}
       break;}
@@ -2039,6 +2048,8 @@ function act(a,id,el){
 }
 function shiftables(d,i){var out=[];for(var k=i+1;k<d.rows.length;k++){var r=d.rows[k];if(fixedRow(r)||fin(r)||r.status==="rolling"||toMin(r.from)==null)continue;out.push(r);}return out;}
 function shiftAfter(d,i,delta){var n=0;shiftables(d,i).forEach(function(r){var f=hm(toMin(r.from)+delta),t=toMin(r.to)!=null?hm(toMin(r.to)+delta):f;if(setTimes(r,f,t))n++;if(d.baseAt){r.origFrom=r.from;r.origTo=r.to||r.from;}});return n;}
+function reorderCount(d,i){var c={shiftFrom:d.shiftFrom,rows:JSON.parse(JSON.stringify(d.rows))};return retimeFrom(c,i);}
+function afterReorder(d,i){if(d.baseAt){var n=reorderCount(d,i);if(n){ui.sheet={kind:"recalc",mode:"order",i:i,n:n};changed();return;}changed();return;}retimeFrom(d,i);changed();}
 function setBase(d){d.rows.forEach(function(r){if(r.noTime||toMin(r.from)==null)return;r.origFrom=r.from;r.origTo=r.to||r.from;delete r.rollMoved;});d.baseAt=nowHM();d.baseAsked=d.date||todayISO();}
 function askBase(d){if(!canEdit||standalone||ui.sheet||!d||d.baseAt||!d.date||d.date!==todayISO()||d.baseAsked===d.date)return false;
   var a=toMin(d.shiftFrom),b=toMin(d.shiftTo),n=nowMin();if(a==null)return false;if(n<a)return false;if(b!=null&&b>a&&n>b)return false;return true;}
@@ -2085,7 +2096,7 @@ function endDrag(e){
   var bArr=d.rows.map(function(r){return r.id;});
   d.rows.sort(function(a,b){return order.indexOf(a.id)-order.indexOf(b.id);});
   var aArr=d.rows.map(function(r){return r.id;}), first=-1; for(var q=0;q<aArr.length;q++){if(aArr[q]!==bArr[q]){first=q;break;}}
-  if(first>=0){retimeFrom(d,first);changed();} else render();
+  if(first>=0)afterReorder(d,first); else render();
 }
 document.addEventListener("pointerup",endDrag);
 document.addEventListener("pointercancel",endDrag);
