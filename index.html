@@ -510,7 +510,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 11:45";
+var APP_BUILD="5. 11. 11:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -807,7 +807,7 @@ function render(){
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
       (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button></span>':'')+'</span>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
-      (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button></span>':'')+'</span>'+
+      (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button></span>':'')+'</span>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
     '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
@@ -1032,6 +1032,13 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
+  if(s.kind==="recalcnow"){
+    b='<h2>Opravdu přepočítat čas podle aktuálního stavu?</h2>'+
+      '<p style="margin:0">'+(s.roll?'Právě natáčený řádek končí v <b>'+esc(s.start)+'</b>.':'Nic se právě nenatáčí, vycházím z aktuálního času <b>'+esc(s.start)+'</b>.')+' Další řádky (<b>'+s.n+'</b>) se posunou o <b>'+fmtDur(Math.abs(s.delta))+' '+(s.delta>0?'později':'dříve')+'</b>, první začne v <b>'+esc(s.start)+'</b>.</p>'+
+      '<p style="margin:0;color:var(--muted)">Mezery mezi řádky zůstanou (jen se nic nebude překrývat). Hotové a právě natáčené řádky ani pevné poznámky se nemění.'+(day().baseAt?' Posunuté řádky budou mít nový čas i jako výchozí plán.':'')+'</p>'+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="recalcnowok">Ano, přepočítat</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
   if(s.kind==="recalc"&&s.mode==="order"){
     b='<h2>Chceš přepočítat aktuální čas dle změny v plánu?</h2>'+
       '<p style="margin:0">Pořadí řádků se změnilo. Časy se přepočítají tak, aby řádky od místa změny dál na sebe navazovaly – změní se u <b>'+s.n+'</b> '+(s.n===1?'řádku':'řádků')+'.</p>'+
@@ -1042,7 +1049,7 @@ function sheetHTML(){
   if(s.kind==="recalc"){var rcx=rowById(s.id),cnt2=rcx?shiftables(day(),rcx.i).length:0,dl=s.delta;
     var who=rcx?(rcx.r.type==="shot"?"obraz "+esc(rcx.r.scene||""):esc(rcx.r.kind||"poznámka")):"";
     b='<h2>Chceš přepočítat aktuální čas dle změny v plánu?</h2>'+
-      '<p style="margin:0">'+(who?'Změna: <b>'+who+'</b>. ':'')+'Následující řádky ('+cnt2+') se posunou o <b>'+(dl>0?'+':'−')+fmtDur(Math.abs(dl))+'</b> '+(dl>0?'později':'dříve')+'.</p>'+
+      '<p style="margin:0">'+(who?'Změna: <b>'+who+'</b>. ':'')+'Následující řádky ('+cnt2+') se posunou o <b>'+fmtDur(Math.abs(dl))+' '+(dl>0?'později':'dříve')+'</b>.</p>'+
       '<p style="margin:0;color:var(--muted)">Hotové a právě natáčené řádky zůstanou beze změny. Posunuté řádky budou mít nový čas i jako výchozí plán.</p>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne, nechat časy</button><button class="btn primary" data-act="recalcok">Ano, přepočítat</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
@@ -1974,6 +1981,9 @@ function act(a,id,el){
     case "planmenu": ui.timeMenu=false; ui.planMenu=!ui.planMenu; render(); break;
     case "timemenu": ui.planMenu=false; ui.timeMenu=!ui.timeMenu; render(); break;
     case "timeclose": ui.timeMenu=false; render(); break;
+    case "recalcnow":{ui.timeMenu=false;var np=nowPlan(d);if(!np){toast("Není co přepočítat – žádné další řádky");render();break;}if(!np.delta){toast("Časy už odpovídají aktuálnímu stavu");render();break;}
+      ui.sheet={kind:"recalcnow",i:np.i,delta:np.delta,n:np.n,start:np.start,roll:np.roll};render();break;}
+    case "recalcnowok":{var nq=ui.sheet;ui.sheet=null;var np2=nowPlan(d);if(!np2||!np2.delta){render();break;}var nn=0,pe=toMin(np2.start);shiftables(d,np2.i).forEach(function(r){var L=rowLen(r),f=toMin(r.from)+np2.delta;if(pe!=null&&f<pe)f=pe;if(setTimes(r,hm(f),toMin(r.to)!=null?hm(f+L):hm(f)))nn++;pe=f+L;if(d.baseAt){r.origFrom=r.from;r.origTo=r.to||r.from;}});changed();toast("Časy přepočítány ("+nn+" "+(nn===1?"řádek":nn<5?"řádky":"řádků")+", "+(np2.delta>0?"+":"−")+fmtDur(Math.abs(np2.delta))+")");break;}
     case "setbase": ui.timeMenu=false; ui.sheet=null; setBase(d); changed(); toast("Výchozí čas uložen ("+d.baseAt+") – podle něj se počítá náskok / zpoždění"); break;
     case "basen": d.baseAsked=d.date||todayISO(); ui.sheet=null; changed(); break;
     case "planclose": ui.planMenu=false; render(); break;
@@ -2050,6 +2060,8 @@ function shiftables(d,i){var out=[];for(var k=i+1;k<d.rows.length;k++){var r=d.r
 function shiftAfter(d,i,delta){var n=0;shiftables(d,i).forEach(function(r){var f=hm(toMin(r.from)+delta),t=toMin(r.to)!=null?hm(toMin(r.to)+delta):f;if(setTimes(r,f,t))n++;if(d.baseAt){r.origFrom=r.from;r.origTo=r.to||r.from;}});return n;}
 function reorderCount(d,i){var c={shiftFrom:d.shiftFrom,rows:JSON.parse(JSON.stringify(d.rows))};return retimeFrom(c,i);}
 function afterReorder(d,i){if(d.baseAt){var n=reorderCount(d,i);if(n){ui.sheet={kind:"recalc",mode:"order",i:i,n:n};changed();return;}changed();return;}retimeFrom(d,i);changed();}
+function nowPlan(d){var ai=-1,t=null,roll=false;d.rows.forEach(function(r,i){if(r.status==="rolling"){roll=true;ai=Math.max(ai,i);var e=endMin(r);if(e!=null)t=t==null?e:Math.max(t,e);}else if(fin(r))ai=Math.max(ai,i);});
+  if(!roll||t==null)t=nowMin();var rows=shiftables(d,ai);if(!rows.length)return null;var dl=t-toMin(rows[0].from);if(dl>720)dl-=1440;if(dl<-720)dl+=1440;return {i:ai,delta:dl,n:rows.length,start:hm(t),roll:roll};}
 function setBase(d){d.rows.forEach(function(r){if(r.noTime||toMin(r.from)==null)return;r.origFrom=r.from;r.origTo=r.to||r.from;delete r.rollMoved;});d.baseAt=nowHM();d.baseAsked=d.date||todayISO();}
 function askBase(d){if(!canEdit||standalone||ui.sheet||!d||d.baseAt||!d.date||d.date!==todayISO()||d.baseAsked===d.date)return false;
   var a=toMin(d.shiftFrom),b=toMin(d.shiftTo),n=nowMin();if(a==null)return false;if(n<a)return false;if(b!=null&&b>a&&n>b)return false;return true;}
