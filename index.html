@@ -514,7 +514,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 12:00";
+var APP_BUILD="5. 11. 12:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -815,7 +815,7 @@ function render(){
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
       (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button></span>':'')+'</span>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
-      (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button></span>':'')+'</span>'+
+      (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button><button data-act="resetbase" role="menuitem">Resetovat vše podle výchozího nastavení<small>'+(d.baseAt?'vrátí časy z '+esc(d.baseAt):'výchozí čas zatím nenastaven')+'</small></button></span>':'')+'</span>'+
       '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
       '<button class="btn rfed hist" data-act="hredo" aria-label="Krok vpřed" title="Krok vpřed ('+REDO.length+')"'+(REDO.length?'':' disabled')+'>'+REDO_I+'</button>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
@@ -1045,6 +1045,13 @@ function sheetHTML(){
       '<span class="hint">'+(isJ?'Záloha celého plánu (všechny dny, herci, stavy).':'Offline kopie aplikace i s daty, funguje bez internetu v prohlížeči na počítači.')+' '+
       (standalone&&window.showSaveFilePicker?'Po klepnutí na Uložit vyberete složku.':'Místo uložení vyberete v dalším kroku: na iPadu a iPhonu v nabídce Uložit do Souborů, na počítači podle nastavení prohlížeče (obvykle složka Stažené).')+'</span>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
+  if(s.kind==="resetbase"){var rbd=day(),rbn=baseRows(rbd).length;
+    b='<h2>Resetovat vše podle výchozího nastavení?</h2>'+
+      '<p style="margin:0">Časy všech obrazů a poznámek se vrátí na výchozí plán uložený v <b>'+esc(rbd.baseAt||"")+'</b>. Změní se u <b>'+rbn+'</b> '+(rbn===1?'řádku':'řádků')+'.</p>'+
+      '<p style="margin:0;color:var(--muted)">Stavy (natáčí se, natočeno…) zůstanou. Řádky přidané až po nastavení výchozího času si nechají svůj čas. Kdyby to bylo omylem, vrátíš to tlačítkem ↶.</p>'+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn danger armed" data-act="resetbaseok">Resetovat časy</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="recalcnow"){
@@ -1977,7 +1984,7 @@ function act(a,id,el){
     case "import": pickFile(); break;
     case "newplan": ui.sheet={kind:"newplan"}; render(); break;
     case "resetst": ui.sheet={kind:"resetst"}; render(); break;
-    case "resetstok": if(d.baseAt)d.rows.forEach(function(r){if(r.origFrom){r.from=r.origFrom;r.to=r.origTo;}delete r.rollMoved;}); delete d.baseAt; delete d.baseAsked; d.rows.forEach(function(r){r.status="";r.doneAt="";delete r.origFrom;delete r.origTo;delete r.startAt;delete r.startTs;}); ui.sheet=null; ui.showDone=false; changed(); window.scrollTo(0,0); toast("Stavy dne resetovány"); break;
+    case "resetstok": if(d.baseAt)d.rows.forEach(function(r){if(r.origFrom){r.from=r.origFrom;r.to=r.origTo;}delete r.rollMoved;}); delete d.baseAt; delete d.baseAsked; d.rows.forEach(function(r){r.status="";r.doneAt="";delete r.origFrom;delete r.origTo;delete r.baseFrom;delete r.baseTo;delete r.startAt;delete r.startTs;}); ui.sheet=null; ui.showDone=false; changed(); window.scrollTo(0,0); toast("Stavy dne resetovány"); break;
     case "mvup": case "mvdown":{
       var j2=x.i+(a==="mvup"?-1:1); if(j2<0||j2>=d.rows.length)return;
       var t2=d.rows[j2]; d.rows[j2]=d.rows[x.i]; d.rows[x.i]=t2; afterReorder(d,Math.min(j2,x.i));
@@ -2002,6 +2009,10 @@ function act(a,id,el){
     case "planmenu": ui.timeMenu=false; ui.planMenu=!ui.planMenu; render(); break;
     case "timemenu": ui.planMenu=false; ui.timeMenu=!ui.timeMenu; render(); break;
     case "timeclose": ui.timeMenu=false; render(); break;
+    case "resetbase": ui.timeMenu=false; if(!d.baseAt){toast("Výchozí čas zatím není nastaven – nastav ho v menu Čas");render();break;}
+      if(!baseRows(d).length){toast("Všechny časy už odpovídají výchozímu nastavení");render();break;} ui.sheet={kind:"resetbase"}; render(); break;
+    case "resetbaseok":{ui.sheet=null;var rn2=0;d.rows.forEach(function(r){var f=r.baseFrom||r.origFrom,t=r.baseTo||r.origTo;if(!f)return;if(setTimes(r,f,t||f))rn2++;r.origFrom=f;r.origTo=t||f;delete r.rollMoved;});
+      changed();toast("Časy vráceny na výchozí ("+rn2+")");break;}
     case "hundo": if(histApply(UNDO,REDO))toast("Krok zpět"+(UNDO.length?" (zbývá "+UNDO.length+")":"")); break;
     case "hredo": if(histApply(REDO,UNDO))toast("Krok vpřed"+(REDO.length?" (zbývá "+REDO.length+")":"")); break;
     case "recalcnow":{ui.timeMenu=false;var np=nowPlan(d);if(!np){toast("Není co přepočítat – žádné další řádky");render();break;}if(!np.delta){toast("Časy už odpovídají aktuálnímu stavu");render();break;}
@@ -2085,7 +2096,8 @@ function reorderCount(d,i){var c={shiftFrom:d.shiftFrom,rows:JSON.parse(JSON.str
 function afterReorder(d,i){if(d.baseAt){var n=reorderCount(d,i);if(n){ui.sheet={kind:"recalc",mode:"order",i:i,n:n};changed();return;}changed();return;}retimeFrom(d,i);changed();}
 function nowPlan(d){var ai=-1,t=null,roll=false;d.rows.forEach(function(r,i){if(r.status==="rolling"){roll=true;ai=Math.max(ai,i);var e=endMin(r);if(e!=null)t=t==null?e:Math.max(t,e);}else if(fin(r))ai=Math.max(ai,i);});
   if(!roll||t==null)t=nowMin();var rows=shiftables(d,ai);if(!rows.length)return null;var dl=t-toMin(rows[0].from);if(dl>720)dl-=1440;if(dl<-720)dl+=1440;return {i:ai,delta:dl,n:rows.length,start:hm(t),roll:roll};}
-function setBase(d){d.rows.forEach(function(r){if(r.noTime||toMin(r.from)==null)return;r.origFrom=r.from;r.origTo=r.to||r.from;delete r.rollMoved;});d.baseAt=nowHM();d.baseAsked=d.date||todayISO();}
+function baseRows(d){return d.rows.filter(function(r){var f=r.baseFrom||(d.baseAt?r.origFrom:null);return f&&(r.from!==f||(r.to||"")!==(r.baseTo||r.origTo||""));});}
+function setBase(d){d.rows.forEach(function(r){if(r.noTime||toMin(r.from)==null)return;r.origFrom=r.from;r.origTo=r.to||r.from;r.baseFrom=r.from;r.baseTo=r.to||r.from;delete r.rollMoved;});d.baseAt=nowHM();d.baseAsked=d.date||todayISO();}
 function askBase(d){if(!canEdit||standalone||ui.sheet||!d||d.baseAt||!d.date||d.date!==todayISO()||d.baseAsked===d.date)return false;
   var a=toMin(d.shiftFrom),b=toMin(d.shiftTo),n=nowMin();if(a==null)return false;if(n<a)return false;if(b!=null&&b>a&&n>b)return false;return true;}
 function curAnchor(d){for(var i=d.rows.length-1;i>=0;i--)if(d.rows[i].status==="rolling")return d.rows[i];return null;}
