@@ -491,6 +491,7 @@ button{cursor:pointer}
 .row.note .time{flex-wrap:wrap;row-gap:2px}
 .row.note .origplan{white-space:nowrap}
 @media (max-width:759px){.row.note .origplan{display:block;flex-basis:100%}}
+.btn.rfed.hist{width:44px}.btn.rfed:disabled{opacity:.35;cursor:default}
 .btn.rfed{display:inline-grid;place-items:center;padding:0;width:44px;min-width:44px;aspect-ratio:1/1;align-self:stretch}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
@@ -500,7 +501,7 @@ button{cursor:pointer}
 .planveil{position:fixed;inset:0;z-index:40}
 .planmenu{position:absolute;top:calc(100% + 6px);left:0;z-index:41;display:flex;flex-direction:column;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .planmenu button{all:unset;cursor:pointer;padding:12px 14px;border-radius:7px;font-weight:700;font-size:17px;color:var(--ink)}
-@media (max-width:759px){.tools #daySel{flex:1 1 0;min-width:0}.planmenu{left:auto;right:0}}
+@media (max-width:759px){.tools #daySel{flex:1 1 100%;min-width:0}.planmenu{left:auto;right:0}}
 .planmenu button:hover,.planmenu button:active{background:rgba(255,255,255,.07)}
 .btn.rfed svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .sharebtn.shbig{width:auto;height:48px;padding:0 14px;display:inline-flex;gap:8px;align-items:center;border:3px solid #F2A54A;border-radius:10px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;color:var(--ink)}
@@ -513,7 +514,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 11:55";
+var APP_BUILD="5. 11. 12:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -630,6 +631,8 @@ function headerHTML(d){
     '<div class="slot s-clock"><span class="lab">Aktuální čas</span><span class="big clock">'+pad(t.getHours())+':'+pad(t.getMinutes())+'<small>:'+pad(t.getSeconds())+'</small></span>'+liveMiniHTML()+'</div>';
 }
 var CLOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.4 2"/></svg>';
+var UNDO_I='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+var REDO_I='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>';
 var REFRESH='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16.5 9.5A5 5 0 1 0 17 13.5"/><path d="M17 6.5v3.2h-3.2"/></svg>';
 function liveMiniHTML(){if(standalone)return '';var k=liveState==="live"?"":liveState==="poll"?"":"stale",t=liveState==="live"?"Živě":liveState==="poll"?"Online":liveState==="off"?"Offline":"";return t?'<span class="livemini '+k+'"><i></i>'+t+'</span>':'';}
 var SUN='<svg class="sunico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg>';
@@ -813,6 +816,8 @@ function render(){
       (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button></span>':'')+'</span>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
       (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button></span>':'')+'</span>'+
+      '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
+      '<button class="btn rfed hist" data-act="hredo" aria-label="Krok vpřed" title="Krok vpřed ('+REDO.length+')"'+(REDO.length?'':' disabled')+'>'+REDO_I+'</button>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
     '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
@@ -1874,7 +1879,12 @@ function pickFile(){
 /* ---------- actions ---------- */
 function rowById(id){var d=day();for(var i=0;i<d.rows.length;i++)if(d.rows[i].id===id)return {r:d.rows[i],i:i,d:d};return null;}
 function setCurrent(d,id){d.rows.forEach(function(r){if(r.type==="shot")r.current=(r.id===id);});}
-function changed(){render();queueSave();}
+var UNDO=[],REDO=[],UMAX=3,lastSnap=null;
+function snapS(){return JSON.stringify(S,function(k,v){return k==="savedAt"?undefined:v;});}
+function histTrack(){var cur=snapS();if(lastSnap!=null&&cur!==lastSnap){UNDO.push(lastSnap);if(UNDO.length>UMAX)UNDO.shift();REDO=[];}lastSnap=cur;}
+function histApply(from,to){if(!from.length)return false;var cur=snapS();to.push(cur);if(to.length>UMAX)to.shift();var o=JSON.parse(from.pop()),ask={};S.days.forEach(function(x){if(x.baseAsked)ask[x.id]=x.baseAsked;});(o.days||[]).forEach(function(x){if(ask[x.id]&&!x.baseAsked)x.baseAsked=ask[x.id];});S=o;migrate(S);S.savedAt=Date.now();lastSnap=snapS();
+  if(!S.days.some(function(x){return x.id===ui.dayId;}))ui.dayId=viewerDay().id;ui.sheet=null;render();queueSave();return true;}
+function changed(){histTrack();render();queueSave();}
 
 function act(a,id,el){
   var d=day(), x=id?rowById(id):null;
@@ -1992,11 +2002,13 @@ function act(a,id,el){
     case "planmenu": ui.timeMenu=false; ui.planMenu=!ui.planMenu; render(); break;
     case "timemenu": ui.planMenu=false; ui.timeMenu=!ui.timeMenu; render(); break;
     case "timeclose": ui.timeMenu=false; render(); break;
+    case "hundo": if(histApply(UNDO,REDO))toast("Krok zpět"+(UNDO.length?" (zbývá "+UNDO.length+")":"")); break;
+    case "hredo": if(histApply(REDO,UNDO))toast("Krok vpřed"+(REDO.length?" (zbývá "+REDO.length+")":"")); break;
     case "recalcnow":{ui.timeMenu=false;var np=nowPlan(d);if(!np){toast("Není co přepočítat – žádné další řádky");render();break;}if(!np.delta){toast("Časy už odpovídají aktuálnímu stavu");render();break;}
       ui.sheet={kind:"recalcnow",i:np.i,delta:np.delta,n:np.n,start:np.start,roll:np.roll};render();break;}
     case "recalcnowok":{var nq=ui.sheet;ui.sheet=null;var np2=nowPlan(d);if(!np2||!np2.delta){render();break;}var nn=0,pe=toMin(np2.start);shiftables(d,np2.i).forEach(function(r){var L=rowLen(r),f=toMin(r.from)+np2.delta;if(pe!=null&&f<pe)f=pe;if(setTimes(r,hm(f),toMin(r.to)!=null?hm(f+L):hm(f)))nn++;pe=f+L;if(d.baseAt){r.origFrom=r.from;r.origTo=r.to||r.from;}});changed();toast("Časy přepočítány ("+nn+" "+(nn===1?"řádek":nn<5?"řádky":"řádků")+", "+(np2.delta>0?"+":"−")+fmtDur(Math.abs(np2.delta))+")");break;}
     case "setbase": ui.timeMenu=false; ui.sheet=null; setBase(d); changed(); toast("Výchozí čas uložen ("+d.baseAt+") – podle něj se počítá náskok / zpoždění"); break;
-    case "basen": d.baseAsked=d.date||todayISO(); ui.sheet=null; changed(); break;
+    case "basen": d.baseAsked=d.date||todayISO(); ui.sheet=null; render(); queueSave(); lastSnap=snapS(); break;
     case "planclose": ui.planMenu=false; render(); break;
     case "chrono": ui.planMenu=false; ui.sheet={kind:"chrono",q:"",mode:"all"}; render(); filterChrono(); break;
     case "chromode": ui.sheet.mode=el.getAttribute("data-m"); var sy=(document.querySelector(".chrlist")||{}).scrollTop||0; render(); filterChrono(); break;
@@ -2168,7 +2180,7 @@ document.addEventListener("pointerdown",function once(){document.removeEventList
 
 /* ---------- boot ---------- */
 var st=ss(true), remembered=ls("nd.day"); ui.showDone=ls("nd.showDone")==="1";
-ui.dayId=S.days.length?viewerDay().id:null;
+ui.dayId=S.days.length?viewerDay().id:null; lastSnap=snapS();
 render();
 if(st&&st.y)window.scrollTo(0,st.y);
 setInterval(tick,1000);
@@ -2197,7 +2209,7 @@ function applyLive(snap){
   liveState="live"; lastLive=Date.now();
   if(theirs>mine){
     if(canEdit&&(ui.sheet||ui.drag||saveTimer!=null||saveMsg==="Ukládám…")){liveInd();return;}
-    try{var o=JSON.parse(d.json);if(o&&o.days&&o.days.length){var y=window.scrollY;S=o;migrate(S);
+    try{var o=JSON.parse(d.json);if(o&&o.days&&o.days.length){var y=window.scrollY;S=o;migrate(S);lastSnap=snapS();
       if(!ui.dayPicked||!S.days.some(function(x){return x.id===ui.dayId;}))ui.dayId=viewerDay().id;
       render();window.scrollTo(0,y);}}catch(_){}
   } else if(theirs<mine&&canEdit&&!snap.hasPendingWrites){if(WEB){if(saveTimer==null)queueSave();}else pushLive();}
@@ -2244,7 +2256,7 @@ function publicState(){
 }
 function cacheKey(){return "nd.cache."+liveRow;}
 function cacheSave(){try{localStorage.setItem(cacheKey(),JSON.stringify(S));}catch(_){}}
-function cacheLoad(){try{var o=JSON.parse(localStorage.getItem(cacheKey())||"null");if(o&&o.days&&o.days.length){S=o;migrate(S);if(!ui.dayPicked)ui.dayId=viewerDay().id;return true;}}catch(_){}return false;}
+function cacheLoad(){try{var o=JSON.parse(localStorage.getItem(cacheKey())||"null");if(o&&o.days&&o.days.length){S=o;migrate(S);lastSnap=snapS();if(!ui.dayPicked)ui.dayId=viewerDay().id;return true;}}catch(_){}return false;}
 function webSave(){
   var now=S.savedAt||Date.now();
   return SB.from("plan").upsert([{id:"main",json:S,saved_at:now,updated_at:new Date().toISOString()},{id:"public",json:publicState(),saved_at:now,updated_at:new Date().toISOString()}]).then(function(r){
