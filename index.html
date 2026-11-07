@@ -527,6 +527,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 @media (max-width:759px){.row.note .origplan{display:block;flex-basis:100%}}
 .btn.rfed.hist{width:44px}.btn.rfed:disabled{opacity:.35;cursor:default}
 .btn.rfed{display:inline-grid;place-items:center;padding:0;width:44px;min-width:44px;aspect-ratio:1/1;align-self:stretch}
+.daynav{display:inline-flex;align-items:stretch;gap:4px}.daynav select{width:auto;min-width:0}
+.btn.dnav{width:44px;padding:0;font-size:28px;line-height:1;font-weight:600;display:grid;place-items:center}.btn.dnav:disabled{opacity:.3}
+@media (max-width:759px){.tools .daynav{flex:1 1 100%}.tools .daynav select{flex:1 1 auto}}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
 .timebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -548,7 +551,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 20:30";
+var APP_BUILD="7. 11. 20:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -572,6 +575,8 @@ function toMin(t){if(!t||!/^\d{1,2}:\d{2}$/.test(t))return null;var p=t.split(":
 function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
 function dur(m){m=Math.round(m);if(m<60)return m+" min";return Math.floor(m/60)+" h "+pad(m%60)+" min";}
 var DOW=["neděle","pondělí","úterý","středa","čtvrtek","pátek","sobota"];
+function daysSorted(){return S.days.slice().sort(function(a,b){var x=a.date||"9999",y=b.date||"9999";return x<y?-1:x>y?1:0;});}
+function shortDay(x){var l=(x.label||"Den").replace(/^FD\s+/,"FD"),dt="";if(x.date){var p=x.date.split("-");dt=(+p[2])+"."+(+p[1])+"."+p[0].slice(2);}return l+(dt?" – "+dt:"");}
 function fmtDate(iso){if(!iso)return "—";var p=iso.split("-");var d=new Date(+p[0],+p[1]-1,+p[2]);return DOW[d.getDay()]+" "+(+p[2])+". "+(+p[1])+". "+p[0];}
 function day(){return S.days.filter(function(d){return d.id===ui.dayId;})[0]||(S.days.length?viewerDay():S.days[0]);}
 function ss(get,val){try{if(get)return JSON.parse(sessionStorage.getItem("nd.ui")||"null");sessionStorage.setItem("nd.ui",JSON.stringify(val));}catch(e){return null;}}
@@ -844,8 +849,9 @@ function viewerDay(){var t=todayISO(),ds=S.days.filter(function(x){return x.date
 function render(){
   if(!canEdit&&!standalone){var vd=viewerDay(); if(vd)ui.dayId=vd.id;}
   var d=day(); ui.dayId=d.id;
-  var opts=S.days.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+esc((x.label||"Natáčecí den")+" – "+(x.date?fmtDate(x.date):"bez data"))+'</option>';}).join("");
-  var tools=(canEdit||standalone?'<select id="daySel" aria-label="Natáčecí den">'+opts+'</select>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
+  var DS=daysSorted();var opts=DS.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+esc(shortDay(x))+'</option>';}).join("");
+  var di=DS.indexOf(d);
+  var tools=(canEdit||standalone?'<span class="daynav"><button class="btn dnav" data-act="dayprev" aria-label="Předchozí den"'+(di>0?'':' disabled')+'>‹</button><select id="daySel" aria-label="Natáčecí den">'+opts+'</select><button class="btn dnav" data-act="daynext" aria-label="Další den"'+(di<DS.length-1?'':' disabled')+'>›</button></span>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
       (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
@@ -2199,6 +2205,7 @@ function act(a,id,el){
     case "savedate": d.date=val("fDate"); d.label=val("fLabel"); S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;}); ui.sheet=null; changed(); break;
     case "track": ui.track=!ui.track; tick(); break;
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
+    case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
     case "dej": ui.dejOpen=ui.dejOpen||{}; ui.dejOpen[id]=!ui.dejOpen[id]; render(); break;
     case "toggledone": ui.showDone=!ui.showDone; ls("nd.showDone",ui.showDone?"1":"0"); render(); if(!ui.showDone)window.scrollTo(0,0); break;
     case "saveshiftloc": d.shiftFrom=val("fShiftFrom"); d.shiftTo=val("fShiftTo"); d.location=val("fLoc"); ui.sheet=null; changed(); break;
