@@ -33,6 +33,8 @@ button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 /* slate header */
+body.ed::before{background:#000}
+.bar.ed{border-top:8px solid #000}
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
   margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:10px max(16px,env(safe-area-inset-left,0px));
   display:flex;flex-wrap:wrap;gap:10px 16px;align-items:stretch}
@@ -551,7 +553,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 20:40";
+var APP_BUILD="7. 11. 20:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -847,6 +849,7 @@ function rowHTML(r){
 function viewerDay(){var t=todayISO(),ds=S.days.filter(function(x){return x.date;}).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
   return ds.filter(function(x){return x.date===t;})[0]||ds.filter(function(x){return x.date>t;})[0]||ds[ds.length-1]||S.days[0];}
 function render(){
+  try{document.body.classList.toggle("ed",!!canEdit);}catch(_){}
   if(!canEdit&&!standalone){var vd=viewerDay(); if(vd)ui.dayId=vd.id;}
   var d=day(); ui.dayId=d.id;
   var DS=daysSorted();var opts=DS.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+esc(shortDay(x))+'</option>';}).join("");
@@ -867,7 +870,7 @@ function render(){
   var list=d.rows.length?'<ol class="rows" id="rows">'+(ui.showDone?doneBar+d.rows.map(function(r){return hid[r.id]?rowHTML(r).replace('class="row ','class="row past '):rowHTML(r);}).join(""):doneBar+d.rows.filter(function(r){return !hid[r.id];}).map(rowHTML).join(""))+'</ol>':'<div class="empty">Program je prázdný. '+(canEdit?(d.date?'Přidejte obraz nebo poznámku tlačítky níže.':'Nejdřív vyplňte den (datum, směnu a lokaci) přes Upravit den, pak přidejte obrazy.'):'Zatím nic naplánováno.')+'</div>';
   var add=canEdit?'<div class="addbar"><button class="btn primary" data-act="addshot">+ Obraz</button>'+(obrazy().length?'<button class="btn" data-act="obrazy">+ Z připravených obrazů</button>':'')+'<button class="btn" data-act="addnote">+ Poznámka (příprava, oběd, herec končí…)</button></div>':'';
   document.getElementById("app").innerHTML=
-    '<header class="bar'+(ui.track?' tracking':'')+'" id="bar">'+headerHTML(d)+'</header>'+
+    '<header class="bar'+(ui.track?' tracking':'')+(canEdit?' ed':'')+'" id="bar">'+headerHTML(d)+'</header>'+
     '<div class="tools">'+tools+'</div>'+
     '<div class="cols" aria-hidden="true"><span></span><span>Čas</span><span>Obraz</span><span>Doba · den · str.</span><span>Motiv · role</span><span></span><span></span><span>Stav</span></div>'+
     list+add+(WEB&&!canEdit?'<div class="loginbar"><button class="linkbtn" data-act="login">Přihlásit (editor)</button></div>':'')+(ui.sheet?sheetHTML():"")+'<div id="toastBox"></div>';
