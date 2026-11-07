@@ -547,9 +547,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .daynav{display:inline-flex;align-items:stretch;gap:4px}.daynav select{width:auto;min-width:0}
 .btn.dnav{width:44px;padding:0;font-size:28px;line-height:1;font-weight:600;display:grid;place-items:center}.btn.dnav:disabled{opacity:.3}
 @media (max-width:759px){.tools .daynav{flex:1 1 100%}.tools .daynav select{flex:1 1 auto}}
-.btn.addbtn{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700}
+.btn.addbtn{padding-inline:12px;font-weight:700;gap:2px}.addbtn .apl{font-weight:800}
 .addmenu{left:auto;right:0}
-@media (max-width:759px){.tools{gap:4px}.addbtn .tl,.addbtn .car{display:none}.addbtn{width:44px;padding:0;justify-content:center}.addbtn .pl{font-size:28px;line-height:1}.tools .planbtn:not(.timebtn):not(.addbtn){padding-inline:9px}.tools .btn.rfed,.tools .timebtn,.tools .addbtn{width:40px;min-width:40px}}@media (min-width:760px){.addmenu{left:0;right:auto}}
+@media (max-width:759px){.tools{gap:4px}.addbtn .tl,.addbtn .car{display:none}.addbtn{width:44px;padding:0;justify-content:center}.addbtn .apl{font-size:28px;line-height:1}.tools .planbtn:not(.timebtn):not(.addbtn){padding-inline:9px}.tools .btn.rfed,.tools .timebtn,.tools .addbtn{width:40px;min-width:40px}}@media (min-width:760px){.addmenu{left:0;right:auto}}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
 .timebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -575,7 +575,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="7. 11. 21:20";
+var APP_BUILD="7. 11. 21:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -885,7 +885,7 @@ function render(){
       '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
       '<button class="btn rfed hist" data-act="hredo" aria-label="Krok vpřed" title="Krok vpřed ('+REDO.length+')"'+(REDO.length?'':' disabled')+'>'+REDO_I+'</button>'+
       '<button class="btn rfed phmenu" data-act="menu" aria-label="Menu" title="Menu"><span class="bars"><i></i><i></i><i></i></span></button>'+
-      '<span class="planwrap"><button class="btn planbtn addbtn'+(ui.addMenu?' open':'')+'" data-act="addmenu" aria-expanded="'+(ui.addMenu?'true':'false')+'"><span class="pl">+</span><span class="tl"> Přidat</span> <span class="car">▾</span></button>'+
+      '<span class="planwrap"><button class="btn planbtn addbtn'+(ui.addMenu?' open':'')+'" data-act="addmenu" aria-expanded="'+(ui.addMenu?'true':'false')+'"><span class="apl">+</span><span class="tl"> Přidat</span></button>'+
       (ui.addMenu?'<span class="planveil" data-act="addclose"></span><span class="planmenu addmenu" role="menu"><button data-act="addshot" role="menuitem">+ Obraz</button>'+(obrazy().length?'<button data-act="obrazy" role="menuitem">+ Z připravených obrazů</button>':'')+'<button data-act="addnote" role="menuitem">+ Poznámka<small>příprava, oběd, herec končí…</small></button></span>':'')+'</span>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
