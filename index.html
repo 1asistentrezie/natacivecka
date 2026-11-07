@@ -176,6 +176,24 @@ button{cursor:pointer}
 .bkbtn.none{opacity:.45}
 .pdfpanel{position:fixed;top:0;right:0;bottom:0;width:50vw;z-index:26;background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.35);display:flex;flex-direction:column;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.mnpanel{width:100vw;border-left:0}
+.bkbtn.mynote,.bkbtn.mynote.has{color:#D93025;background:#F7F1E4;border-color:#D9CBAA;opacity:1;position:relative}
+.bkbtn.mynote svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.bkbtn.mynote i{position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#D93025;border:2px solid var(--surface)}
+.mnbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.mnbar .mnc i{display:block;width:18px;height:18px;border-radius:50%}
+.mnbar .annt.sel{outline:2px solid #F2A54A;outline-offset:1px}
+.mnbar .mnfile{cursor:pointer;display:inline-flex;align-items:center}.mnbar .mnfinger{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.mnbar .armed{background:#E5483D;color:#fff}
+.mnscroll{flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px;background:#2a2a2a}
+.mnpaper{position:relative;max-width:1100px;margin:0 auto;background-color:#FBFAF5;background-image:radial-gradient(circle,#B8B2A2 1.3px,transparent 1.6px);background-size:24px 24px;border-radius:4px;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.mnpaper canvas{display:block;touch-action:pan-y;cursor:crosshair}
+.mnmore{text-align:center;padding:12px}
+.mnphotos{display:flex;flex-wrap:wrap;gap:10px;max-width:1100px;margin:0 auto;padding-bottom:30px}
+.mnphotos .hint{color:#bbb}
+.mnph{position:relative}.mnph img{display:block;height:150px;max-width:100%;border-radius:6px;object-fit:cover;cursor:zoom-in}
+.mnph button{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.mnview{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.9);display:grid;place-items:center;cursor:zoom-out}.mnview img{max-width:96vw;max-height:94vh}
 .pdfhead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
 .pdfhead b{font-family:var(--f-display);font-size:20px;letter-spacing:.03em}
 .pdfhead span{color:var(--muted);font-size:14px;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -514,7 +532,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="5. 11. 12:05";
+var APP_BUILD="7. 11. 07:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1260,7 +1278,89 @@ function docBtn(r,k){
   if(!canEdit&&!has)return '';
   return '<button class="bkbtn '+(k==="brk"?'lupa':'')+(has?' has':' none')+'" data-act="'+(k==="brk"?"lupa":"book")+'" data-id="'+r.id+'" aria-label="'+(k==="brk"?"Složka obrazu":"Stránky scénáře")+'"'+(has?' title="'+(k==="brk"?"Složka":"Scénář")+' str. '+f.from+(f.to&&f.to!==f.from?'–'+f.to:'')+'"':'')+'>'+(k==="brk"?LUPA:BOOK)+'</button>';
 }
-function bookHTML(r){return '<span class="bk">'+docBtn(r,"brk")+docBtn(r,"script")+'</span>';}
+function bookHTML(r){return '<span class="bk">'+myNoteBtn(r)+docBtn(r,"brk")+docBtn(r,"script")+'</span>';}
+/* ===== Moje poznámka: Apple Pencil notes + photos, stored on this device (IndexedDB) ===== */
+var PENCIL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16.4 4.2a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/><path d="M4 20l4.6-1.2"/></svg>';
+var MYN={}, MN=null, mnDbP=null, MN_W=1000, MN_PH=1414;
+function mnDb(){if(mnDbP)return mnDbP;mnDbP=new Promise(function(ok,no){try{var q=indexedDB.open("nd-mynotes",1);q.onupgradeneeded=function(){q.result.createObjectStore("n");};q.onsuccess=function(){ok(q.result);};q.onerror=function(){no(q.error);};}catch(e){no(e);}});return mnDbP;}
+function mnGet(id){return mnDb().then(function(db){return new Promise(function(ok){var t=db.transaction("n").objectStore("n").get(id);t.onsuccess=function(){ok(t.result||null);};t.onerror=function(){ok(null);};});}).catch(function(){return null;});}
+function mnPut(id,v){return mnDb().then(function(db){return new Promise(function(ok){var tx=db.transaction("n","readwrite"),st=tx.objectStore("n");if(v)st.put(v,id);else st.delete(id);tx.oncomplete=function(){ok(true);};tx.onerror=function(){ok(false);};});}).catch(function(){return false;});}
+function mnKeys(){return mnDb().then(function(db){return new Promise(function(ok){var t=db.transaction("n").objectStore("n").getAllKeys();t.onsuccess=function(){ok(t.result||[]);};t.onerror=function(){ok([]);};});}).catch(function(){return [];});}
+function mnInit(){if(!canEdit||typeof indexedDB==="undefined")return;mnKeys().then(function(k){MYN={};k.forEach(function(x){MYN[x]=1;});if(k.length)render();});}
+function myNoteBtn(r){if(!canEdit)return "";return '<button class="bkbtn mynote'+(MYN[r.id]?' has':'')+'" data-act="mynote" data-id="'+r.id+'" aria-label="Moje poznámka" title="Moje poznámka">'+PENCIL+(MYN[r.id]?'<i></i>':'')+'</button>';}
+function mnEmpty(n){return !n||(!n.strokes.length&&!n.photos.length);}
+function openMyNote(r){
+  closeMyNote(); closePdf();
+  var pn=document.createElement("div");pn.className="pdfpanel mnpanel";pn.id="mnPanel";
+  pn.innerHTML='<div class="pdfhead"><b>Moje poznámka · O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+'</span><button class="btn" id="mnClose">Hotovo</button></div>'+
+    '<div class="mnbar">'+
+      '<button class="annt mnc sel" data-mn="pen" data-c="#1d1d1f" title="Černé pero"><i style="background:#1d1d1f"></i></button>'+
+      '<button class="annt mnc" data-mn="pen" data-c="#D93025" title="Červené pero"><i style="background:#D93025"></i></button>'+
+      '<button class="annt mnc" data-mn="pen" data-c="#1F5FA8" title="Modré pero"><i style="background:#1F5FA8"></i></button>'+
+      '<button class="annt mnc" data-mn="hl" data-c="rgba(244,198,49,.45)" title="Zvýrazňovač"><i style="background:#F4C631;border-radius:2px;height:8px"></i></button>'+
+      '<button class="annt" data-mn="eraser">Guma</button><span class="annsep"></span>'+
+      '<button class="annt" data-mn="undo">Zpět</button><button class="annt" data-mn="clear">Smazat vše</button><span class="annsep"></span>'+
+      '<label class="annt mnfile">Fotka<input type="file" accept="image/*" multiple id="mnPick" hidden></label>'+
+      '<label class="annt mnfile">Fotoaparát<input type="file" accept="image/*" capture="environment" id="mnCam" hidden></label>'+
+      '<span class="annsep"></span><label class="annt mnfinger"><input type="checkbox" id="mnFinger"> Kreslit prstem</label>'+
+    '</div>'+
+    '<div class="mnscroll" id="mnScroll"><div class="mnpaper" id="mnPaper"><canvas id="mnCv"></canvas></div>'+
+    '<div class="mnmore"><button class="btn" data-mn="page">+ Další stránka</button></div><div class="mnphotos" id="mnPhotos"></div></div>';
+  document.body.appendChild(pn);
+  MN={id:r.id,note:null,tool:"pen",color:"#1d1d1f",finger:false,undo:[],cur:null,dirty:false,t:null};
+  document.getElementById("mnClose").onclick=closeMyNote;
+  mnGet(r.id).then(function(n){if(!MN||MN.id!==r.id)return;MN.note=n||{strokes:[],photos:[],pages:1,v:1};mnLayout();mnPhotos();});
+  var cv=document.getElementById("mnCv");
+  cv.addEventListener("touchstart",function(e){if(MN&&(MN.finger||[].some.call(e.touches,function(t){return t.touchType==="stylus";})))e.preventDefault();},{passive:false});
+  cv.addEventListener("touchmove",function(e){if(MN&&(MN.finger||[].some.call(e.touches,function(t){return t.touchType==="stylus";})))e.preventDefault();},{passive:false});
+  cv.addEventListener("pointerdown",mnDown);cv.addEventListener("pointermove",mnMove);
+  cv.addEventListener("pointerup",mnUp);cv.addEventListener("pointercancel",mnUp);
+  pn.addEventListener("click",function(e){var b=e.target.closest("[data-mn]");if(!b||!MN)return;var a=b.getAttribute("data-mn");
+    if(a==="pen"||a==="hl"||a==="eraser"){MN.tool=a;if(b.getAttribute("data-c"))MN.color=b.getAttribute("data-c");pn.querySelectorAll(".mnbar [data-mn]").forEach(function(x){x.classList.toggle("sel",x===b);});return;}
+    if(a==="undo"){var u=MN.undo.pop();if(u){MN.note.strokes=u;mnDraw();mnDirty();}else toast("Není co vrátit");return;}
+    if(a==="clear"){if(!MN.note.strokes.length)return;if(b.classList.contains("armed")){MN.undo.push(MN.note.strokes.slice());MN.note.strokes=[];mnDraw();mnDirty();b.classList.remove("armed");b.textContent="Smazat vše";}else{b.classList.add("armed");b.textContent="Opravdu smazat?";setTimeout(function(){b.classList.remove("armed");b.textContent="Smazat vše";},2500);}return;}
+    if(a==="page"){MN.note.pages=(MN.note.pages||1)+1;mnLayout();mnDirty();return;}
+    if(a==="phdel"){var pid=b.getAttribute("data-id");MN.note.photos=MN.note.photos.filter(function(p){return p.id!==pid;});mnPhotos();mnDirty();return;}
+    if(a==="phview"){var ph=MN.note.photos.filter(function(p){return p.id===b.getAttribute("data-id");})[0];if(ph)mnView(ph.d);return;}
+  });
+  document.getElementById("mnFinger").onchange=function(){MN.finger=this.checked;cv.style.touchAction=MN.finger?"none":"pan-y";};
+  ["mnPick","mnCam"].forEach(function(idn){document.getElementById(idn).onchange=function(){var fs=[].slice.call(this.files||[]);this.value="";fs.forEach(function(f){mnImg(f).then(function(d){if(!MN||!d)return;MN.note.photos.push({id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:d,at:nowHM()});mnPhotos();mnDirty();var s=document.getElementById("mnScroll");if(s)s.scrollTop=s.scrollHeight;});});};});
+  window.addEventListener("resize",mnLayout);
+}
+function mnImg(f){return new Promise(function(ok){var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var m=1600,sc=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.82));};im.onerror=function(){toast("Fotku se nepodařilo načíst");ok(null);};im.src=rd.result;};rd.onerror=function(){ok(null);};rd.readAsDataURL(f);});}
+function mnLayout(){if(!MN||!MN.note)return;var pp=document.getElementById("mnPaper"),cv=document.getElementById("mnCv");if(!pp||!cv)return;
+  var w=pp.clientWidth,h=Math.round(w*MN_PH/MN_W)*(MN.note.pages||1),dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.style.width=w+"px";cv.style.height=h+"px";cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);MN.k=w/MN_W;MN.dpr=dpr;
+  pp.style.backgroundSize=Math.max(14,Math.round(24*MN.k*1.4))+"px "+Math.max(14,Math.round(24*MN.k*1.4))+"px";
+  var ph=Math.round(w*MN_PH/MN_W);pp.style.setProperty("--pgh",ph+"px");cv.style.touchAction=MN.finger?"none":"pan-y";mnDraw();}
+function mnStroke(g,s,k){var p=s.p;if(!p.length)return;g.strokeStyle=s.c;g.lineCap="round";g.lineJoin="round";g.globalCompositeOperation=s.t==="hl"?"multiply":"source-over";
+  var base=s.t==="hl"?16:2.4;
+  if(p.length===1){g.beginPath();g.fillStyle=s.c;g.arc(p[0][0]*k,p[0][1]*k,base*k*(0.5+0.6*(p[0][2]||.5)),0,7);g.fill();return;}
+  for(var i=1;i<p.length;i++){var a=p[i-1],b=p[i];g.lineWidth=Math.max(.6,base*k*(s.t==="hl"?1:(0.45+0.9*((a[2]+b[2])/2||.5))));g.beginPath();
+    if(i>1){var z=p[i-2];g.moveTo((z[0]+a[0])/2*k,(z[1]+a[1])/2*k);g.quadraticCurveTo(a[0]*k,a[1]*k,(a[0]+b[0])/2*k,(a[1]+b[1])/2*k);}else{g.moveTo(a[0]*k,a[1]*k);g.lineTo((a[0]+b[0])/2*k,(a[1]+b[1])/2*k);}
+    g.stroke();}
+  g.globalCompositeOperation="source-over";}
+function mnDraw(){var cv=document.getElementById("mnCv");if(!cv||!MN||!MN.note)return;var g=cv.getContext("2d");g.setTransform(MN.dpr,0,0,MN.dpr,0,0);g.clearRect(0,0,cv.width,cv.height);
+  var ph=MN_PH*MN.k;g.strokeStyle="rgba(0,0,0,.18)";g.setLineDash([6,6]);g.lineWidth=1;for(var i=1;i<(MN.note.pages||1);i++){g.beginPath();g.moveTo(0,ph*i);g.lineTo(cv.width,ph*i);g.stroke();}g.setLineDash([]);
+  MN.note.strokes.forEach(function(s){mnStroke(g,s,MN.k);});if(MN.cur)mnStroke(g,MN.cur,MN.k);}
+function mnPt(e){var r=e.target.getBoundingClientRect();return [(e.clientX-r.left)/MN.k,(e.clientY-r.top)/MN.k,e.pointerType==="pen"?(e.pressure||.5):.5];}
+function mnOk(e){return e.pointerType==="pen"||e.pointerType==="mouse"||(e.pointerType==="touch"&&MN.finger);}
+function mnDown(e){if(!MN||!MN.note||!mnOk(e))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId);}catch(_){}
+  if(MN.tool==="eraser"){MN.erasing=true;MN.undo.push(MN.note.strokes.slice());mnErase(mnPt(e));return;}
+  MN.cur={t:MN.tool,c:MN.color,p:[mnPt(e)]};mnDraw();}
+function mnMove(e){if(!MN||!MN.note)return;if(MN.erasing){mnErase(mnPt(e));return;}if(!MN.cur)return;e.preventDefault();
+  var evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];if(!evs.length)evs=[e];evs.forEach(function(x){var p=mnPt({target:e.target,clientX:x.clientX,clientY:x.clientY,pointerType:e.pointerType,pressure:x.pressure});MN.cur.p.push(p);});mnDraw();}
+function mnUp(){if(!MN)return;if(MN.erasing){MN.erasing=false;mnDirty();return;}if(!MN.cur)return;MN.undo.push(MN.note.strokes.slice());if(MN.undo.length>50)MN.undo.shift();
+  MN.cur.p=MN.cur.p.map(function(q){return [Math.round(q[0]*10)/10,Math.round(q[1]*10)/10,Math.round(q[2]*100)/100];});MN.note.strokes.push(MN.cur);MN.cur=null;mnDraw();mnDirty();}
+function mnErase(pt){var R=14,n0=MN.note.strokes.length;MN.note.strokes=MN.note.strokes.filter(function(s){return !s.p.some(function(q){var dx=q[0]-pt[0],dy=q[1]-pt[1];return dx*dx+dy*dy<R*R;});});if(MN.note.strokes.length!==n0)mnDraw();}
+function mnPhotos(){var b=document.getElementById("mnPhotos");if(!b||!MN||!MN.note)return;
+  b.innerHTML=MN.note.photos.length?MN.note.photos.map(function(p){return '<span class="mnph"><img src="'+p.d+'" alt="" data-mn="phview" data-id="'+p.id+'"><button data-mn="phdel" data-id="'+p.id+'" aria-label="Smazat fotku">×</button></span>';}).join(""):'<span class="hint">Fotky přidáš tlačítkem Fotka nebo Fotoaparát.</span>';}
+function mnView(d){var v=document.createElement("div");v.className="mnview";v.innerHTML='<img src="'+d+'" alt="">';v.onclick=function(){v.remove();};document.body.appendChild(v);}
+function mnDirty(){if(!MN)return;MN.dirty=true;clearTimeout(MN.t);MN.t=setTimeout(mnSave,700);}
+function mnSave(){if(!MN||!MN.dirty)return Promise.resolve();var id=MN.id,n=MN.note;MN.dirty=false;n.at=Date.now();var empty=mnEmpty(n);
+  return mnPut(id,empty?null:n).then(function(ok){if(!ok){toast("Poznámku se nepodařilo uložit");return;}var had=!!MYN[id];if(empty)delete MYN[id];else MYN[id]=1;if(had!==!empty)render();});}
+function closeMyNote(){var p=document.getElementById("mnPanel");if(!p)return;window.removeEventListener("resize",mnLayout);var m=MN;clearTimeout(m&&m.t);(m?mnSave():Promise.resolve()).then(function(){});p.remove();setTimeout(function(){if(MN===m)MN=null;},0);}
+
 function loadScript(src){return new Promise(function(ok,no){var t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=function(){no(new Error("nelze načíst "+src));};document.head.appendChild(t);});}
 /* pdf.js 4 (ES module) reads text from Mac-made screenplays correctly; 3.11 stays as a fallback */
 function pdfjsOld(){var B="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
@@ -1998,6 +2098,7 @@ function act(a,id,el){
     case "deldoc":{ var dk3=ui.sheet.dk, di=+el.getAttribute("data-i"); if(ui.arm!=="deldoc:"+di){ui.arm="deldoc:"+di;render();return;} ui.arm=null;
       var dl3=docList(dk3), ds=dl3[di], F3=DK[dk3].field, A3=DK[dk3].auto; if(ds){dl3.splice(di,1);if(WEB&&SB)SB.storage.from("docs").remove([ds.id+".pdf"]).catch(function(){}); S.days.forEach(function(dd){dd.rows.forEach(function(r){if(r[F3]&&r[F3].sid===ds.id){delete r[F3];delete r[A3];}});});}
       ui.sheet.summary=""; changed(); toast("Soubor odebrán"); break;}
+    case "mynote": if(x)openMyNote(x.r); break;
     case "book": case "lupa":{ var dkb=a==="lupa"?"brk":"script"; if(canEdit&&!hasDoc(x.r,dkb)){docList(dkb);ui.sheet={kind:"pages",id:id,dk:dkb};render();} else showPdf(x.r,dkb); break;}
     case "pgedit":{ var pe=rowById(el.getAttribute("data-id")); closePdf(); if(pe){docList(el.getAttribute("data-dk"));ui.sheet={kind:"pages",id:pe.r.id,dk:el.getAttribute("data-dk")};render();} break;}
     case "pgsave":{ var dk4=ui.sheet.dk, F4=DK[dk4].field, A4=DK[dk4].auto, pr=rowById(ui.sheet.id).r, f1=parseInt(val("fPgFrom"),10), t1=parseInt(val("fPgTo"),10), sid1=val("fPgSid")||(docList(dk4)[0]&&docList(dk4)[0].id);
@@ -2204,7 +2305,7 @@ function connect(tries){
     art=res[0]; var u=res[1]; dl=res[2]; var dbx=res[3]; assetsNs=res[4];
     var go=function(){startLive(dbx);};
     if(!art){go();return;}
-    return (u?u.canEdit():Promise.resolve(false)).then(function(ok){canEdit=!!ok;render();go();});
+    return (u?u.canEdit():Promise.resolve(false)).then(function(ok){canEdit=!!ok;render();go();mnInit();});
   });
 }
 /* ---------- live sync: the plan also lives in db doc live/plan, so signed-in viewers get changes in about a second ---------- */
@@ -2299,7 +2400,7 @@ function webSubscribe(){
   webFetch(); startPoll();
 }
 function becomeEditor(user){
-  sbUser=user; canEdit=true; liveRow="main"; ui.sheet=null;
+  sbUser=user; canEdit=true; liveRow="main"; ui.sheet=null; mnInit();
   assetsNs={upload:function(file){var id=(crypto.randomUUID?crypto.randomUUID():uid()+Date.now()).replace(/-/g,"");
     return SB.storage.from("docs").upload(id+".pdf",file,{contentType:"application/pdf",upsert:false}).then(function(r){if(r.error){var e=new Error(r.error.message);e.code="upload";throw e;}return {id:id};});}};
   cacheLoad(); render(); webSubscribe();
