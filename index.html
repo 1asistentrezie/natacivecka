@@ -103,7 +103,7 @@ body.ed::before{background:#000}
   font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;color:var(--muted)}
 .menubtn .bars{display:flex;flex-direction:column;gap:3px}
 .menubtn .bars i{display:block;width:20px;height:2px;border-radius:1px;background:var(--ink)}
-.mitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:60px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 14px}
+.mitem{flex-shrink:0;height:auto;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:60px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 14px}
 .mitem b{font-family:var(--f-display);font-size:19px;letter-spacing:.04em}
 .mitem span{font-size:14px;color:var(--muted)}
 .mitem[disabled]{opacity:.45;cursor:default}
@@ -456,6 +456,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 @media (max-width:759px){.row.shot .no{font-size:28px;padding:3px}.row.shot .no.sz-m{font-size:21px}.row.shot .no.sz-l{font-size:14px}.row.shot .no small{font-size:9px}}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .s-menu.ro-hide{display:none!important}
+.phmenu{display:none!important}.phmenu .bars{display:flex;flex-direction:column;gap:4px;width:20px}.phmenu .bars i{display:block;height:2.5px;border-radius:2px;background:currentColor}
+@media (max-width:759px){.phmenu{display:inline-grid!important}}
 .seg .btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .chrlist{max-height:60vh}
 .chr{display:grid;grid-template-columns:92px 92px minmax(0,1fr) minmax(150px,auto);gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line)}
@@ -570,7 +572,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="7. 11. 21:05";
+var APP_BUILD="7. 11. 21:10";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -879,6 +881,7 @@ function render(){
       (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button><button data-act="resetbase" role="menuitem">Resetovat vše podle výchozího nastavení<small>'+(d.baseAt?'vrátí časy z '+esc(d.baseAt):'výchozí čas zatím nenastaven')+'</small></button></span>':'')+'</span>'+
       '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
       '<button class="btn rfed hist" data-act="hredo" aria-label="Krok vpřed" title="Krok vpřed ('+REDO.length+')"'+(REDO.length?'':' disabled')+'>'+REDO_I+'</button>'+
+      '<button class="btn rfed phmenu" data-act="menu" aria-label="Menu" title="Menu"><span class="bars"><i></i><i></i><i></i></span></button>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
     '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
