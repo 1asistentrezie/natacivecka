@@ -245,10 +245,18 @@ button{cursor:pointer}
 .motif .memo{display:block;font-weight:400;font-size:14px;color:var(--muted)}
 .dej{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:400;font-size:14px;line-height:1.3;color:var(--muted);margin-top:3px;cursor:pointer;font-style:italic}
 .dej.open{display:block;-webkit-line-clamp:unset;color:var(--ink);font-style:normal;background:rgba(255,255,255,.05);border-radius:5px;padding:4px 6px}
-@media (min-width:760px){.row.shot .mr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:6px;align-items:start}.row.shot .mr>.motif,.row.shot .mr>.roles{grid-column:1}.row.shot .mr>.loc{grid-column:2;grid-row:1/span 2;align-self:center}}
+@media (min-width:760px){.row.shot .mr{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"motif motif" "dej roles";column-gap:14px;row-gap:5px;align-items:start}
+  .row.shot .mr>.motif{grid-area:motif}.row.shot .mr>.dej-out{grid-area:dej;margin-top:0}.row.shot .mr>.roles{grid-area:roles;align-content:flex-start}
+  .row.shot .mr:not(:has(.dej-out))>.roles{grid-column:1/-1}
+  .dej-in{display:none!important}
+  .row.shot .bk{display:grid;grid-template-columns:38px 38px;gap:4px;justify-content:end;align-content:center}}
+@media (max-width:759px){.dej-out{display:none!important}.row.shot .bk{display:grid;grid-template-columns:repeat(2,38px);gap:4px;justify-content:end}}
+a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--ink)}
+.bkbtn.pin{color:#C23B2A;background:#F7F1E4;border-color:#D9CBAA;opacity:1}.bkbtn.pin.none{opacity:.35}
+.bkbtn.pin svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .loc{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;max-width:160px;font-size:12px;line-height:1.25;color:var(--muted);text-align:right}
 .locm{display:none}
-@media (max-width:759px){.row .loc{display:none}.locm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:400;font-size:12px;line-height:1.25;color:var(--muted);margin-top:3px}.locm::before{content:"📍 "}}
+
 .roles{grid-area:roles;min-width:0;display:flex;flex-wrap:wrap;gap:4px}
 .role{border:1px solid var(--line);border-radius:3px;padding:1px 7px;font-size:14px;font-weight:600;background:var(--bg)}
 .role.lim{border-color:var(--late);color:var(--late);background:var(--late-bg)}
@@ -538,7 +546,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 17:45";
+var APP_BUILD="7. 11. 17:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -823,8 +831,8 @@ function rowHTML(r){
     '<span class="no'+(String(r.scene||"").length>6?' sz-l':String(r.scene||"").length>4?' sz-m':'')+'"'+tapAttr+'><small>OBRAZ</small>'+esc(r.scene||"–")+'</span>'+
     infoHTML(r,tapAttr)+
     '<span class="mr"><span class="motif"'+tapAttr+'>'+esc(r.motif||"")+(r.note?'<span class="memo">'+esc(r.note)+'</span>':'')+
-      (rowDesc(r)?'<span class="dej'+(ui.dejOpen&&ui.dejOpen[r.id]?' open':'')+'" data-act="dej" data-id="'+r.id+'" role="button" aria-expanded="'+(ui.dejOpen&&ui.dejOpen[r.id]?'true':'false')+'" title="Děj – klepnutím zobrazíte celý">'+esc(rowDesc(r))+'</span>':'')+locHTML(r,"locm")+'</span>'+
-    '<span class="roles"'+tapAttr+'>'+roles+'</span>'+locHTML(r,"loc")+'</span>'+
+      dejHTML(r,"dej-in")+'</span>'+dejHTML(r,"dej-out")+
+    '<span class="roles"'+tapAttr+'>'+roles+'</span></span>'+
     bookHTML(r)+mvHTML(r)+'<span class="state">'+state+'</span></li>';
 }
 
@@ -1083,6 +1091,11 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
+  if(s.kind==="loc"){var lx=rowById(s.id);if(!lx){ui.sheet=null;return "";}var lr=lx.r,lt=rowLoc(lr);
+    b='<h2>Lokace · O:'+esc(lr.scene||"")+'</h2><p style="margin:0;font-size:18px;font-weight:600;line-height:1.4">'+esc(lt||"Lokace není zadaná")+'</p>'+(lr.motif?'<p style="margin:0;color:var(--muted)">'+esc(lr.motif)+'</p>':'')+
+      '<div class="actions"><div class="grp">'+(lt?'<a class="btn" href="https://maps.apple.com/?q='+encodeURIComponent(lt)+'" target="_blank" rel="noopener">Otevřít v Mapách</a>':'')+'</div><div class="grp"><button class="btn primary" data-act="close">Zavřít</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
   if(s.kind==="resetbase"){var rbd=day(),rbn=baseRows(rbd).length;
     b='<h2>Resetovat vše podle výchozího nastavení?</h2>'+
       '<p style="margin:0">Časy všech obrazů a poznámek se vrátí na výchozí plán uložený v <b>'+esc(rbd.baseAt||"")+'</b>. Změní se u <b>'+rbn+'</b> '+(rbn===1?'řádku':'řádků')+'.</p>'+
@@ -1296,7 +1309,7 @@ function docBtn(r,k){
   if(!canEdit&&!has)return '';
   return '<button class="bkbtn '+(k==="brk"?'lupa':'')+(has?' has':' none')+'" data-act="'+(k==="brk"?"lupa":"book")+'" data-id="'+r.id+'" aria-label="'+(k==="brk"?"Složka obrazu":"Stránky scénáře")+'"'+(has?' title="'+(k==="brk"?"Složka":"Scénář")+' str. '+f.from+(f.to&&f.to!==f.from?'–'+f.to:'')+'"':'')+'>'+(k==="brk"?LUPA:BOOK)+'</button>';
 }
-function bookHTML(r){return '<span class="bk">'+myNoteBtn(r)+docBtn(r,"brk")+docBtn(r,"script")+'</span>';}
+function bookHTML(r){return '<span class="bk">'+(r.type==="shot"?pinBtn(r):"")+myNoteBtn(r)+docBtn(r,"brk")+docBtn(r,"script")+'</span>';}
 /* ===== Moje poznámka: Apple Pencil notes + photos, stored on this device (IndexedDB) ===== */
 var PENCIL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16.4 4.2a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/><path d="M4 20l4.6-1.2"/></svg>';
 var MYN={}, MN=null, mnDbP=null, MN_W=1000, MN_PH=1414;
@@ -1308,6 +1321,9 @@ function mnInit(){if(!canEdit||typeof indexedDB==="undefined")return;mnKeys().th
 function rowObr(r){return r.scene&&typeof obrByScene==="function"&&Array.isArray(S.obrazy)?obrByScene(r.scene):null;}
 function rowDesc(r){if(r.desc)return r.desc;var o=rowObr(r);return o&&o.desc||"";}
 function rowLoc(r){if(r.loc)return r.loc;var o=rowObr(r);return o&&o.loc||"";}
+function dejHTML(r,cls){var d=rowDesc(r);if(!d)return "";var o=ui.dejOpen&&ui.dejOpen[r.id];return '<span class="dej '+cls+(o?' open':'')+'" data-act="dej" data-id="'+r.id+'" role="button" aria-expanded="'+(o?'true':'false')+'" title="Děj – klepnutím zobrazíte celý">'+esc(d)+'</span>';}
+var PIN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></svg>';
+function pinBtn(r){var l=rowLoc(r);if(!l&&!canEdit)return "";return '<button class="bkbtn pin'+(l?' has':' none')+'" data-act="loc" data-id="'+r.id+'" aria-label="Lokace"'+(l?' title="'+esc(l)+'"':' disabled')+'>'+PIN+'</button>';}
 function locHTML(r,cls){var l=rowLoc(r);return l?'<span class="'+cls+'" title="'+esc(l)+'">'+esc(l)+'</span>':'';}
 function myNoteBtn(r){if(!canEdit)return "";return '<button class="bkbtn mynote'+(MYN[r.id]?' has':'')+'" data-act="mynote" data-id="'+r.id+'" aria-label="Moje poznámka" title="Moje poznámka">'+PENCIL+(MYN[r.id]?'<i></i>':'')+'</button>';}
 function mnEmpty(n){return !n||(!n.strokes.length&&!n.photos.length);}
@@ -2180,6 +2196,7 @@ function act(a,id,el){
     case "editdate": ui.sheet={kind:"date"}; render(); break;
     case "savedate": d.date=val("fDate"); d.label=val("fLabel"); S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;}); ui.sheet=null; changed(); break;
     case "track": ui.track=!ui.track; tick(); break;
+    case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
     case "dej": ui.dejOpen=ui.dejOpen||{}; ui.dejOpen[id]=!ui.dejOpen[id]; render(); break;
     case "toggledone": ui.showDone=!ui.showDone; ls("nd.showDone",ui.showDone?"1":"0"); render(); if(!ui.showDone)window.scrollTo(0,0); break;
     case "saveshiftloc": d.shiftFrom=val("fShiftFrom"); d.shiftTo=val("fShiftTo"); d.location=val("fLoc"); ui.sheet=null; changed(); break;
@@ -2334,7 +2351,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","book","lupa","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
