@@ -16,15 +16,28 @@
 <style id="css">
 /* Layout (dark only, for the set): sticky slate header (date · shift · clock · location · time status), then the day's strip of rows like a call sheet. */
 :root{
-  --bg:#0D1012; --surface:#161B1E; --ink:#E8ECEA; --muted:#97A2A6; --line:#283035;
+  --bg:#E9E6DF; --surface:#FFFFFF; --ink:#15191B; --muted:#5E676B; --line:#CFC9BE;
   --accent:#55B9BF; --on-accent:#08201F;
-  --go:#2FA862; --go-bg:#12301F; --late:#E5483D; --late-bg:#3A1613;
-  --roll:#F4C631; --roll-bg:#2F270B; --note-bg:#1C2326; --on-strong:#FFFFFF;
+  --go:#2FA862; --go-bg:#E2F3E8; --late:#E5483D; --late-bg:#F8DEDA;
+  --roll:#F4C631; --roll-bg:#FFF6D6; --note-bg:#F1EEE8; --on-strong:#FFFFFF;
   --blue:#4C9BEA; --blue-strong:#1D69BF; --sun:#F2A54A;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
-  color-scheme:dark;
+  color-scheme:light;
 }
+
+html[data-theme="a"]{--bg:#0D1012;--surface:#161B1E;--ink:#E8ECEA;--muted:#97A2A6;--line:#283035;--roll-bg:#2F270B;--note-bg:#1C2326;--go-bg:#12301F;--late-bg:#3A1613;color-scheme:dark;}
+html[data-theme="c"]{--bg:#0A1120;--surface:#14203A;--ink:#E7EDF7;--muted:#93A3BF;--line:#26365A;--accent:#5FA8FF;--on-accent:#06172E;--roll-bg:#2F270B;--note-bg:#1C2326;--go-bg:#12301F;--late-bg:#3A1613;color-scheme:dark;}
+html[data-theme="d"]{--bg:#12100D;--surface:#211C17;--ink:#F2EADF;--muted:#AE9F8E;--line:#3B3229;--accent:#D9A35B;--on-accent:#2A1A06;--roll-bg:#2F270B;--note-bg:#1C2326;--go-bg:#12301F;--late-bg:#3A1613;color-scheme:dark;}
+html[data-theme="e"]{--bg:#000;--surface:#121212;--ink:#FFFFFF;--muted:#B5B5B5;--line:#3C3C3C;--accent:#3FD0D6;--on-accent:#001A1B;--roll-bg:#2F270B;--note-bg:#1C2326;--go-bg:#12301F;--late-bg:#3A1613;color-scheme:dark;}
+html[data-theme="f"]{--bg:#0C1411;--surface:#15221D;--ink:#E6F0EB;--muted:#93AAA0;--line:#25382F;--accent:#5CC59A;--on-accent:#06231A;--roll-bg:#2F270B;--note-bg:#1C2326;--go-bg:#12301F;--late-bg:#3A1613;color-scheme:dark;}
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.thm{all:unset;cursor:pointer;border:2px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px;color:var(--ink)}
+.thm.sel{border-color:#F2A54A;box-shadow:0 0 0 2px #F2A54A}
+.thm .sw{display:flex;height:34px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.2)}.thm .sw i{flex:1}
+/* téma „Papír“ (výchozí): světlá stránka, černé horní menu */
+.bar{--bg:#15191B;--surface:#0B0D0E;--ink:#EEF1F0;--muted:#9AA4A8;--line:#2A3236;background:#0B0D0E;color:#EEF1F0;color-scheme:dark}
+body::before{background:#0B0D0E!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.35}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 #app{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px;max-width:1180px;margin:0 auto}
@@ -553,7 +566,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 20:45";
+var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papír",["#0B0D0E","#E9E6DF","#FFFFFF","#F4C631"]],["c","Noční modrá",["#000","#0A1120","#14203A","#F4C631"]],["d","Espresso",["#000","#12100D","#211C17","#F4C631"]],["e","Kontrast",["#000","#000","#121212","#F4C631"]],["f","Lesní",["#000","#0C1411","#15221D","#F4C631"]]];
+function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
+function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
+applyTheme(curTheme());
+var APP_BUILD="7. 11. 21:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -949,6 +966,7 @@ function sheetHTML(){
     var canDl=!!dl||standalone||WEB;
     b='<h2>Menu</h2>'+
       '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+
+      '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span><div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div></div>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
       (canEdit?'<button class="mitem" data-act="resetst"><b>Resetovat stavy dne</b><span>Vymaže stavy a jejich časy u všech obrazů a poznámek tohoto dne. Program zůstane.</span></button>':'')+
       (canEdit?'<button class="mitem" data-act="plan"><b>Natáčecí plán</b><span>'+(S.plan&&S.plan.version?'Načtena verze: <b>'+esc(S.plan.version)+'</b>. ':'')+'Nahrát natáčecí plán (PDF) a podle něj předběžně připravit natáčecí dny</span></button>':'')+
@@ -2209,6 +2227,7 @@ function act(a,id,el){
     case "track": ui.track=!ui.track; tick(); break;
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
     case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
+    case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{localStorage.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
     case "dej": ui.dejOpen=ui.dejOpen||{}; ui.dejOpen[id]=!ui.dejOpen[id]; render(); break;
     case "toggledone": ui.showDone=!ui.showDone; ls("nd.showDone",ui.showDone?"1":"0"); render(); if(!ui.showDone)window.scrollTo(0,0); break;
     case "saveshiftloc": d.shiftFrom=val("fShiftFrom"); d.shiftTo=val("fShiftTo"); d.location=val("fLoc"); ui.sheet=null; changed(); break;
