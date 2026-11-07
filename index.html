@@ -532,7 +532,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 07:20";
+var APP_BUILD="7. 11. 16:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -831,7 +831,7 @@ function render(){
   var tools=(canEdit||standalone?'<select id="daySel" aria-label="Natáčecí den">'+opts+'</select>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
-      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button></span>':'')+'</span>'+
+      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
       (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button><button data-act="resetbase" role="menuitem">Resetovat vše podle výchozího nastavení<small>'+(d.baseAt?'vrátí časy z '+esc(d.baseAt):'výchozí čas zatím nenastaven')+'</small></button></span>':'')+'</span>'+
       '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
@@ -1008,9 +1008,18 @@ function sheetHTML(){
   }
   if(s.kind==="plan"){
     var pp=s.parsed, cur=S.plan||null;
-    b='<h2>Natáčecí plán</h2>'+
+    b='<h2>'+(s.mode==="update"?'Aktualizovat podle nové verze':'Natáčecí plán')+'</h2>'+
       (cur?'<div class="scsum">Načtená verze: <b>'+esc(cur.version||"bez označení")+'</b>'+(cur.printed?' · tisk '+esc(cur.printed):'')+(cur.name?'<br><span class="memo3">'+esc(cur.name)+'</span>':'')+(cur.importedAt?'<br><span class="memo3">nahráno '+esc(cur.importedAt)+'</span>':'')+'</div>':'<p style="margin:0">Zatím není nahraný žádný natáčecí plán.</p>');
-    if(pp){
+    if(pp&&s.mode==="update"){
+      var up=planUpd(pp),uc={new:0,merge:0,keep:0,"skip-past":0},AU={"new":"nový den","merge":"aktualizovat","keep":"už se natáčí – beze změny","skip-past":"už proběhl"};up.forEach(function(x){uc[x.act]++;});
+      var vis=up.filter(function(x){return x.act!=="skip-past";});
+      b+='<div class="planhead">Soubor <b>'+esc(pp.name||"")+'</b><br>Nová verze: <b class="pv">'+esc(pp.version||"neuvedena")+'</b>'+(pp.printed?' · tisk '+esc(pp.printed):'')+'<br>Aktualizuje se <b>'+uc.merge+'</b> '+(uc.merge===1?'den':uc.merge<5&&uc.merge?'dny':'dnů')+(uc["new"]?', přibude <b>'+uc["new"]+'</b> nových':'')+(uc.keep?', '+uc.keep+' už se natáčí a nemění se':'')+'.</div>'+
+        '<div class="planlist">'+vis.map(function(x){var pd=x.pd,st=x.m&&x.m.st,parts=[];
+          if(st){if(st.addN)parts.push('+'+st.addN+' '+(st.addN===1?'poznámka':st.addN<5?'poznámky':'poznámek'));if(st.addS)parts.push('+'+st.addS+' '+(st.addS===1?'obraz':st.addS<5?'obrazy':'obrazů'));if(st.time)parts.push(st.time+'× upřesněný čas');if(st.del)parts.push('−'+st.del+' ('+esc(st.removed.join(", "))+')');if(!parts.length)parts.push('beze změny');}
+          return '<div class="pl a-'+(x.act==="merge"?"replace":x.act)+'"><b>'+esc(pd.label)+'</b><span>'+esc(fmtDate(pd.date))+(pd.shiftFrom?' · '+esc(pd.shiftFrom)+'–'+esc(pd.shiftTo):'')+'<br><small>'+(st?parts.join(' · '):esc(pd.location||""))+'</small></span><em>'+AU[x.act]+'</em></div>';}).join("")+'</div>'+
+        '<span class="hint">Obrazy a poznámky se převezmou z nové verze (pořadí, časy, nové poznámky). U obrazů, které zůstaly, se zachová vše, co jsi doplnil – stránky scénáře a složky i Moje poznámka. Dny, které už začaly nebo proběhly, se nemění. Kdyby něco nesedělo, vrátíš to tlačítkem ↶.</span>'+
+        '<div class="actions"><div class="grp"><button class="btn" data-act="planfile">Jiný soubor</button></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="planupd"'+(uc.merge+uc["new"]?'':' disabled')+'>Aktualizovat ('+(uc.merge+uc["new"])+')</button></div></div>';
+    } else if(pp){
       var opt={past:!!s.past,over:!!s.over}, plan=planPlan(pp,opt), cnt={new:0,replace:0,keep:0,"skip-past":0};
       plan.forEach(function(x){cnt[x.act]++;});
       var AL={"new":"nový den","replace":"aktualizovat","keep":"ponechat beze změny","skip-past":"už proběhl – vynechat"};
@@ -1023,7 +1032,8 @@ function sheetHTML(){
         '<div class="actions"><div class="grp"><button class="btn" data-act="planfile">Jiný soubor</button></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="planapply"'+(cnt["new"]+cnt.replace?'':' disabled')+'>Připravit dny ('+(cnt["new"]+cnt.replace)+')</button></div></div>';
     } else {
       b+=(s.busy?'<p style="margin:0;font-weight:700">'+esc(s.busy)+'</p>':'')+(s.err?'<div class="scsum" style="color:var(--late)">'+esc(s.err)+'</div>':'')+
-        '<span class="hint">Nahrajte „Malý natáčecí plán“ jako PDF. Aplikace z něj vezme verzi plánu, natáčecí dny (datum, směnu, lokaci) a v každém dni obrazy a poznámky ve stejném pořadí. Dny, kde už jsou vyplněné stavy, se nikdy nepřepíšou.</span>'+
+        (s.mode==="update"?'<span class="hint">Vlož novou verzi „Malého natáčecího plánu“ (PDF). Aktualizují se dnešní (pokud ještě nezačal) a další natáčecí dny – přibudou nové poznámky, upřesní se časy a pořadí. Před uložením uvidíš, co se u kterého dne změní.</span>':
+        '<span class="hint">Nahrajte „Malý natáčecí plán“ jako PDF. Aplikace z něj vezme verzi plánu, natáčecí dny (datum, směnu, lokaci) a v každém dni obrazy a poznámky ve stejném pořadí. Dny, kde už jsou vyplněné stavy, se nikdy nepřepíšou.</span>')+
         '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button><button class="btn primary" data-act="planfile"'+(s.busy?' disabled':'')+'>Nahrát natáčecí plán (PDF)</button></div></div>';
     }
     return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+b+'</div></div>';
@@ -1617,6 +1627,26 @@ function planRows(pd){
   });
   return out;
 }
+var PLAN_SHOT_F=["scene","motif","tod","len","roles","from","to","den"];
+function mergeRows(ex,pd){var nr=planRows(pd),old=ex.rows,used={},st={addN:0,addS:0,time:0,del:0,keepMan:0};
+  function find(r,strict){for(var k=0;k<old.length;k++){var o=old[k];if(used[k]||o.type!==r.type)continue;
+    if(r.type==="shot"?String(o.scene)===String(r.scene):(o.kind===r.kind&&(!strict||(o.text||"")===(r.text||""))))return k;}return -1;}
+  nr.forEach(function(r,i){var m=find(r,true);if(m<0&&r.type==="note")m=find(r,false);
+    if(m<0){if(r.type==="note")st.addN++;else st.addS++;return;}
+    used[m]=1;var o=old[m],k2=JSON.parse(JSON.stringify(o));
+    if(r.type==="shot"){PLAN_SHOT_F.forEach(function(f){if(r[f]!==undefined&&r[f]!=="")k2[f]=r[f];});if(r.note)k2.note=r.note;
+      ["pages","pagesAuto","slozka","slozkaAuto"].forEach(function(f){if(!k2[f]&&r[f])k2[f]=r[f];});}
+    else Object.keys(r).forEach(function(f){if(f!=="id"&&f!=="status"&&f!=="doneAt")k2[f]=r[f];});
+    if((o.from||"")!==(k2.from||"")||(o.to||"")!==(k2.to||""))st.time++;
+    ["origFrom","origTo","baseFrom","baseTo","rollMoved"].forEach(function(f){delete k2[f];});
+    nr[i]=k2;});
+  st.del=old.length-Object.keys(used).length;
+  st.removed=old.filter(function(o,k){return !used[k];}).map(function(o){return o.type==="shot"?"O:"+(o.scene||"?"):(o.kind||"poznámka");});
+  return {rows:nr,st:st};}
+function planUpd(pp){var today=todayISO();
+  return pp.days.map(function(pd){var ex=S.days.filter(function(d){return d.date===pd.date;})[0],started=ex&&ex.rows.some(function(r){return r.status;}),act;
+    if(pd.date<today)act="skip-past";else if(!ex)act="new";else if(started)act="keep";else act="merge";
+    return {pd:pd,ex:ex,act:act,started:started,m:act==="merge"?mergeRows(ex,pd):null};});}
 function planPlan(pp,opt){
   var today=todayISO();
   return pp.days.map(function(pd){
@@ -2127,6 +2157,12 @@ function act(a,id,el){
     case "chrogo":{ var did=el.getAttribute("data-day"), rid=el.getAttribute("data-id"); ui.dayId=did; ui.dayPicked=true; ls("nd.day",did); ui.sheet=null; ui.showDone=true; render();
       var li=document.querySelector('.row[data-id="'+rid+'"]'); if(li){li.scrollIntoView({block:"center"});li.classList.add("flash");setTimeout(function(){li.classList.remove("flash");},1500);} break;}
     case "plan": ui.sheet={kind:"plan"}; render(); break;
+    case "planupdopen": ui.planMenu=false; ui.sheet={kind:"plan",mode:"update"}; render(); break;
+    case "planupd":{ var pu=ui.sheet.parsed; if(!pu)break; var ul=planUpd(pu), uN=0, uM=0, uver=pu.version||"";
+      ul.forEach(function(x){ if(x.act==="new"){S.days.push(planDay(x.pd,uver));uN++;} else if(x.act==="merge"){var ex=x.ex;ex.rows=x.m.rows;ex.shiftFrom=x.pd.shiftFrom||ex.shiftFrom;ex.shiftTo=x.pd.shiftTo||ex.shiftTo;if(x.pd.location)ex.location=x.pd.location;if(x.pd.label)ex.label=x.pd.label;ex.planVer=uver;delete ex.baseAt;delete ex.baseAsked;uM++;} });
+      S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+      var nowU=new Date(); S.plan={version:uver,printed:pu.printed||"",name:pu.name||"",importedAt:nowU.getDate()+". "+(nowU.getMonth()+1)+". "+nowU.getFullYear()+" "+nowHM()};
+      ui.sheet=null; changed(); toast("Plán "+uver+": aktualizováno "+uM+" "+(uM===1?"den":uM<5?"dny":"dnů")+(uN?", "+uN+" nových":"")); break;}
     case "planfile": readPlanFile(); break;
     case "planapply":{ var pp=ui.sheet.parsed; if(!pp)break; var pl=planPlan(pp,{past:!!ui.sheet.past,over:!!ui.sheet.over}), nNew=0, nRep=0, ver=pp.version||"";
       pl.forEach(function(x){ if(x.act==="new"){S.days.push(planDay(x.pd,ver));nNew++;} else if(x.act==="replace"){var nd2=planDay(x.pd,ver); nd2.id=x.ex.id; nd2.sunCity=x.ex.sunCity||"auto"; nd2.sunCoords=x.ex.sunCoords||""; S.days[S.days.indexOf(x.ex)]=nd2; nRep++;} });
