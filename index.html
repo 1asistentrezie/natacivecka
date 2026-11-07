@@ -532,7 +532,7 @@ button{cursor:pointer}
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
-var APP_BUILD="7. 11. 16:20";
+var APP_BUILD="7. 11. 17:10";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1017,6 +1017,7 @@ function sheetHTML(){
         '<div class="planlist">'+vis.map(function(x){var pd=x.pd,st=x.m&&x.m.st,parts=[];
           if(st){if(st.addN)parts.push('+'+st.addN+' '+(st.addN===1?'poznámka':st.addN<5?'poznámky':'poznámek'));if(st.addS)parts.push('+'+st.addS+' '+(st.addS===1?'obraz':st.addS<5?'obrazy':'obrazů'));if(st.time)parts.push(st.time+'× upřesněný čas');if(st.del)parts.push('−'+st.del+' ('+esc(st.removed.join(", "))+')');if(!parts.length)parts.push('beze změny');}
           return '<div class="pl a-'+(x.act==="merge"?"replace":x.act)+'"><b>'+esc(pd.label)+'</b><span>'+esc(fmtDate(pd.date))+(pd.shiftFrom?' · '+esc(pd.shiftFrom)+'–'+esc(pd.shiftTo):'')+'<br><small>'+(st?parts.join(' · '):esc(pd.location||""))+'</small></span><em>'+AU[x.act]+'</em></div>';}).join("")+'</div>'+
+        catalogNote(planCatalog(pp,true))+
         '<span class="hint">Obrazy a poznámky se převezmou z nové verze (pořadí, časy, nové poznámky). U obrazů, které zůstaly, se zachová vše, co jsi doplnil – stránky scénáře a složky i Moje poznámka. Dny, které už začaly nebo proběhly, se nemění. Kdyby něco nesedělo, vrátíš to tlačítkem ↶.</span>'+
         '<div class="actions"><div class="grp"><button class="btn" data-act="planfile">Jiný soubor</button></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="planupd"'+(uc.merge+uc["new"]?'':' disabled')+'>Aktualizovat ('+(uc.merge+uc["new"])+')</button></div></div>';
     } else if(pp){
@@ -1627,6 +1628,15 @@ function planRows(pd){
   });
   return out;
 }
+function planCatalog(pp,dry){var L=obrazy(),seen={},st={desc:0,add:0,fill:0};
+  pp.days.forEach(function(pd){pd.rows.forEach(function(r){if(r.type!=="shot"||!r.scene)return;var k=normKey(r.scene);if(!k||seen[k])return;seen[k]=1;
+    var o=obrByScene(r.scene),roles=sortRoles((r.roles||[]).map(function(x){return castRole?castRole(x):x;}).filter(Boolean)).join(", ");
+    if(!o){st.add++;if(!dry)L.push({id:uid(),key:k,scene:String(r.scene),motif:r.motif||"",tod:r.tod||"",den:r.den||"",len:r.len||"",roles:roles,desc:r.desc||"",fromPlan:true});return;}
+    var d=(r.desc||"").trim();if(d&&d!==(o.desc||"").trim()){st.desc++;if(!dry)o.desc=d;}
+    var f=0;[["motif",r.motif],["tod",r.tod],["den",r.den],["len",r.len],["roles",roles]].forEach(function(x){if(x[1]&&!o[x[0]]){f=1;if(!dry)o[x[0]]=x[1];}});if(f)st.fill++;});});
+  return st;}
+function catalogNote(st){var p=[];if(st.desc)p.push('<b>'+st.desc+'</b> '+(st.desc===1?'nový popis děje':st.desc<5?'nové popisy děje':'nových popisů děje'));if(st.add)p.push('<b>'+st.add+'</b> '+(st.add===1?'nový obraz':st.add<5?'nové obrazy':'nových obrazů'));if(st.fill)p.push(st.fill+' doplněno');
+  return '<div class="scsum">Obrazy (ze složek): '+(p.length?p.join(', '):'beze změny – v plánu nejsou nové údaje')+'</div>';}
 var PLAN_SHOT_F=["scene","motif","tod","len","roles","from","to","den"];
 function mergeRows(ex,pd){var nr=planRows(pd),old=ex.rows,used={},st={addN:0,addS:0,time:0,del:0,keepMan:0};
   function find(r,strict){for(var k=0;k<old.length;k++){var o=old[k];if(used[k]||o.type!==r.type)continue;
@@ -1721,11 +1731,15 @@ function parsePlan2(doc,onPage){
       var tods=col(function(i){return i.x>=150&&i.x<200&&!/^Den\s*\d/i.test(i.s);}), tod=tods.length?{s:tods.map(function(i){return i.s;}).join("")}:null;
       var den=col(function(i){return /^Den\s*\d/i.test(i.s);})[0];
       var pgi=col(function(i){return i.x>=215&&i.x<256&&/^\d+(\s+\d\/8)?$|^\d\/8$/.test(i.s);})[0];
-      var motif=col(function(i){return i.x>=256&&i.x<440;}).map(function(i){return i.s;}).join(" ").replace(/,\s*$/,"").replace(/\s+/g," ");
+      var mcol=col(function(i){return i.x>=256&&i.x<440;}), mh=mcol.reduce(function(m,i){return Math.max(m,i.h||0);},0);
+      var isBig=function(i){return !(i.h&&mh&&i.h<mh-0.8);}, bigY=mcol.filter(isBig).reduce(function(m,i){return Math.min(m,i.y);},1e9);
+      var small=mcol.filter(function(i){return !isBig(i)&&i.y<bigY-1;}), big=mcol.filter(function(i){return small.indexOf(i)<0;});
+      var motif=big.map(function(i){return i.s;}).join(" ").replace(/,\s*$/,"").replace(/\s+/g," ");
+      var pdesc=small.map(function(i){return i.s;}).join(" ").replace(/\s+/g," ").trim();
       var roles=col(function(i){return i.x>=440;}).map(function(i){return i.s;});
       var rl=[];roles.forEach(function(r){if(/^R\s*\d/i.test(r)||!rl.length)rl.push(r);else rl[rl.length-1]+=" "+r;});
       var id=s.id.replace(/\s+/g,""), opt=/eventuel/i.test(id)||eventual; id=id.replace(/event\S*$/i,"");
-      var row={type:"shot",scene:id,tod:tod?tod.s.toUpperCase().replace(/\s+/g,""):"",len:pgi?pgi.s:"",den:den?den.s:"",motif:motif,desc:"",
+      var row={type:"shot",scene:id,tod:tod?tod.s.toUpperCase().replace(/\s+/g,""):"",len:pgi?pgi.s:"",den:den?den.s:"",motif:motif,desc:pdesc,
         roles:rl.map(function(r){return r.replace(/\(!\)/g,"").trim();}).filter(Boolean),optional:opt};
       if(s.time){row.from=hm2(s.time[0]);row.to=hm2(s.time[1]);}
       cur.rows.push(row);
@@ -2159,12 +2173,13 @@ function act(a,id,el){
     case "plan": ui.sheet={kind:"plan"}; render(); break;
     case "planupdopen": ui.planMenu=false; ui.sheet={kind:"plan",mode:"update"}; render(); break;
     case "planupd":{ var pu=ui.sheet.parsed; if(!pu)break; var ul=planUpd(pu), uN=0, uM=0, uver=pu.version||"";
+      var ucat=planCatalog(pu,false);
       ul.forEach(function(x){ if(x.act==="new"){S.days.push(planDay(x.pd,uver));uN++;} else if(x.act==="merge"){var ex=x.ex;ex.rows=x.m.rows;ex.shiftFrom=x.pd.shiftFrom||ex.shiftFrom;ex.shiftTo=x.pd.shiftTo||ex.shiftTo;if(x.pd.location)ex.location=x.pd.location;if(x.pd.label)ex.label=x.pd.label;ex.planVer=uver;delete ex.baseAt;delete ex.baseAsked;uM++;} });
       S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
       var nowU=new Date(); S.plan={version:uver,printed:pu.printed||"",name:pu.name||"",importedAt:nowU.getDate()+". "+(nowU.getMonth()+1)+". "+nowU.getFullYear()+" "+nowHM()};
-      ui.sheet=null; changed(); toast("Plán "+uver+": aktualizováno "+uM+" "+(uM===1?"den":uM<5?"dny":"dnů")+(uN?", "+uN+" nových":"")); break;}
+      ui.sheet=null; changed(); toast("Plán "+uver+": aktualizováno "+uM+" "+(uM===1?"den":uM<5?"dny":"dnů")+(uN?", "+uN+" nových":"")+(ucat.desc?" · "+ucat.desc+" popisů děje":"")+(ucat.add?" · "+ucat.add+" nových obrazů":"")); break;}
     case "planfile": readPlanFile(); break;
-    case "planapply":{ var pp=ui.sheet.parsed; if(!pp)break; var pl=planPlan(pp,{past:!!ui.sheet.past,over:!!ui.sheet.over}), nNew=0, nRep=0, ver=pp.version||"";
+    case "planapply":{ var pp=ui.sheet.parsed; if(!pp)break; planCatalog(pp,false); var pl=planPlan(pp,{past:!!ui.sheet.past,over:!!ui.sheet.over}), nNew=0, nRep=0, ver=pp.version||"";
       pl.forEach(function(x){ if(x.act==="new"){S.days.push(planDay(x.pd,ver));nNew++;} else if(x.act==="replace"){var nd2=planDay(x.pd,ver); nd2.id=x.ex.id; nd2.sunCity=x.ex.sunCity||"auto"; nd2.sunCoords=x.ex.sunCoords||""; S.days[S.days.indexOf(x.ex)]=nd2; nRep++;} });
       S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
       var nowD=new Date(); S.plan={version:ver,printed:pp.printed||"",name:pp.name||"",importedAt:nowD.getDate()+". "+(nowD.getMonth()+1)+". "+nowD.getFullYear()+" "+nowHM()};
