@@ -1,5 +1,5 @@
 /* Natáčecí den – offline cache. App files: network first (updates arrive at once), libraries: cache first. Supabase data is never cached here. */
-const CACHE = "nd-v59";
+const CACHE = "nd-v60";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "klapka-192.png", "klapka-512.png", "klapka-180.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
