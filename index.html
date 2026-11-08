@@ -572,6 +572,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 @media (max-width:759px){.tools{gap:4px}.addbtn .tl,.addbtn .car{display:none}.addbtn{width:44px;padding:0;justify-content:center}.addbtn .apl{font-size:28px;line-height:1}.tools .planbtn:not(.timebtn):not(.addbtn){padding-inline:9px}.tools .btn.rfed,.tools .timebtn,.tools .addbtn{width:40px;min-width:40px}}@media (min-width:760px){.addmenu{left:0;right:auto}}
 .linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700;font-size:15px;padding:2px 0;align-self:flex-start;text-decoration:underline}.linkbtn:disabled{opacity:.5}
 .nowbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
+@media (max-width:759px){body.ed .tools .planver,body.ed .tools .save:not(.err),body.ed .tools .live{display:none}}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
 .timebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -599,7 +600,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 17:25";
+var APP_BUILD="8. 11. 17:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -918,7 +919,7 @@ function render(){
       (ui.addMenu?'<span class="planveil" data-act="addclose"></span><span class="planmenu addmenu" role="menu"><button data-act="addshot" role="menuitem">+ Obraz</button>'+(obrazy().length?'<button data-act="obrazy" role="menuitem">+ Z připravených obrazů</button>':'')+'<button data-act="addnote" role="menuitem">+ Poznámka<small>příprava, oběd, herec končí…</small></button></span>':'')+'</span>'+
       '<button class="btn rfed" data-act="reload" aria-label="Obnovit stránku" title="Obnovit stránku">'+REFRESH+'</button>':'<span class="ro">Jen pro čtení</span>')+
     (!canEdit&&!standalone?'<button class="btn" data-act="refresh">Obnovit</button>':'')+
-    '<span class="save" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
+    '<span class="save'+(/neulo|chyb|nepoda/i.test(saveMsg)?' err':'')+'" id="saveMsg">'+esc(saveMsg)+'</span>'+(!standalone?'<span class="live" id="liveInd"></span>':'');
   var hid=hiddenRows(d), nh=0; for(var hk in hid)nh++;
   var doneBar=nh?'<li class="donebar"><button class="donebtn" data-act="toggledone" aria-expanded="'+(ui.showDone?"true":"false")+'"><span class="chev">'+(ui.showDone?'▾':'▸')+'</span>'+(ui.showDone?'Skrýt hotové':'Hotové')+' <b>'+nh+'</b>'+(ui.showDone?'':' <span class="unf">(rozbalit)</span>')+'<span class="dsum">'+doneSummary(d,hid)+'</span></button></li>':'';
   var list=d.rows.length?'<ol class="rows" id="rows">'+(ui.showDone?doneBar+d.rows.map(function(r){return hid[r.id]?rowHTML(r).replace('class="row ','class="row past '):rowHTML(r);}).join(""):doneBar+d.rows.filter(function(r){return !hid[r.id];}).map(rowHTML).join(""))+'</ol>':'<div class="empty">Program je prázdný. '+(canEdit?(d.date?'Přidejte obraz nebo poznámku tlačítky níže.':'Nejdřív vyplňte den (datum, směnu a lokaci) přes Upravit den, pak přidejte obrazy.'):'Zatím nic naplánováno.')+'</div>';
@@ -1014,6 +1015,7 @@ function sheetHTML(){
   if(s.kind==="menu"){
     var canDl=!!dl||standalone||WEB;
     b='<h2>Menu</h2>'+
+      ((S.plan&&S.plan.version)||day().planVer?'<span class="hint">Natáčecí plán: '+esc(day().planVer||S.plan.version)+'</span>':'')+
       '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+(offlineInfo()?'<span class="hint">'+esc(offlineInfo())+'</span>':'')+
       '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span>'+themeTiles()+'</div>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
@@ -2622,7 +2624,7 @@ document.addEventListener("pointerup",endDrag);
 document.addEventListener("pointercancel",endDrag);
 
 /* ---------- saving (the page itself is the shared record) ---------- */
-function setSave(m){saveMsg=m;var el=document.getElementById("saveMsg");if(el)el.textContent=m;}
+function setSave(m){saveMsg=m;var el=document.getElementById("saveMsg");if(el){el.textContent=m;el.classList.toggle("err",/neulo|chyb|nepoda/i.test(m));}}
 function queueSave(){
   if(standalone){try{localStorage.setItem("nd.offline",JSON.stringify(S));setSave("Uloženo v tomto prohlížeči");}catch(_){setSave("Neuloženo – stáhněte zálohu přes Menu");}return;}
   if(preview){setSave("Náhled – změny se neukládají");return;}

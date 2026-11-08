@@ -1,5 +1,5 @@
 /* Natáčecí den – offline cache. App files: network first (updates arrive at once), libraries: cache first. Supabase data is never cached here, except script/breakdown PDFs (cache nd-docs) for offline use. */
-const CACHE = "nd-v69";
+const CACHE = "nd-v70";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "np-marika-192.png", "np-marika-512.png", "np-marika-180.png", "lib/pdf.min.mjs", "lib/pdf.worker.min.mjs"];
 const DOCS = "nd-docs";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
