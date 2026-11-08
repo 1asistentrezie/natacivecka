@@ -233,7 +233,8 @@ body.ed::before{background:#000}
 .pdfmsg{color:#E8ECEA;text-align:center;padding:30px 10px}
 .pgrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .scsum{font-size:14px;line-height:1.45;max-height:30vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
-@media (max-width:759px){.pdfpanel{width:100vw;border-left:0}}
+.pdfpanel.wide{width:96vw}
+@media (max-width:759px){.pdfpanel{width:100vw;border-left:0}.pdfwide{display:none}}
 /* note rows: light grey band with dark text */
 .row.note{background:#9EA6A4;border:1px solid #87908D;color:#101315}
 .row.note.current{background:#F4E6AE}
@@ -593,7 +594,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 15:15";
+var APP_BUILD="8. 11. 15:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2102,13 +2103,15 @@ function showPdf(r,k,full){
   k=k||"script"; var f=r[DK[k].field], sc=f&&docById(k,f.sid); if(!sc)return;
   var url=blobUrl(sc.id), from=+f.from||1, to=Math.max(from,+f.to||from);
   closePdf();
-  var pn=document.createElement("div");pn.className="pdfpanel";pn.id="pdfPanel";
+  var wide=false;try{wide=localStorage.getItem("nd.pdfwide")==="1";}catch(_){}
+  var pn=document.createElement("div");pn.className="pdfpanel"+(wide?" wide":"");pn.id="pdfPanel";
   var lblAll=k==="brk"?"Celé složky":"Celý scénář";
   pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+
-    (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
+    (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn pdfwide" id="pdfWide" title="'+(wide?'Zmenšit na polovinu':'Roztáhnout na celou obrazovku')+'">'+(wide?'⤡ Zmenšit':'⤢ Roztáhnout')+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
+  document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}showPdf(r,k,full);};
   openPdf(url).then(function(doc){
     var box=document.getElementById("pdfPages"); if(!box)return; box.innerHTML="";
     var w=box.clientWidth-24, dpr=Math.min(window.devicePixelRatio||1,2);
