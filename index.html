@@ -561,6 +561,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .addmenu{left:auto;right:0}
 @media (max-width:759px){.tools{gap:4px}.addbtn .tl,.addbtn .car{display:none}.addbtn{width:44px;padding:0;justify-content:center}.addbtn .apl{font-size:28px;line-height:1}.tools .planbtn:not(.timebtn):not(.addbtn){padding-inline:9px}.tools .btn.rfed,.tools .timebtn,.tools .addbtn{width:40px;min-width:40px}}@media (min-width:760px){.addmenu{left:0;right:auto}}
 .linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700;font-size:15px;padding:2px 0;align-self:flex-start;text-decoration:underline}.linkbtn:disabled{opacity:.5}
+.nowbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
 .timebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -586,7 +587,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 12:45";
+var APP_BUILD="8. 11. 13:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1259,6 +1260,7 @@ function sheetHTML(){
       (isShot?'':'<label class="f"><span class="lab">Typ poznámky</span><select id="fKind">'+(KINDS.indexOf(r.kind)<0&&r.kind?[r.kind]:[]).concat(KINDS).map(function(k){return '<option'+(k===r.kind?' selected':'')+'>'+k+'</option>';}).join("")+'</select></label>'+
         '<div id="actorWrap"'+(isActorEnd(r.kind)?'':' hidden')+'>'+actorPicks(day(),r)+'</div>'+placePick(s))+
       '<div class="pair">'+field("fFrom","Od",r.from,"time")+field("fTo",isShot?"Do":"Do (nepovinné)",r.to,"time")+'</div>'+
+      '<div class="nowbtns"><button class="btn sm" data-act="nowfrom" type="button">⏱ Od = teď</button><button class="btn sm" data-act="nowto" type="button">⏱ Do = teď</button><button class="btn sm" data-act="nowboth" type="button">Od i Do = teď</button></div>'+
       durSelect(spanMin(r.from,r.to),isShot?"Délka natáčení":"Jak dlouho trvá")+'<span class="hint">Konec se dopočítá ze začátku a délky. Délku můžete měnit po 5 minutách až do 12 hodin.</span>';
     if(isShot){
       b+=placePick(s)+(s.isNew?obrPick():"")+field("fScene","Číslo obrazu",r.scene,"text",' inputmode="text"')+motifPick(r.motif)+field("fMotif","Název motivu",r.motif)+todSelect(r.tod||"")+'<div class="pair">'+field("fDen","Skript den",shotMeta(r).den,"text",' placeholder="např. Den 3"')+field("fLen","Počet stran",shotMeta(r).len,"text",' placeholder="např. 1 1/8"')+'</div>'+rolePicks(r.roles)+field("fRoles","Role (oddělené čárkou, můžete dopsat i další)",r.roles)+field("fNote","Poznámka (nepovinné)",r.note);
@@ -2311,6 +2313,10 @@ function act(a,id,el){
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
     case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
     case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{localStorage.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
+    case "nowfrom": case "nowto": case "nowboth":{var nh=nowHM(),setv=function(idn){var inp=document.getElementById(idn);if(!inp)return;inp.value=nh;inp.dispatchEvent(new Event("input",{bubbles:true}));};
+      if(a==="nowboth"){setv("fFrom");setv("fTo");}else setv(a==="nowfrom"?"fFrom":"fTo");
+      if(ui.sheet&&ui.sheet.isNew&&a!=="nowto"){ui.sheet.place="time";var rt=document.querySelector('input[name=fPlace][value=time]');if(rt)rt.checked=true;}
+      toast((a==="nowfrom"?"Od":a==="nowto"?"Do":"Od i Do")+" = "+nh);break;}
     case "dej": ui.dejOpen=ui.dejOpen||{}; ui.dejOpen[id]=!ui.dejOpen[id]; render(); break;
     case "toggledone": ui.showDone=!ui.showDone; ls("nd.showDone",ui.showDone?"1":"0"); render(); if(!ui.showDone)window.scrollTo(0,0); break;
     case "saveshiftloc": d.shiftFrom=val("fShiftFrom"); d.shiftTo=val("fShiftTo"); d.location=val("fLoc"); ui.sheet=null; changed(); break;
