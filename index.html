@@ -550,6 +550,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .btn.addbtn{padding-inline:12px;font-weight:700;gap:2px}.addbtn .apl{font-weight:800}
 .addmenu{left:auto;right:0}
 @media (max-width:759px){.tools{gap:4px}.addbtn .tl,.addbtn .car{display:none}.addbtn{width:44px;padding:0;justify-content:center}.addbtn .apl{font-size:28px;line-height:1}.tools .planbtn:not(.timebtn):not(.addbtn){padding-inline:9px}.tools .btn.rfed,.tools .timebtn,.tools .addbtn{width:40px;min-width:40px}}@media (min-width:760px){.addmenu{left:0;right:auto}}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700;font-size:15px;padding:2px 0;align-self:flex-start;text-decoration:underline}.linkbtn:disabled{opacity:.5}
 .planwrap{position:relative;display:inline-flex}
 .planbtn{display:inline-flex;align-items:center;gap:8px}.planbtn .car{font-size:13px;transition:transform .15s}.planbtn.open .car{transform:rotate(180deg)}
 .timebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -575,7 +576,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 07:55";
+var APP_BUILD="8. 11. 08:25";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -999,9 +1000,17 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
+  if(s.kind==="newpass"){
+    b='<h2>Nastavit nové heslo</h2><p style="margin:0">Zadej nové heslo pro účet editora (aspoň 6 znaků).</p>'+field("fNew1","Nové heslo","","password",' autocomplete="new-password"')+field("fNew2","Nové heslo znovu","","password",' autocomplete="new-password"')+
+      (s.err?'<div class="scsum" style="color:var(--late)">'+esc(s.err)+'</div>':'')+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="setnewpass"'+(s.busy?' disabled':'')+'>'+(s.busy?'Ukládám…':'Uložit heslo')+'</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
   if(s.kind==="login"){
     b='<h2>Přihlášení editora</h2>'+field("fEmail","E-mail",s.email||"","email",' autocomplete="username"')+field("fPass","Heslo","","password",' autocomplete="current-password"')+
       (s.err?'<div class="scsum" style="color:var(--late)">'+esc(s.err)+'</div>':'')+
+      (s.info?'<div class="scsum" style="color:var(--go)">'+esc(s.info)+'</div>':'')+
+      '<button class="linkbtn" data-act="forgot"'+(s.busy?' disabled':'')+'>Zapomenuté heslo?</button>'+
       '<span class="hint">Štáb se přihlašovat nemusí – program vidí po otevření odkazu.</span>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dologin"'+(s.busy?' disabled':'')+'>'+(s.busy?'Přihlašuji…':'Přihlásit')+'</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
@@ -2381,6 +2390,19 @@ function act(a,id,el){
       if(ui.arm!=="delday"){ui.arm="delday";render();return;}
       ui.arm=null; S.days=S.days.filter(function(z){return z.id!==d.id;}); ui.dayId=S.days[0].id; ui.sheet=null; changed(); break;
     case "login": ui.sheet={kind:"login"}; render(); setTimeout(function(){var e=document.getElementById("fEmail");if(e)e.focus();},50); break;
+    case "forgot":{var fe=val("fEmail");ui.sheet.email=fe;if(!fe||!/@/.test(fe)){ui.sheet.err="Napiš nahoru svůj e-mail a klepni znovu na Zapomenuté heslo.";ui.sheet.info="";render();break;}
+      if(!SB){ui.sheet.err="Není připojení k serveru.";render();break;}
+      ui.sheet.busy=true;ui.sheet.err="";ui.sheet.info="";render();
+      SB.auth.resetPasswordForEmail(fe,{redirectTo:location.origin+location.pathname}).then(function(r){if(!ui.sheet)return;ui.sheet.busy=false;
+        if(r.error){ui.sheet.err="Odeslání se nepovedlo: "+r.error.message;}else ui.sheet.info="Poslal jsem odkaz na "+fe+". Otevři ho v tomto zařízení a nastav si nové heslo.";render();},
+        function(e){if(!ui.sheet)return;ui.sheet.busy=false;ui.sheet.err="Odeslání se nepovedlo: "+(e&&e.message||e);render();});break;}
+    case "setnewpass":{var p1=(document.getElementById("fNew1")||{}).value||"",p2=(document.getElementById("fNew2")||{}).value||"";
+      if(p1.length<6){ui.sheet.err="Heslo musí mít aspoň 6 znaků.";render();break;}if(p1!==p2){ui.sheet.err="Hesla se neshodují.";render();break;}
+      ui.sheet.busy=true;ui.sheet.err="";render();
+      SB.auth.updateUser({password:p1}).then(function(r){if(r.error){ui.sheet.busy=false;ui.sheet.err="Heslo se nepodařilo uložit: "+r.error.message;render();return;}
+        try{history.replaceState(null,"",location.pathname+location.search);}catch(_){}
+        ui.sheet=null;toast("Nové heslo uloženo");return checkEditor(r.data.user).then(function(ok){if(ok)becomeEditor(r.data.user);else render();});},
+        function(e){ui.sheet.busy=false;ui.sheet.err=String(e&&e.message||e);render();});break;}
     case "dologin": webLogin(val("fEmail"),(document.getElementById("fPass")||{}).value||""); break;
     case "logout": SB.auth.signOut().then(function(){location.reload();}); break;
     case "reload": if(saveTimer!=null||saveMsg==="Ukládám…"){toast("Ukládám změny, za chvíli obnovím…");setTimeout(function(){act("reload");},1500);break;} location.reload(); break;
@@ -2409,7 +2431,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
@@ -2622,7 +2644,9 @@ function webLogin(email,pass){
 }
 function webConnect(){
   if(!window.supabase||!window.supabase.createClient){cacheLoad();render();liveState="off";liveInd();return;}
-  SB=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  var isRecovery=/type=recovery/.test(location.hash||"");
+  SB=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  try{SB.auth.onAuthStateChange(function(ev){if(ev==="PASSWORD_RECOVERY"||(isRecovery&&ev==="SIGNED_IN")){isRecovery=false;setTimeout(function(){ui.sheet={kind:"newpass"};render();},300);}});}catch(_){}
   cacheLoad(); render();
   SB.auth.getSession().then(function(r){var u=r.data&&r.data.session&&r.data.session.user;
     return checkEditor(u).then(function(ok){if(ok)becomeEditor(u);else{liveRow="public";webSubscribe();if(/[?&]login\b/.test(location.search))act("login");}});
