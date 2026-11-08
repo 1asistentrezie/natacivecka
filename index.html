@@ -496,7 +496,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .donebtn .unf{color:var(--muted);font-weight:600}
 .row.note .kind .orig{font-size:13px;font-weight:700;color:#5A1A12;background:#F3D2CE;border:1px solid #C9867D;border-radius:4px;padding:0 6px}
 .shfold{display:block;width:100%;text-align:left;background:none;border:0;color:var(--muted);font-weight:700;font-size:14px;padding:6px 8px}
-.placepick{display:flex;flex-direction:column;gap:6px}.placepick label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}.placepick input{width:20px;height:20px}.placepick small{color:var(--muted);font-weight:600}
+.placepick{display:flex;flex-direction:column;gap:5px}.placepick label{padding:6px 10px!important}.placepick label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}.placepick input{width:20px;height:20px}.placepick small{color:var(--muted);font-weight:600}
 .annbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
 .annt{min-height:34px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);padding:0 10px;font-weight:600;font-size:14px}
 .annt.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
@@ -575,7 +575,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="7. 11. 21:30";
+var APP_BUILD="8. 11. 07:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -919,13 +919,22 @@ function tickPace(){var d=day();[].forEach.call(document.querySelectorAll("[data
 function tick(){tickCd();tickPace();var dB=day();if(askBase(dB)){ui.sheet={kind:"basepr"};render();}var b=document.getElementById("bar");if(b&&!ui.drag){b.innerHTML=headerHTML(day());b.classList.toggle("tracking",!!ui.track);}}
 
 /* ---------- sheets ---------- */
-function placePick(s){if(!s.isNew)return "";var a=curAnchor(day());
-  if(!a)return s.data&&s.data.type==="shot"?'':'<span class="hint">Poznámka se přidá na konec dne (nic se právě nenatáčí).</span>';
+function curFirst(d){for(var i=0;i<d.rows.length;i++)if(d.rows[i].status==="rolling")return d.rows[i];return null;}
+function nextUp(d){for(var i=0;i<d.rows.length;i++){var r=d.rows[i];if(!fin(r)&&r.status!=="rolling"&&!fixedRow(r))return r;}return null;}
+function afterRow(d){return curAnchor(d)||null;}
+function beforeRow(d){return curFirst(d)||nextUp(d);}
+function timeIndex(d,from){var m=toMin(from);if(m==null)return d.rows.length;for(var i=0;i<d.rows.length;i++){var r=d.rows[i],a=toMin(r.from);if(a==null||r.noTime)continue;if(a>m)return i;}return d.rows.length;}
+function placePick(s){if(!s.isNew)return "";var d=day(),a=afterRow(d),bf=beforeRow(d),pl=s.place||"end";
+  var opt=function(v,txt){return '<label><input type="radio" name="fPlace" value="'+v+'"'+(pl===v?' checked':'')+'> '+txt+'</label>';};
   return '<div class="f"><span class="lab">Kam přidat</span><div class="placepick">'+
-    '<label><input type="radio" name="fPlace" value="cur"'+(s.place==="cur"?' checked':'')+'> Hned za '+esc(anchorLabel(a))+' <small>(probíhá)</small></label>'+
-    '<label><input type="radio" name="fPlace" value="end"'+(s.place!=="cur"?' checked':'')+'> Na konec dne</label></div></div>';}
-document.addEventListener("change",function(e){if(e.target.name!=="fPlace"||!ui.sheet||!ui.sheet.isNew)return;ui.sheet.place=e.target.value;
-  var f=document.getElementById("fFrom"),t=document.getElementById("fTo");if(!f)return;var L=spanMin(f.value,t&&t.value);var nf=placeFrom(day(),ui.sheet.place);f.value=nf;
+    opt("start",'Jako první položku dne')+
+    (bf?opt("before",(bf.type==="shot"?'Před obrazem '+esc(bf.scene||"–"):'Před: '+esc(bf.kind||"poznámka"))+' <small>('+(bf.status==="rolling"?'probíhá':'další na řadě')+')</small>'):'')+
+    (a?opt("cur",'Hned za '+esc(anchorLabel(a))+' <small>(probíhá)</small>'):'')+
+    opt("end",'Na konec dne')+
+    opt("time",'Podle času <small>(zařadí se tam, kam časem patří)</small>')+
+    '</div></div>';}
+document.addEventListener("change",function(e){if(e.target.name!=="fPlace"||!ui.sheet||!ui.sheet.isNew)return;ui.sheet.place=e.target.value;if(ui.sheet.place==="time")return;
+  var f=document.getElementById("fFrom"),t=document.getElementById("fTo");if(!f)return;var L=spanMin(f.value,t&&t.value);var nf=placeFrom(day(),ui.sheet.place,L);f.value=nf;
   if(t&&L!=null&&toMin(nf)!=null)t.value=hm(toMin(nf)+L);});
 function field(id,label,val,type,extra){return '<label class="f"><span class="lab">'+label+'</span><input id="'+id+'" type="'+(type||"text")+'" value="'+esc(val)+'"'+(extra||"")+'></label>';}
 function sheetHTML(){
@@ -2209,7 +2218,12 @@ function act(a,id,el){
       else {r.kind=val("fKind");r.text=val("fText");var nt=document.getElementById("fNoTime");if(nt&&nt.checked)r.noTime=true;else delete r.noTime;
         if((r.kind===KONEC_KIND||r.kind===MARTINI_KIND)&&(ui.sheet.isNew||!r.from)){r.from=nowHM();r.to=r.from;}if(!isActorEnd(r.kind)){delete r.actors;delete r.actorTimes;}if(fin(r))r.doneAt=val("fDoneAt");}
       var rcI=-1, rcD=0;
-      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);var an=ui.sheet.place==="cur"?curAnchor(d):null,ai=an?d.rows.indexOf(an):-1;if(ai>=0)d.rows.splice(ai+1,0,r);else d.rows.push(r);
+      if(ui.sheet.isNew){if(r.type==="shot")attachDocs(r);var pl=ui.sheet.place,ix=d.rows.length;
+        if(pl==="cur"){var an=curAnchor(d);if(an)ix=d.rows.indexOf(an)+1;}
+        else if(pl==="before"){var bn=beforeRow(d);if(bn)ix=d.rows.indexOf(bn);}
+        else if(pl==="start")ix=0;
+        else if(pl==="time")ix=timeIndex(d,r.from);
+        d.rows.splice(ix,0,r);
         if(d.baseAt&&!fixedRow(r)&&toMin(r.from)!=null){r.origFrom=r.from;r.origTo=r.to||r.from;rcI=d.rows.indexOf(r);rcD=rowLen(r);}}
       else {var y=rowById(r.id); if(y){d.rows[y.i]=r;
         if(d.baseAt){if(!fixedRow(r)&&toMin(r.from)!=null){if(r.status==="rolling"&&r.origFrom)r.origTo=hm(toMin(r.origFrom)+rowLen(r));else if(!fin(r)){r.origFrom=r.from;r.origTo=r.to||r.from;}
@@ -2385,7 +2399,10 @@ function askBase(d){if(!canEdit||standalone||ui.sheet||!d||d.baseAt||!d.date||d.
   var a=toMin(d.shiftFrom),b=toMin(d.shiftTo),n=nowMin();if(a==null)return false;if(n<a)return false;if(b!=null&&b>a&&n>b)return false;return true;}
 function curAnchor(d){for(var i=d.rows.length-1;i>=0;i--)if(d.rows[i].status==="rolling")return d.rows[i];return null;}
 function anchorLabel(a){return a.type==="shot"?"obraz "+(a.scene||"–"):(a.kind||"poznámka");}
-function placeFrom(d,place){var a=place==="cur"?curAnchor(d):null;if(a)return a.noTime||!(a.to||a.from)?nowHM():(a.to||a.from);return lastEnd(d)||nowHM();}
+function placeFrom(d,place,L){L=L||0;
+  if(place==="start"){var f0=d.shiftFrom||"";if(!f0)d.rows.some(function(r){if(toMin(r.from)!=null&&!r.noTime){f0=r.from;return true;}});return f0||nowHM();}
+  if(place==="before"){var b=beforeRow(d);if(b&&toMin(b.from)!=null)return hm(toMin(b.from)-L);return nowHM();}
+  var a=place==="cur"?curAnchor(d):null;if(a)return a.noTime||!(a.to||a.from)?nowHM():(a.to||a.from);return lastEnd(d)||nowHM();}
 function lastEnd(d){for(var i=d.rows.length-1;i>=0;i--){var r=d.rows[i];if(r.to)return r.to;if(r.from)return r.from;}return d.shiftFrom||"";}
 
 document.addEventListener("click",function(e){
