@@ -502,6 +502,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .loginbar{display:flex;justify-content:center;padding:28px 0 8px}
 .linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px;padding:8px}
 .livemini,.rfbtn{display:none}
+.s-watch{display:flex;gap:8px;align-items:center}
+.thbtn{display:grid;place-items:center;width:46px;height:46px;padding:0}.thbtn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8}.thbtn svg circle{fill:currentColor;stroke:none}
 @media (max-width:759px){
   .tools [data-act=refresh],.tools #liveInd{display:none!important}
   .rfbtn{display:grid}
@@ -591,10 +593,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
 var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papír",["#0B0D0E","#E9E6DF","#FFFFFF","#F4C631"]],["c","Noční modrá",["#000","#0A1120","#14203A","#F4C631"]],["d","Espresso",["#000","#12100D","#211C17","#F4C631"]],["e","Kontrast",["#000","#000","#121212","#F4C631"]],["f","Lesní",["#000","#0C1411","#15221D","#F4C631"]]];
+function themeTiles(){return '<div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div>';}
+var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.1-.9-1.5-.9-2.5 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="10" cy="7" r="1.4"/><circle cx="14.5" cy="7" r="1.4"/><circle cx="17" cy="10.5" r="1.4"/></svg>';
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 16:00";
+var APP_BUILD="8. 11. 17:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -709,7 +713,7 @@ function headerHTML(d){
     '<div class="slot s-loc'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Lokace</span><span class="loc">'+esc(d.location||"—")+'</span></div>'+
     '<div class="slot s-shift'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Směna</span><span class="big">'+(d.shiftFrom||d.shiftTo?esc(d.shiftFrom||"?")+'–'+esc(d.shiftTo||"?"):"—")+'</span></div>'+
     '<div class="slot s-sun" title="'+esc(pl.name)+'"><span class="lab" aria-label="Slunce">'+SUN+'</span><span class="sunl"><i>VÝCHOD</i><span>'+(sun?sun.rise:"—")+'</span><i>ZÁPAD</i><span>'+(sun?sun.set:"—")+'</span></span></div>'+
-    '<div class="s-watch">'+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
+    '<div class="s-watch">'+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':'<button class="sharebtn thbtn" data-act="themesheet" aria-label="Barvy displeje" title="Barvy displeje">'+PALETTE+'</button>'+(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
     '<div class="slot s-clock"><span class="lab">Aktuální čas</span><span class="big clock">'+pad(t.getHours())+':'+pad(t.getMinutes())+'<small>:'+pad(t.getSeconds())+'</small></span>'+liveMiniHTML()+'</div>';
 }
 var CLOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.4 2"/></svg>';
@@ -1004,7 +1008,7 @@ function sheetHTML(){
     var canDl=!!dl||standalone||WEB;
     b='<h2>Menu</h2>'+
       '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+(offlineInfo()?'<span class="hint">'+esc(offlineInfo())+'</span>':'')+
-      '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span><div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div></div>'+
+      '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span>'+themeTiles()+'</div>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
       (canEdit?'<button class="mitem" data-act="resetst"><b>Resetovat stavy dne</b><span>Vymaže stavy a jejich časy u všech obrazů a poznámek tohoto dne. Program zůstane.</span></button>':'')+
       (canEdit?'<button class="mitem" data-act="plan"><b>Natáčecí plán</b><span>'+(S.plan&&S.plan.version?'Načtena verze: <b>'+esc(S.plan.version)+'</b>. ':'')+'Nahrát natáčecí plán (PDF) a podle něj předběžně připravit natáčecí dny</span></button>':'')+
@@ -1166,6 +1170,8 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="dosave">Uložit</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
+  if(s.kind==="themes"){b='<h2>Barvy displeje</h2><p style="margin:0;color:var(--muted)">Platí jen v tomto zařízení.</p>'+themeTiles()+'<div class="actions"><div class="grp"></div><div class="grp"><button class="btn primary" data-act="close">Hotovo</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';}
   if(s.kind==="loc"){var lx=rowById(s.id);if(!lx){ui.sheet=null;return "";}var lr=lx.r,lt=rowLoc(lr);
     b='<h2>Lokace · O:'+esc(lr.scene||"")+'</h2><p style="margin:0;font-size:18px;font-weight:600;line-height:1.4">'+esc(lt||"Lokace není zadaná")+'</p>'+(lr.motif?'<p style="margin:0;color:var(--muted)">'+esc(lr.motif)+'</p>':'')+
       '<div class="actions"><div class="grp">'+(lt?'<a class="btn" href="https://maps.apple.com/?q='+encodeURIComponent(lt)+'" target="_blank" rel="noopener">Otevřít v Mapách</a>':'')+'</div><div class="grp"><button class="btn primary" data-act="close">Zavřít</button></div></div>';
@@ -2390,6 +2396,7 @@ function act(a,id,el){
     case "track": ui.track=!ui.track; tick(); break;
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
     case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
+    case "themesheet": ui.sheet={kind:"themes"}; render(); break;
     case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{localStorage.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
     case "nowfrom": case "nowto": case "nowboth":{var nh=nowHM(),setv=function(idn){var inp=document.getElementById(idn);if(!inp)return;inp.value=nh;inp.dispatchEvent(new Event("input",{bubbles:true}));};
       if(a==="nowboth"){setv("fFrom");setv("fTo");}else setv(a==="nowfrom"?"fFrom":"fTo");
@@ -2567,7 +2574,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
