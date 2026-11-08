@@ -593,7 +593,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 14:55";
+var APP_BUILD="8. 11. 15:15";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1002,7 +1002,7 @@ function sheetHTML(){
   if(s.kind==="menu"){
     var canDl=!!dl||standalone||WEB;
     b='<h2>Menu</h2>'+
-      '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+
+      '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+(offlineInfo()?'<span class="hint">'+esc(offlineInfo())+'</span>':'')+
       '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span><div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div></div>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
       (canEdit?'<button class="mitem" data-act="resetst"><b>Resetovat stavy dne</b><span>Vymaže stavy a jejich časy u všech obrazů a poznámek tohoto dne. Program zůstane.</span></button>':'')+
@@ -1585,10 +1585,25 @@ function pdfjsCdn(){
   return pdfLibP;
 }
 var pdfDocCache={};
+/* offline: uložit scénáře a složky do zařízení (cache v service workeru) */
+var OFF={done:0,total:0,busy:false,at:null};
+function offlineDocs(){if(!WEB||!("caches" in window))return;if(OFF.busy)return;var ids=[];docList("script").concat(docList("brk")).forEach(function(x){if(x&&x.id&&ids.indexOf(x.id)<0)ids.push(x.id);});
+  if(!ids.length)return;OFF.busy=true;OFF.total=ids.length;OFF.done=0;
+  caches.open("nd-docs").then(function(c){
+    var urls=ids.map(blobUrl),chain=Promise.resolve();
+    urls.forEach(function(u){chain=chain.then(function(){return c.match(u).then(function(hit){if(hit){OFF.done++;return;}
+      return fetch(u,{cache:"no-store"}).then(function(r){if(r.ok){OFF.done++;return c.put(u,r);}}).catch(function(){});});});});
+    return chain.then(function(){return c.keys();}).then(function(ks){return Promise.all(ks.filter(function(k){return urls.indexOf(k.url)<0;}).map(function(k){return c.delete(k);}));});
+  }).then(function(){OFF.busy=false;OFF.at=nowHM();if(ui.sheet&&ui.sheet.kind==="menu")render();},function(){OFF.busy=false;});}
+function offlineInfo(){if(!WEB)return "";if(!("caches" in window))return "Offline uložení není v tomto prohlížeči k dispozici.";
+  if(OFF.busy)return "Ukládám scénáře a složky pro offline… "+OFF.done+"/"+OFF.total;
+  if(OFF.total)return (OFF.done===OFF.total?"✓ ":"")+"Offline k dispozici: "+OFF.done+" z "+OFF.total+" souborů (scénáře a složky)"+(OFF.at?" · "+OFF.at:"");return "";}
 function openPdf(src){
   var key=typeof src==="string"?src:null;
   if(key&&pdfDocCache[key])return pdfDocCache[key];
-  var p=pdfjs().then(function(L){var o={isEvalSupported:false,disableFontFace:true};if(key)o.url=key;else o.data=src;return L.getDocument(o).promise;});
+  var p=pdfjs().then(function(L){var o={isEvalSupported:false,disableFontFace:true};if(key){o.url=key;o.disableRange=true;o.disableStream=true;}else o.data=src;
+    return L.getDocument(o).promise.catch(function(err){if(!key||!("caches" in window))throw err;
+      return caches.open("nd-docs").then(function(c){return c.match(key);}).then(function(hit){if(!hit)throw err;return hit.arrayBuffer();}).then(function(buf){return L.getDocument({isEvalSupported:false,disableFontFace:true,data:new Uint8Array(buf)}).promise;});});});
   if(key){pdfDocCache[key]=p;p.catch(function(){delete pdfDocCache[key];});}
   return p;
 }
@@ -2661,7 +2676,7 @@ function applyLive(snap){
   liveState="live"; lastLive=Date.now();
   if(theirs>mine){
     if(canEdit&&(ui.sheet||ui.drag||saveTimer!=null||saveMsg==="Ukládám…")){liveInd();return;}
-    try{var o=JSON.parse(d.json);if(o&&o.days&&o.days.length){var y=window.scrollY;S=o;migrate(S);lastSnap=snapS();
+    try{var o=JSON.parse(d.json);if(o&&o.days&&o.days.length){var y=window.scrollY;S=o;migrate(S);lastSnap=snapS();clearTimeout(window.__offT);window.__offT=setTimeout(offlineDocs,2500);
       if(!ui.dayPicked||!S.days.some(function(x){return x.id===ui.dayId;}))ui.dayId=viewerDay().id;
       render();window.scrollTo(0,y);}}catch(_){}
   } else if(theirs<mine&&canEdit&&!snap.hasPendingWrites){if(WEB){if(saveTimer==null)queueSave();}else pushLive();}
