@@ -592,7 +592,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 14:40";
+var APP_BUILD="8. 11. 14:50";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1441,6 +1441,7 @@ function openMyNote(r){
       '<button class="annt" data-mn="emo">😀 Nálepky</button>'+
       '<label class="annt mnfile">🖼️ Fotka<input type="file" accept="image/*" multiple id="mnPick" hidden></label>'+
       '<label class="annt mnfile">📷 Fotoaparát<input type="file" accept="image/*" capture="environment" id="mnCam" hidden></label>'+
+      '<button class="annt" data-mn="mapy" title="Otevře Mapy.cz s lokací obrazu">🗺️ Mapy.cz</button><button class="annt" data-mn="paste" title="Vloží obrázek zkopírovaný do schránky (např. snímek obrazovky)">📋 Vložit</button>'+
       '<span class="annsep"></span><button class="annt" data-mn="undo">↶ Zpět</button><button class="annt" data-mn="del" id="mnDel" disabled>Smazat vybrané</button><button class="annt" data-mn="clear">Smazat vše</button>'+
       '<span class="annsep"></span><label class="annt mnfinger"><input type="checkbox" id="mnFinger"> Kreslit prstem</label>'+
     '</div>'+
@@ -1464,6 +1465,9 @@ function openMyNote(r){
     if(a==="emo"){var em=document.getElementById("mnEmo");em.hidden=!em.hidden;b.classList.toggle("sel",!em.hidden);return;}
     if(a==="svgpick"){MN.emo=null;MN.svg=b.getAttribute("data-k");pn.querySelectorAll(".mnemo button").forEach(function(x){x.classList.toggle("sel",x===b);});mnTool("sticker");toast("Klepni na papír – nálepka bude v barvě pera");return;}
     if(a==="emopick"){MN.svg=null;MN.emo=b.getAttribute("data-e");pn.querySelectorAll(".mnemo button").forEach(function(x){x.classList.toggle("sel",x===b);});mnTool("sticker");toast("Klepni na papír, kam nálepku dát");return;}
+    if(a==="mapy"){var rx=rowById(MN.id),q=rx?(rowLoc(rx.r)||rx.r.motif||""):"";q=q.split(" - ").pop().trim();window.open("https://mapy.cz/zakladni?q="+encodeURIComponent(q),"_blank","noopener");
+      toast("Udělej snímek obrazovky mapy a vlož ho přes 📋 Vložit nebo 🖼️ Fotka",5000);return;}
+    if(a==="paste"){mnPaste();return;}
     if(a==="undo"){var u=MN.undo.pop();if(u){MN.note.strokes=u.s;MN.note.items=u.i;MN.sel=-1;mnSelUI();mnDraw();mnDirty();}else toast("Není co vrátit");return;}
     if(a==="del"){if(MN.sel<0)return;mnPush();MN.note.items.splice(MN.sel,1);MN.sel=-1;mnSelUI();mnDraw();mnDirty();return;}
     if(a==="clear"){if(!MN.note.strokes.length&&!MN.note.items.length)return;if(b.classList.contains("armed")){mnPush();MN.note.strokes=[];MN.note.items=[];MN.sel=-1;mnSelUI();mnDraw();mnDirty();b.classList.remove("armed");b.textContent="Smazat vše";}else{b.classList.add("armed");b.textContent="Opravdu smazat vše?";setTimeout(function(){b.classList.remove("armed");b.textContent="Smazat vše";},2500);}return;}
@@ -1475,6 +1479,15 @@ function openMyNote(r){
   ["mnPick","mnCam"].forEach(function(idn){document.getElementById(idn).onchange=function(){var fs=[].slice.call(this.files||[]);this.value="";var k=0;fs.forEach(function(f){mnImg(f).then(function(res){if(!MN||!res)return;mnAddImg(res,k++);});});};});
   window.addEventListener("resize",mnLayout);
 }
+function mnPaste(){
+  if(!navigator.clipboard||!navigator.clipboard.read){toast("Vkládání ze schránky tu nejde – použij 🖼️ Fotka a vyber snímek obrazovky");return;}
+  navigator.clipboard.read().then(function(list){var got=false;
+    list.forEach(function(it){var ty=(it.types||[]).filter(function(t){return /^image\//.test(t);})[0];if(!ty||got)return;got=true;
+      it.getType(ty).then(function(bl){return mnImg(bl);}).then(function(res){if(res&&MN)mnAddImg(res,0);});});
+    if(!got)toast("Ve schránce není obrázek. Snímek obrazovky nejdřív zkopíruj (v náhledu snímku: Sdílet → Kopírovat).",6000);
+  },function(){toast("Vložení se nepovedlo – povol vkládání, nebo použij 🖼️ Fotka",5000);});}
+document.addEventListener("paste",function(e){if(!MN||!document.getElementById("mnPanel"))return;var its=(e.clipboardData&&e.clipboardData.items)||[];
+  for(var i=0;i<its.length;i++){if(/^image\//.test(its[i].type)){var f=its[i].getAsFile();if(f){e.preventDefault();mnImg(f).then(function(res){if(res&&MN)mnAddImg(res,0);});return;}}}});
 function mnTouch(){var cv=document.getElementById("mnCv");if(cv)cv.style.touchAction=(MN.finger||MN.tool==="move"||MN.tool==="sticker")?"none":"pan-y";}
 function mnTool(t){MN.tool=t;var pn=document.getElementById("mnPanel");if(!pn)return;pn.querySelectorAll(".mnbar .annt[data-mn]").forEach(function(x){var v=x.getAttribute("data-mn");if(v==="pen"||v==="hl"||v==="eraser"||v==="move")x.classList.toggle("sel",v===t);});
   if(t!=="sticker")pn.querySelectorAll(".mnemo button").forEach(function(x){x.classList.remove("sel");});
