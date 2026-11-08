@@ -195,6 +195,16 @@ body.ed::before{background:#000}
 .bkbtn.mynote,.bkbtn.mynote.has{color:#D93025;background:#F7F1E4;border-color:#D9CBAA;opacity:1;position:relative}
 .bkbtn.mynote svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .bkbtn.mynote i{position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#D93025;border:2px solid var(--surface)}
+.mncols,.mnsizes{display:inline-flex;gap:5px;flex-wrap:wrap;align-items:center}
+.mncol{width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.25);cursor:pointer;padding:0}
+.mncol.sel{box-shadow:0 0 0 3px #F2A54A}
+.mnsz{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;cursor:pointer;padding:0}
+.mnsz i{display:block;border-radius:50%;background:var(--ink)}.mnsz.sel{outline:2px solid #F2A54A;outline-offset:1px}
+.mnemo{display:flex;flex-wrap:wrap;gap:10px 18px;padding:8px 12px;border-bottom:1px solid var(--line);max-height:34vh;overflow:auto;background:var(--surface)}
+.mnemog{display:flex;flex-direction:column;gap:2px}.mnemog>span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mnemog>div{display:flex;flex-wrap:wrap;gap:2px;max-width:420px}.mnemog button{all:unset;cursor:pointer;font-size:26px;line-height:1;padding:4px;border-radius:6px}
+.mnemog button.sel,.mnemog button:hover{background:rgba(242,165,74,.35)}
+.annt:disabled{opacity:.4}
 .mnbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
 .mnbar .mnc i{display:block;width:18px;height:18px;border-radius:50%}
 .mnbar .annt.sel{outline:2px solid #F2A54A;outline-offset:1px}
@@ -576,7 +586,7 @@ var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papí
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 08:25";
+var APP_BUILD="8. 11. 12:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1365,9 +1375,12 @@ function docBtn(r,k){
   return '<button class="bkbtn '+(k==="brk"?'lupa':'')+(has?' has':' none')+'" data-act="'+(k==="brk"?"lupa":"book")+'" data-id="'+r.id+'" aria-label="'+(k==="brk"?"Složka obrazu":"Stránky scénáře")+'"'+(has?' title="'+(k==="brk"?"Složka":"Scénář")+' str. '+f.from+(f.to&&f.to!==f.from?'–'+f.to:'')+'"':'')+'>'+(k==="brk"?LUPA:BOOK)+'</button>';
 }
 function bookHTML(r){return '<span class="bk">'+(r.type==="shot"?pinBtn(r):"")+myNoteBtn(r)+docBtn(r,"brk")+docBtn(r,"script")+'</span>';}
-/* ===== Moje poznámka: Apple Pencil notes + photos, stored on this device (IndexedDB) ===== */
+/* ===== Moje poznámka: Apple Pencil notes, photos and stickers on paper, stored on this device (IndexedDB) ===== */
 var PENCIL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16.4 4.2a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/><path d="M4 20l4.6-1.2"/></svg>';
 var MYN={}, MN=null, mnDbP=null, MN_W=1000, MN_PH=1414;
+var MN_COLORS=["#1d1d1f","#6E6E73","#D93025","#F2711C","#F4C631","#2FA862","#1F9AA8","#1F5FA8","#7B3FB5","#E0559C","#8B5A2B","#FFFFFF"];
+var MN_SIZES=[["XS",.5,3],["S",1,5],["M",2,8],["L",3.5,12],["XL",6,17]];
+var MN_EMO=[["Číslice","0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟"],["Natáčení","🎥 📷 🎬 🎞️ 🎤 🎧 💡 🔦 🪜 🔌 📢 📍 ⏱️ 🕐"],["Šipky","⬆️ ➡️ ⬇️ ⬅️ ↗️ ↘️ ↙️ ↖️ ↔️ ↕️ 🔄 ↩️"],["Postavy","🧍 🧍‍♀️ 🚶 🚶‍♀️ 🏃 🏃‍♀️ 🧑‍🤝‍🧑 👫 👨‍👩‍👧 🧒 👶 🧓 🧑‍🦽 💃 🕺 🧑‍💼"],["Auta","🚗 🚕 🚙 🚐 🚚 🚛 🚌 🚑 🚓 🚒 🏍️ 🛵 🚲 🛴 🚂 ✈️"],["Zvířata","🐕 🐈 🐎 🐄 🐖 🐑 🐐 🐓 🐔 🦆 🐦 🐟 🐇 🦌 🐝"],["Místa","⛺ 🏠 🏢 🏥 ⛪ 🏰 🌳 🌲 🌊 ⛰️ 🛣️ 🌉 🚪 🪟 🛏️ 🪑"],["Značky","⭐ ❗ ❓ ✅ ❌ ⚠️ 🔴 🟢 🔵 🟡 ☀️ 🌙 ☁️ 🌧️ ❄️ ❤️"]];
 function mnDb(){if(mnDbP)return mnDbP;mnDbP=new Promise(function(ok,no){try{var q=indexedDB.open("nd-mynotes",1);q.onupgradeneeded=function(){q.result.createObjectStore("n");};q.onsuccess=function(){ok(q.result);};q.onerror=function(){no(q.error);};}catch(e){no(e);}});return mnDbP;}
 function mnGet(id){return mnDb().then(function(db){return new Promise(function(ok){var t=db.transaction("n").objectStore("n").get(id);t.onsuccess=function(){ok(t.result||null);};t.onerror=function(){ok(null);};});}).catch(function(){return null;});}
 function mnPut(id,v){return mnDb().then(function(db){return new Promise(function(ok){var tx=db.transaction("n","readwrite"),st=tx.objectStore("n");if(v)st.put(v,id);else st.delete(id);tx.oncomplete=function(){ok(true);};tx.onerror=function(){ok(false);};});}).catch(function(){return false;});}
@@ -1381,73 +1394,112 @@ var PIN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.
 function pinBtn(r){var l=rowLoc(r);if(!l&&!canEdit)return "";return '<button class="bkbtn pin'+(l?' has':' none')+'" data-act="loc" data-id="'+r.id+'" aria-label="Lokace"'+(l?' title="'+esc(l)+'"':' disabled')+'>'+PIN+'</button>';}
 function locHTML(r,cls){var l=rowLoc(r);return l?'<span class="'+cls+'" title="'+esc(l)+'">'+esc(l)+'</span>':'';}
 function myNoteBtn(r){if(!canEdit)return "";return '<button class="bkbtn mynote'+(MYN[r.id]?' has':'')+'" data-act="mynote" data-id="'+r.id+'" aria-label="Moje poznámka" title="Moje poznámka">'+PENCIL+(MYN[r.id]?'<i></i>':'')+'</button>';}
-function mnEmpty(n){return !n||(!n.strokes.length&&!n.photos.length);}
+function mnEmpty(n){return !n||(!n.strokes.length&&!(n.photos||[]).length&&!(n.items||[]).length);}
+var MN_IMG={};
+function mnImgEl(d){if(MN_IMG[d])return MN_IMG[d];var im=new Image();im.onload=function(){mnDraw();};im.src=d;MN_IMG[d]=im;return im;}
+function mnSnap(){return {s:MN.note.strokes.slice(),i:JSON.parse(JSON.stringify(MN.note.items||[]))};}
+function mnPush(){MN.undo.push(mnSnap());if(MN.undo.length>40)MN.undo.shift();}
 function openMyNote(r){
   closeMyNote(); closePdf();
   var pn=document.createElement("div");pn.className="pdfpanel mnpanel";pn.id="mnPanel";
   pn.innerHTML='<div class="pdfhead"><b>Moje poznámka · O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+'</span><button class="btn" id="mnClose">Hotovo</button></div>'+
     '<div class="mnbar">'+
-      '<button class="annt mnc sel" data-mn="pen" data-c="#1d1d1f" title="Černé pero"><i style="background:#1d1d1f"></i></button>'+
-      '<button class="annt mnc" data-mn="pen" data-c="#D93025" title="Červené pero"><i style="background:#D93025"></i></button>'+
-      '<button class="annt mnc" data-mn="pen" data-c="#1F5FA8" title="Modré pero"><i style="background:#1F5FA8"></i></button>'+
-      '<button class="annt mnc" data-mn="hl" data-c="rgba(244,198,49,.45)" title="Zvýrazňovač"><i style="background:#F4C631;border-radius:2px;height:8px"></i></button>'+
-      '<button class="annt" data-mn="eraser">Guma</button><span class="annsep"></span>'+
-      '<button class="annt" data-mn="undo">Zpět</button><button class="annt" data-mn="clear">Smazat vše</button><span class="annsep"></span>'+
-      '<label class="annt mnfile">Fotka<input type="file" accept="image/*" multiple id="mnPick" hidden></label>'+
-      '<label class="annt mnfile">Fotoaparát<input type="file" accept="image/*" capture="environment" id="mnCam" hidden></label>'+
+      '<button class="annt sel" data-mn="pen" title="Pero">Pero</button><button class="annt" data-mn="hl" title="Zvýrazňovač">Zvýraz.</button><button class="annt" data-mn="eraser">Guma</button><button class="annt" data-mn="move" title="Posunout nebo zvětšit fotku či nálepku">✋ Posun</button>'+
+      '<span class="annsep"></span><span class="mncols">'+MN_COLORS.map(function(c,i){return '<button class="mncol'+(i===0?' sel':'')+'" data-mn="col" data-c="'+c+'" style="background:'+c+'" aria-label="Barva"></button>';}).join("")+'</span>'+
+      '<span class="annsep"></span><span class="mnsizes">'+MN_SIZES.map(function(z,i){return '<button class="mnsz'+(i===1?' sel':'')+'" data-mn="size" data-i="'+i+'" aria-label="Tloušťka '+z[0]+'"><i style="width:'+z[2]+'px;height:'+z[2]+'px"></i></button>';}).join("")+'</span>'+
+    '</div><div class="mnbar">'+
+      '<button class="annt" data-mn="emo">😀 Nálepky</button>'+
+      '<label class="annt mnfile">🖼️ Fotka<input type="file" accept="image/*" multiple id="mnPick" hidden></label>'+
+      '<label class="annt mnfile">📷 Fotoaparát<input type="file" accept="image/*" capture="environment" id="mnCam" hidden></label>'+
+      '<span class="annsep"></span><button class="annt" data-mn="undo">↶ Zpět</button><button class="annt" data-mn="del" id="mnDel" disabled>Smazat vybrané</button><button class="annt" data-mn="clear">Smazat vše</button>'+
       '<span class="annsep"></span><label class="annt mnfinger"><input type="checkbox" id="mnFinger"> Kreslit prstem</label>'+
     '</div>'+
+    '<div class="mnemo" id="mnEmo" hidden>'+MN_EMO.map(function(g){return '<div class="mnemog"><span>'+g[0]+'</span><div>'+g[1].split(" ").map(function(e){return '<button data-mn="emopick" data-e="'+e+'">'+e+'</button>';}).join("")+'</div></div>';}).join("")+'</div>'+
     '<div class="mnscroll" id="mnScroll"><div class="mnpaper" id="mnPaper"><canvas id="mnCv"></canvas></div>'+
     '<div class="mnmore"><button class="btn" data-mn="page">+ Další stránka</button></div><div class="mnphotos" id="mnPhotos"></div></div>';
   document.body.appendChild(pn);
-  MN={id:r.id,note:null,tool:"pen",color:"#1d1d1f",finger:false,undo:[],cur:null,dirty:false,t:null};
+  MN={id:r.id,note:null,tool:"pen",color:MN_COLORS[0],size:1,finger:false,undo:[],cur:null,dirty:false,t:null,sel:-1,emo:null};
   document.getElementById("mnClose").onclick=closeMyNote;
-  mnGet(r.id).then(function(n){if(!MN||MN.id!==r.id)return;MN.note=n||{strokes:[],photos:[],pages:1,v:1};mnLayout();mnPhotos();});
+  mnGet(r.id).then(function(n){if(!MN||MN.id!==r.id)return;MN.note=n||{strokes:[],photos:[],items:[],pages:1,v:2};MN.note.items=MN.note.items||[];MN.note.photos=MN.note.photos||[];mnLayout();mnPhotos();});
   var cv=document.getElementById("mnCv");
-  cv.addEventListener("touchstart",function(e){if(MN&&(MN.finger||[].some.call(e.touches,function(t){return t.touchType==="stylus";})))e.preventDefault();},{passive:false});
-  cv.addEventListener("touchmove",function(e){if(MN&&(MN.finger||[].some.call(e.touches,function(t){return t.touchType==="stylus";})))e.preventDefault();},{passive:false});
+  var stylus=function(e){return MN&&(MN.finger||MN.tool==="move"||[].some.call(e.touches,function(t){return t.touchType==="stylus";}));};
+  cv.addEventListener("touchstart",function(e){if(stylus(e))e.preventDefault();},{passive:false});
+  cv.addEventListener("touchmove",function(e){if(stylus(e))e.preventDefault();},{passive:false});
   cv.addEventListener("pointerdown",mnDown);cv.addEventListener("pointermove",mnMove);
   cv.addEventListener("pointerup",mnUp);cv.addEventListener("pointercancel",mnUp);
   pn.addEventListener("click",function(e){var b=e.target.closest("[data-mn]");if(!b||!MN)return;var a=b.getAttribute("data-mn");
-    if(a==="pen"||a==="hl"||a==="eraser"){MN.tool=a;if(b.getAttribute("data-c"))MN.color=b.getAttribute("data-c");pn.querySelectorAll(".mnbar [data-mn]").forEach(function(x){x.classList.toggle("sel",x===b);});return;}
-    if(a==="undo"){var u=MN.undo.pop();if(u){MN.note.strokes=u;mnDraw();mnDirty();}else toast("Není co vrátit");return;}
-    if(a==="clear"){if(!MN.note.strokes.length)return;if(b.classList.contains("armed")){MN.undo.push(MN.note.strokes.slice());MN.note.strokes=[];mnDraw();mnDirty();b.classList.remove("armed");b.textContent="Smazat vše";}else{b.classList.add("armed");b.textContent="Opravdu smazat?";setTimeout(function(){b.classList.remove("armed");b.textContent="Smazat vše";},2500);}return;}
+    if(a==="pen"||a==="hl"||a==="eraser"||a==="move"){mnTool(a);return;}
+    if(a==="col"){MN.color=b.getAttribute("data-c");pn.querySelectorAll(".mncol").forEach(function(x){x.classList.toggle("sel",x===b);});if(MN.tool!=="pen"&&MN.tool!=="hl")mnTool("pen");return;}
+    if(a==="size"){MN.size=+b.getAttribute("data-i");pn.querySelectorAll(".mnsz").forEach(function(x){x.classList.toggle("sel",x===b);});if(MN.tool!=="pen"&&MN.tool!=="hl"&&MN.tool!=="eraser")mnTool("pen");return;}
+    if(a==="emo"){var em=document.getElementById("mnEmo");em.hidden=!em.hidden;b.classList.toggle("sel",!em.hidden);return;}
+    if(a==="emopick"){MN.emo=b.getAttribute("data-e");pn.querySelectorAll(".mnemo button").forEach(function(x){x.classList.toggle("sel",x===b);});mnTool("sticker");toast("Klepni na papír, kam nálepku dát");return;}
+    if(a==="undo"){var u=MN.undo.pop();if(u){MN.note.strokes=u.s;MN.note.items=u.i;MN.sel=-1;mnSelUI();mnDraw();mnDirty();}else toast("Není co vrátit");return;}
+    if(a==="del"){if(MN.sel<0)return;mnPush();MN.note.items.splice(MN.sel,1);MN.sel=-1;mnSelUI();mnDraw();mnDirty();return;}
+    if(a==="clear"){if(!MN.note.strokes.length&&!MN.note.items.length)return;if(b.classList.contains("armed")){mnPush();MN.note.strokes=[];MN.note.items=[];MN.sel=-1;mnSelUI();mnDraw();mnDirty();b.classList.remove("armed");b.textContent="Smazat vše";}else{b.classList.add("armed");b.textContent="Opravdu smazat vše?";setTimeout(function(){b.classList.remove("armed");b.textContent="Smazat vše";},2500);}return;}
     if(a==="page"){MN.note.pages=(MN.note.pages||1)+1;mnLayout();mnDirty();return;}
     if(a==="phdel"){var pid=b.getAttribute("data-id");MN.note.photos=MN.note.photos.filter(function(p){return p.id!==pid;});mnPhotos();mnDirty();return;}
     if(a==="phview"){var ph=MN.note.photos.filter(function(p){return p.id===b.getAttribute("data-id");})[0];if(ph)mnView(ph.d);return;}
   });
-  document.getElementById("mnFinger").onchange=function(){MN.finger=this.checked;cv.style.touchAction=MN.finger?"none":"pan-y";};
-  ["mnPick","mnCam"].forEach(function(idn){document.getElementById(idn).onchange=function(){var fs=[].slice.call(this.files||[]);this.value="";fs.forEach(function(f){mnImg(f).then(function(d){if(!MN||!d)return;MN.note.photos.push({id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:d,at:nowHM()});mnPhotos();mnDirty();var s=document.getElementById("mnScroll");if(s)s.scrollTop=s.scrollHeight;});});};});
+  document.getElementById("mnFinger").onchange=function(){MN.finger=this.checked;mnTouch();};
+  ["mnPick","mnCam"].forEach(function(idn){document.getElementById(idn).onchange=function(){var fs=[].slice.call(this.files||[]);this.value="";var k=0;fs.forEach(function(f){mnImg(f).then(function(res){if(!MN||!res)return;mnAddImg(res,k++);});});};});
   window.addEventListener("resize",mnLayout);
 }
-function mnImg(f){return new Promise(function(ok){var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var m=1600,sc=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.82));};im.onerror=function(){toast("Fotku se nepodařilo načíst");ok(null);};im.src=rd.result;};rd.onerror=function(){ok(null);};rd.readAsDataURL(f);});}
+function mnTouch(){var cv=document.getElementById("mnCv");if(cv)cv.style.touchAction=(MN.finger||MN.tool==="move"||MN.tool==="sticker")?"none":"pan-y";}
+function mnTool(t){MN.tool=t;var pn=document.getElementById("mnPanel");if(!pn)return;pn.querySelectorAll(".mnbar .annt[data-mn]").forEach(function(x){var v=x.getAttribute("data-mn");if(v==="pen"||v==="hl"||v==="eraser"||v==="move")x.classList.toggle("sel",v===t);});
+  if(t!=="sticker")pn.querySelectorAll(".mnemo button").forEach(function(x){x.classList.remove("sel");});
+  if(t!=="move"){MN.sel=-1;mnSelUI();mnDraw();}var cv=document.getElementById("mnCv");if(cv)cv.style.cursor=t==="move"?"move":t==="sticker"?"copy":"crosshair";mnTouch();}
+function mnSelUI(){var b=document.getElementById("mnDel");if(b)b.disabled=!(MN&&MN.sel>=0);}
+function mnVisTop(){var sc=document.getElementById("mnScroll"),pp=document.getElementById("mnPaper");if(!sc||!pp||!MN.k)return 40;var y=(sc.scrollTop-pp.offsetTop+30)/MN.k;return Math.max(30,y);}
+function mnAddImg(res,k){mnPush();var w=Math.min(620,MN_W-80),h=w*res.h/res.w;var it={t:"img",d:res.d,x:40+k*30,y:mnVisTop()+k*30,w:w,h:h};
+  var need=Math.ceil((it.y+h+20)/MN_PH);if(need>(MN.note.pages||1)){MN.note.pages=need;}
+  MN.note.items.push(it);MN.sel=MN.note.items.length-1;mnTool("move");MN.sel=MN.note.items.length-1;mnSelUI();mnLayout();mnDirty();toast("Fotka je na papíře – posuň ji, pak vyber pero a kresli do ní");}
+function mnImg(f){return new Promise(function(ok){var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var m=1600,sc=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok({d:c.toDataURL("image/jpeg",.82),w:c.width,h:c.height});};im.onerror=function(){toast("Fotku se nepodařilo načíst");ok(null);};im.src=rd.result;};rd.onerror=function(){ok(null);};rd.readAsDataURL(f);});}
 function mnLayout(){if(!MN||!MN.note)return;var pp=document.getElementById("mnPaper"),cv=document.getElementById("mnCv");if(!pp||!cv)return;
   var w=pp.clientWidth,h=Math.round(w*MN_PH/MN_W)*(MN.note.pages||1),dpr=Math.min(window.devicePixelRatio||1,2);
   cv.style.width=w+"px";cv.style.height=h+"px";cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);MN.k=w/MN_W;MN.dpr=dpr;
-  pp.style.backgroundSize=Math.max(14,Math.round(24*MN.k*1.4))+"px "+Math.max(14,Math.round(24*MN.k*1.4))+"px";
-  var ph=Math.round(w*MN_PH/MN_W);pp.style.setProperty("--pgh",ph+"px");cv.style.touchAction=MN.finger?"none":"pan-y";mnDraw();}
+  var g=Math.max(14,Math.round(24*MN.k*1.4));pp.style.backgroundSize=g+"px "+g+"px";mnTouch();mnDraw();}
 function mnStroke(g,s,k){var p=s.p;if(!p.length)return;g.strokeStyle=s.c;g.lineCap="round";g.lineJoin="round";g.globalCompositeOperation=s.t==="hl"?"multiply":"source-over";
-  var base=s.t==="hl"?16:2.4;
-  if(p.length===1){g.beginPath();g.fillStyle=s.c;g.arc(p[0][0]*k,p[0][1]*k,base*k*(0.5+0.6*(p[0][2]||.5)),0,7);g.fill();return;}
+  var base=(s.t==="hl"?16:2.4)*(s.w||1);
+  if(p.length===1){g.beginPath();g.fillStyle=s.c;g.arc(p[0][0]*k,p[0][1]*k,base*k*(0.5+0.6*(p[0][2]||.5)),0,7);g.fill();g.globalCompositeOperation="source-over";return;}
   for(var i=1;i<p.length;i++){var a=p[i-1],b=p[i];g.lineWidth=Math.max(.6,base*k*(s.t==="hl"?1:(0.45+0.9*((a[2]+b[2])/2||.5))));g.beginPath();
     if(i>1){var z=p[i-2];g.moveTo((z[0]+a[0])/2*k,(z[1]+a[1])/2*k);g.quadraticCurveTo(a[0]*k,a[1]*k,(a[0]+b[0])/2*k,(a[1]+b[1])/2*k);}else{g.moveTo(a[0]*k,a[1]*k);g.lineTo((a[0]+b[0])/2*k,(a[1]+b[1])/2*k);}
     g.stroke();}
   g.globalCompositeOperation="source-over";}
+function mnItemBox(it){if(it.t==="img")return [it.x,it.y,it.w,it.h];var s=it.s||70;return [it.x-s/2,it.y-s/2,s,s];}
+function mnDrawItem(g,it,k){if(it.t==="img"){var im=mnImgEl(it.d);if(im.complete&&im.naturalWidth)g.drawImage(im,it.x*k,it.y*k,it.w*k,it.h*k);else{g.fillStyle="rgba(0,0,0,.06)";g.fillRect(it.x*k,it.y*k,it.w*k,it.h*k);}return;}
+  var s=(it.s||70)*k;g.font=Math.round(s)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';g.textAlign="center";g.textBaseline="middle";g.fillText(it.e,it.x*k,it.y*k+s*.05);}
 function mnDraw(){var cv=document.getElementById("mnCv");if(!cv||!MN||!MN.note)return;var g=cv.getContext("2d");g.setTransform(MN.dpr,0,0,MN.dpr,0,0);g.clearRect(0,0,cv.width,cv.height);
   var ph=MN_PH*MN.k;g.strokeStyle="rgba(0,0,0,.18)";g.setLineDash([6,6]);g.lineWidth=1;for(var i=1;i<(MN.note.pages||1);i++){g.beginPath();g.moveTo(0,ph*i);g.lineTo(cv.width,ph*i);g.stroke();}g.setLineDash([]);
-  MN.note.strokes.forEach(function(s){mnStroke(g,s,MN.k);});if(MN.cur)mnStroke(g,MN.cur,MN.k);}
+  MN.note.items.forEach(function(it){if(it.t==="img")mnDrawItem(g,it,MN.k);});
+  MN.note.items.forEach(function(it){if(it.t!=="img")mnDrawItem(g,it,MN.k);});
+  MN.note.strokes.forEach(function(s){mnStroke(g,s,MN.k);});if(MN.cur)mnStroke(g,MN.cur,MN.k);
+  if(MN.sel>=0&&MN.note.items[MN.sel]){var bx=mnItemBox(MN.note.items[MN.sel]),k=MN.k;g.strokeStyle="#F2A54A";g.lineWidth=2;g.setLineDash([7,5]);g.strokeRect(bx[0]*k-3,bx[1]*k-3,bx[2]*k+6,bx[3]*k+6);g.setLineDash([]);
+    g.fillStyle="#F2A54A";g.beginPath();g.arc((bx[0]+bx[2])*k+3,(bx[1]+bx[3])*k+3,11,0,7);g.fill();g.fillStyle="#fff";g.font="bold 13px sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText("⤡",(bx[0]+bx[2])*k+3,(bx[1]+bx[3])*k+3);}}
 function mnPt(e){var r=e.target.getBoundingClientRect();return [(e.clientX-r.left)/MN.k,(e.clientY-r.top)/MN.k,e.pointerType==="pen"?(e.pressure||.5):.5];}
-function mnOk(e){return e.pointerType==="pen"||e.pointerType==="mouse"||(e.pointerType==="touch"&&MN.finger);}
-function mnDown(e){if(!MN||!MN.note||!mnOk(e))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId);}catch(_){}
-  if(MN.tool==="eraser"){MN.erasing=true;MN.undo.push(MN.note.strokes.slice());mnErase(mnPt(e));return;}
-  MN.cur={t:MN.tool,c:MN.color,p:[mnPt(e)]};mnDraw();}
-function mnMove(e){if(!MN||!MN.note)return;if(MN.erasing){mnErase(mnPt(e));return;}if(!MN.cur)return;e.preventDefault();
-  var evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];if(!evs.length)evs=[e];evs.forEach(function(x){var p=mnPt({target:e.target,clientX:x.clientX,clientY:x.clientY,pointerType:e.pointerType,pressure:x.pressure});MN.cur.p.push(p);});mnDraw();}
-function mnUp(){if(!MN)return;if(MN.erasing){MN.erasing=false;mnDirty();return;}if(!MN.cur)return;MN.undo.push(MN.note.strokes.slice());if(MN.undo.length>50)MN.undo.shift();
+function mnOk(e){return e.pointerType==="pen"||e.pointerType==="mouse"||(e.pointerType==="touch"&&(MN.finger||MN.tool==="move"||MN.tool==="sticker"));}
+function mnHit(pt){for(var i=MN.note.items.length-1;i>=0;i--){var b=mnItemBox(MN.note.items[i]);if(pt[0]>=b[0]&&pt[0]<=b[0]+b[2]&&pt[1]>=b[1]&&pt[1]<=b[1]+b[3])return i;}return -1;}
+function mnDown(e){if(!MN||!MN.note||!mnOk(e))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId);}catch(_){}var pt=mnPt(e);
+  if(MN.tool==="sticker"&&MN.emo){mnPush();MN.note.items.push({t:"emo",e:MN.emo,x:pt[0],y:pt[1],s:70});mnDraw();mnDirty();return;}
+  if(MN.tool==="move"){var hz=MN.sel>=0&&MN.note.items[MN.sel]?mnItemBox(MN.note.items[MN.sel]):null,rh=24/MN.k;
+    if(hz&&Math.abs(pt[0]-(hz[0]+hz[2]))<rh&&Math.abs(pt[1]-(hz[1]+hz[3]))<rh){mnPush();MN.drag={mode:"size",i:MN.sel,p0:pt,o:JSON.parse(JSON.stringify(MN.note.items[MN.sel]))};return;}
+    var h=mnHit(pt);MN.sel=h;mnSelUI();if(h>=0){mnPush();MN.drag={mode:"move",i:h,p0:pt,o:JSON.parse(JSON.stringify(MN.note.items[h]))};}mnDraw();return;}
+  if(MN.tool==="eraser"){MN.erasing=true;mnPush();mnErase(pt);return;}
+  MN.cur={t:MN.tool,c:MN.color,w:MN_SIZES[MN.size][1],p:[pt]};mnDraw();}
+function mnMove(e){if(!MN||!MN.note)return;
+  if(MN.drag){e.preventDefault();var pt=mnPt(e),d=MN.drag,it=MN.note.items[d.i],o=d.o,dx=pt[0]-d.p0[0],dy=pt[1]-d.p0[1];
+    if(d.mode==="move"){it.x=o.x+dx;it.y=o.y+dy;}
+    else if(it.t==="img"){var nw=Math.max(60,o.w+dx);it.w=nw;it.h=o.h*nw/o.w;}
+    else{it.s=Math.max(24,(o.s||70)+Math.max(dx,dy)*2);}
+    var b=mnItemBox(it),need=Math.ceil((b[1]+b[3]+10)/MN_PH);if(need>(MN.note.pages||1)){MN.note.pages=need;mnLayout();}else mnDraw();return;}
+  if(MN.erasing){mnErase(mnPt(e));return;}if(!MN.cur)return;e.preventDefault();
+  var evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];if(!evs.length)evs=[e];evs.forEach(function(x){MN.cur.p.push(mnPt({target:e.target,clientX:x.clientX,clientY:x.clientY,pointerType:e.pointerType,pressure:x.pressure}));});mnDraw();}
+function mnUp(){if(!MN)return;if(MN.drag){MN.drag=null;mnDirty();return;}if(MN.erasing){MN.erasing=false;mnDirty();return;}if(!MN.cur)return;mnPush();
   MN.cur.p=MN.cur.p.map(function(q){return [Math.round(q[0]*10)/10,Math.round(q[1]*10)/10,Math.round(q[2]*100)/100];});MN.note.strokes.push(MN.cur);MN.cur=null;mnDraw();mnDirty();}
-function mnErase(pt){var R=14,n0=MN.note.strokes.length;MN.note.strokes=MN.note.strokes.filter(function(s){return !s.p.some(function(q){var dx=q[0]-pt[0],dy=q[1]-pt[1];return dx*dx+dy*dy<R*R;});});if(MN.note.strokes.length!==n0)mnDraw();}
+function mnErase(pt){var R=10+6*MN_SIZES[MN.size][1],n0=MN.note.strokes.length;MN.note.strokes=MN.note.strokes.filter(function(s){return !s.p.some(function(q){var dx=q[0]-pt[0],dy=q[1]-pt[1];return dx*dx+dy*dy<R*R;});});
+  var i0=MN.note.items.length;MN.note.items=MN.note.items.filter(function(it){if(it.t==="img")return true;var b=mnItemBox(it);return !(pt[0]>=b[0]&&pt[0]<=b[0]+b[2]&&pt[1]>=b[1]&&pt[1]<=b[1]+b[3]);});
+  if(MN.note.strokes.length!==n0||MN.note.items.length!==i0)mnDraw();}
 function mnPhotos(){var b=document.getElementById("mnPhotos");if(!b||!MN||!MN.note)return;
-  b.innerHTML=MN.note.photos.length?MN.note.photos.map(function(p){return '<span class="mnph"><img src="'+p.d+'" alt="" data-mn="phview" data-id="'+p.id+'"><button data-mn="phdel" data-id="'+p.id+'" aria-label="Smazat fotku">×</button></span>';}).join(""):'<span class="hint">Fotky přidáš tlačítkem Fotka nebo Fotoaparát.</span>';}
+  b.innerHTML=MN.note.photos.length?MN.note.photos.map(function(p){return '<span class="mnph"><img src="'+p.d+'" alt="" data-mn="phview" data-id="'+p.id+'"><button data-mn="phdel" data-id="'+p.id+'" aria-label="Smazat fotku">×</button></span>';}).join(""):'';}
 function mnView(d){var v=document.createElement("div");v.className="mnview";v.innerHTML='<img src="'+d+'" alt="">';v.onclick=function(){v.remove();};document.body.appendChild(v);}
 function mnDirty(){if(!MN)return;MN.dirty=true;clearTimeout(MN.t);MN.t=setTimeout(mnSave,700);}
 function mnSave(){if(!MN||!MN.dirty)return Promise.resolve();var id=MN.id,n=MN.note;MN.dirty=false;n.at=Date.now();var empty=mnEmpty(n);
