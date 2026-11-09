@@ -527,6 +527,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .annsep{width:1px;height:24px;background:var(--line);margin:0 2px}
 .annhint{font-size:11px;color:var(--muted);flex:1 1 100%}
 .pgwrap{position:relative;line-height:0}
+.srchl{position:absolute;background:rgba(255,214,0,.45);mix-blend-mode:multiply;border-radius:2px;pointer-events:none}
+.srchl.cur{background:rgba(255,140,0,.6);outline:2px solid #F2711C}
+.pdfsearch{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.pdfsearch input{flex:1 1 auto;min-width:0;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.pdfsearch .btn{min-height:38px;padding:0 12px}.pdfqn{font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;min-width:40px;text-align:center}
 .pgwrap canvas{display:block}
 .pdfpages canvas.ann{position:absolute;inset:0;width:100%;height:100%;background:transparent!important;box-shadow:none!important;pointer-events:none;touch-action:auto}
 .pdfpages.drawing canvas.ann{pointer-events:auto;touch-action:none;cursor:crosshair}
@@ -601,7 +606,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="9. 11. 08:20";
+var APP_BUILD="9. 11. 15:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2134,7 +2139,21 @@ function showPdf(r,k,full){
   var lblAll=k==="brk"?"Celé složky":"Celý scénář";
   pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+
     (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn pdfwide" id="pdfWide" title="'+(wide?'Zmenšit na polovinu':'Roztáhnout na celou obrazovku')+'">'+(wide?'⤡ Zmenšit':'⤢ Roztáhnout')+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
+  var hd=pn.querySelector(".pdfhead");if(hd){var sb=document.createElement("div");sb.className="pdfsearch";
+    sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="'+(k==="brk"?'Hledat ve složkách…':'Hledat ve scénáři…')+'" autocomplete="off"><button class="btn" id="pdfQgo">Hledat</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
+    hd.parentNode.insertBefore(sb,hd.nextSibling);}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
+  if(!PSR||PSR.doc!==sc.id)PSR={doc:sc.id,q:"",hits:[],idx:-1};
+  var qi=document.getElementById("pdfQ");qi.value=PSR.q||"";
+  var doSearch=function(){var q=qi.value.trim();if(!q){PSR.q="";PSR.hits=[];PSR.idx=-1;srchUI();srchPaintAll();return;}
+    if(!full){PSR.q=q;PSR.pending=true;showPdf(r,k,true);return;}
+    PSR.q=q;document.getElementById("pdfQn").textContent="Hledám…";
+    openPdf(url).then(function(doc){return srchRun(doc,sc.id,q);}).then(function(h){PSR.hits=h;PSR.idx=h.length?0:-1;srchUI();srchPaintAll();if(h.length)srchGo(0);});};
+  document.getElementById("pdfQgo").onclick=doSearch;
+  qi.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doSearch();qi.blur();}});
+  document.getElementById("pdfQprev").onclick=function(){if(PSR.hits.length){srchGo((PSR.idx-1+PSR.hits.length)%PSR.hits.length);}};
+  document.getElementById("pdfQnext").onclick=function(){if(PSR.hits.length){srchGo((PSR.idx+1)%PSR.hits.length);}};
+  srchUI();
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
   document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}showPdf(r,k,full);};
@@ -2150,7 +2169,7 @@ function showPdf(r,k,full){
           var vv=page.getViewport({scale:1}), sc2=w/vv.width*dpr, v=page.getViewport({scale:sc2});
           var c=document.createElement("canvas");c.width=v.width;c.height=v.height;c.setAttribute("aria-label","Strana "+pg);
           var ov=document.createElement("canvas");ov.className="ann";ov.width=v.width;ov.height=v.height;ov.setAttribute("data-pg",pg);
-          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);
+          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);
           return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){annDraw(ov);});});}
       for(var pg=a;pg<=b;pg++){var wrap=document.createElement("div");wrap.className="pgwrap"+(full&&pg>=from&&pg<=to?" cur":"");wrap.setAttribute("data-page",pg);
         wrap.style.height=Math.round((w)*ratio)+"px";if(full)wrap.innerHTML='<span class="pgno">str. '+pg+'</span>';box.appendChild(wrap);slots.push(wrap);}
@@ -2158,11 +2177,29 @@ function showPdf(r,k,full){
         io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var pg=+e.target.getAttribute("data-page");renderSlot(pg,e.target);io.unobserve(e.target);}});},{root:box,rootMargin:"1200px 0px"});
         slots.forEach(function(s){io.observe(s);});
         var cur=box.querySelector('[data-page="'+from+'"]'); if(cur)box.scrollTop=cur.offsetTop-box.offsetTop-8;
+        if(PSR&&PSR.doc===sc.id&&PSR.q){var pend=PSR.pending;PSR.pending=false;if(pend||!PSR.hits.length){document.getElementById("pdfQn").textContent="Hledám…";srchRun(doc,sc.id,PSR.q).then(function(h){PSR.hits=h;PSR.idx=h.length?0:-1;srchUI();srchPaintAll();if(h.length)srchGo(0);});}else{srchUI();srchPaintAll();}}
       } else {var chain=Promise.resolve();slots.forEach(function(s){chain=chain.then(function(){return renderSlot(+s.getAttribute("data-page"),s);});});
         if(full){var cur2=box.querySelector('[data-page="'+from+'"]'); if(cur2)box.scrollTop=cur2.offsetTop-box.offsetTop-8;}}
     });
   }).catch(function(e){var box=document.getElementById("pdfPages");if(box)box.innerHTML='<div class="pdfmsg">Soubor se nepodařilo otevřít ('+esc(e&&e.message?e.message:"chyba")+'). Zkuste stránku obnovit.</div>';});
 }
+/* ---------- vyhledávání ve scénáři / složkách ---------- */
+var PSR=null, SRCH_TXT={};
+function srchNorm(t){var o="";for(var i=0;i<t.length;i++){var c=t[i].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();o+=c.length===1?c:(c[0]||" ");}return o;}
+function srchPageText(doc,id,pg){var key=id+":"+pg;if(SRCH_TXT[key])return Promise.resolve(SRCH_TXT[key]);
+  return doc.getPage(pg).then(function(page){var vp=page.getViewport({scale:1});return page.getTextContent().then(function(tc){
+    var o={w:vp.width,h:vp.height,items:tc.items.filter(function(it){return it.str;}).map(function(it){var t=it.transform,fh=Math.hypot(t[2],t[3])||it.height||10;return {s:it.str,n:srchNorm(it.str),x:t[4],y:t[5],w:it.width,h:fh};})};SRCH_TXT[key]=o;return o;});});}
+function srchRun(doc,id,q){var nq=srchNorm(q),hits=[],chain=Promise.resolve();
+  for(var pg=1;pg<=doc.numPages;pg++)(function(pg){chain=chain.then(function(){return srchPageText(doc,id,pg).then(function(P){
+    P.items.forEach(function(it){var i=it.n.indexOf(nq);while(i>=0){var L=it.s.length||1;hits.push({pg:pg,l:(it.x+it.w*i/L)/P.w,t:(P.h-it.y-it.h*0.95)/P.h,ww:Math.max(it.w*nq.length/L,4)/P.w,hh:(it.h*1.2)/P.h});i=it.n.indexOf(nq,i+nq.length);}});});});})(pg);
+  return chain.then(function(){return hits;});}
+function srchUI(){var n=document.getElementById("pdfQn");if(!n||!PSR)return;n.textContent=PSR.q?(PSR.hits.length?(PSR.idx+1)+" / "+PSR.hits.length:"nenalezeno"):"";
+  ["pdfQprev","pdfQnext"].forEach(function(i){var b=document.getElementById(i);if(b)b.disabled=!(PSR.hits.length>1);});}
+function srchPaint(wrap,pg){if(!wrap)return;[].slice.call(wrap.querySelectorAll(".srchl")).forEach(function(x){x.remove();});if(!PSR||!PSR.q)return;
+  PSR.hits.forEach(function(hh,i){if(hh.pg!==pg)return;var d=document.createElement("span");d.className="srchl"+(i===PSR.idx?" cur":"");d.style.left=(hh.l*100)+"%";d.style.top=(hh.t*100)+"%";d.style.width=(hh.ww*100)+"%";d.style.height=(hh.hh*100)+"%";wrap.appendChild(d);});}
+function srchPaintAll(){var box=document.getElementById("pdfPages");if(!box)return;[].slice.call(box.querySelectorAll(".pgwrap")).forEach(function(w){srchPaint(w,+w.getAttribute("data-page"));});}
+function srchGo(i){PSR.idx=i;srchUI();srchPaintAll();var hh=PSR.hits[i],box=document.getElementById("pdfPages");if(!hh||!box)return;var w=box.querySelector('[data-page="'+hh.pg+'"]');if(!w)return;
+  box.scrollTop=w.offsetTop-box.offsetTop+hh.t*w.offsetHeight-box.clientHeight*0.3;}
 function closePdf(){var p=document.getElementById("pdfPanel");if(p)p.remove();}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closePdf();});
 
