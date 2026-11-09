@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Natáčení MARIKA">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="np-marika-192.png">
-<link rel="apple-touch-icon" href="np-marika-180.png">
-<link rel="apple-touch-icon" sizes="180x180" href="np-marika-180.png">
+<link rel="icon" href="marika-klapka-192.png">
+<link rel="apple-touch-icon" href="marika-klapka-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="marika-klapka-180.png">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 </head><body>
@@ -600,7 +600,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="8. 11. 17:30";
+var APP_BUILD="9. 11. 07:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
