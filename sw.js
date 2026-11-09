@@ -1,5 +1,5 @@
 /* Natáčecí den – offline cache. App files: network first (updates arrive at once), libraries: cache first. Supabase data is never cached here, except script/breakdown PDFs (cache nd-docs) for offline use. */
-const CACHE = "nd-v73";
+const CACHE = "nd-v74";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "marika-klapka-192.png", "marika-klapka-512.png", "marika-klapka-180.png", "lib/pdf.min.mjs", "lib/pdf.worker.min.mjs"];
 const DOCS = "nd-docs";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
@@ -22,4 +22,22 @@ self.addEventListener("fetch", e => {
   if (u.origin === location.origin) {
     e.respondWith(fetch(req, {cache: "no-store"}).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; }).catch(() => caches.match(req).then(hit => hit || caches.match("index.html"))));
   }
+});
+
+// Upozornění (Web Push) – zobrazí se na iPhonu i na spárovaných Apple Watch
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || "Natáčení MARIKA", {
+    body: d.body || "", tag: d.tag || "nd", renotify: true,
+    icon: "marika-klapka-192.png", badge: "marika-klapka-192.png",
+    data: { url: d.url || "./" }
+  }));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(cs => {
+    for (const c of cs) { if ("focus" in c) return c.focus(); }
+    return self.clients.openWindow((e.notification.data && e.notification.data.url) || "./");
+  }));
 });

@@ -505,6 +505,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px;padding:8px}
 .livemini,.rfbtn{display:none}
 .s-watch{display:flex;gap:8px;align-items:center}
+.pushrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .thbtn{display:grid;place-items:center;width:46px;height:46px;padding:0}.thbtn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8}.thbtn svg circle{fill:currentColor;stroke:none}
 @media (max-width:759px){
   .tools [data-act=refresh],.tools #liveInd{display:none!important}
@@ -606,7 +607,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="9. 11. 15:05";
+var APP_BUILD="9. 11. 17:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -623,6 +624,38 @@ var saveTimer = null, saveMsg = "", upstreamRetried = false;
 /* ---------- helpers ---------- */
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
 function splitNames(sc){sc=String(sc||"").trim();var m=/^(.*?)\s*část\s*(\d+)$/i.exec(sc);if(m)return [m[1]+"část"+m[2],m[1]+"část"+(+m[2]+1)];return [sc+"část1",sc+"část2"];}
+/* ---------- upozornění (Web Push → iPhone a Apple Watch) ---------- */
+function pushOk(){return !!(WEB&&SB&&CFG&&CFG.vapidPublic&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window);}
+function pushSendOn(){try{return localStorage.getItem("nd.pushsend")!=="0";}catch(_){return true;}}
+function pushSend(title,body,tag){if(!canEdit||!pushOk()||!pushSendOn())return;try{SB.functions.invoke("notify",{body:{title:title,body:body||"",tag:tag||"nd",url:location.origin+location.pathname}}).then(function(r){if(r&&r.error)console.warn("notify",r.error);},function(e){console.warn("notify",e);});}catch(e){console.warn(e);}}
+function nextShot(d,r){var i=d.rows.indexOf(r);for(var k=i+1;k<d.rows.length;k++){var z=d.rows[k];if(z.type==="shot"&&!fin(z)&&z.status!=="rolling")return z;}return null;}
+function pushStatus(d,r,v){if(!v)return;var O=function(z){return "O:"+(z.scene||"?");};
+  if(isMartini(r)){if(v==="rolling")pushSend("🍸 MARTINI SHOT! – točí se",nowHM(),"nd-martini");else if(v==="done")pushSend("🍸 MARTINI SHOT! natočeno",nowHM(),"nd-martini");return;}
+  if(r.type==="note"){if(v==="rolling")pushSend("⏱ "+(r.kind||"Poznámka")+(r.to?" do "+r.to:""),(r.text||"")+(r.from?" ("+r.from+(r.to?"–"+r.to:"")+")":""),"nd-now");return;}
+  var nx=nextShot(d,r),nt=nx?"Další: "+O(nx)+(nx.from?" · "+nx.from:"")+(nx.motif?" · "+nx.motif:""):"";
+  if(v==="rolling")pushSend("🎬 Natáčí se "+O(r)+(r.to?" do "+r.to:""),(r.motif||"")+(nx?"\n"+nt:""),"nd-now");
+  else if(v==="done")pushSend("✅ Natočeno "+O(r)+" ("+(r.doneAt||nowHM())+")",nt,"nd-now");
+  else if(v==="partial")pushSend("◐ "+O(r)+" natočeno částečně",nt,"nd-now");
+  else if(v==="moved")pushSend("↪ "+O(r)+" nenatočeno / přesunuto",nt,"nd-now");}
+function b64u(s){var p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
+var PUSH={on:null,busy:false,msg:""};
+function pushCheck(){if(!pushOk()){PUSH.on=false;return Promise.resolve(false);}return navigator.serviceWorker.ready.then(function(reg){return reg.pushManager.getSubscription();}).then(function(sb){PUSH.on=!!sb&&Notification.permission==="granted";return PUSH.on;},function(){PUSH.on=false;return false;});}
+function pushEnable(){if(!pushOk()){PUSH.msg="Upozornění tu nejdou zapnout. Na iPhonu otevři aplikaci z ikony na ploše (Safari → Sdílet → Přidat na plochu).";render();return;}
+  PUSH.busy=true;PUSH.msg="";render();
+  Notification.requestPermission().then(function(perm){if(perm!=="granted")throw new Error("Upozornění nejsou povolená. Povol je v Nastavení → Oznámení → Natáčení MARIKA.");
+    return navigator.serviceWorker.ready;}).then(function(reg){return reg.pushManager.getSubscription().then(function(old){return old||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(CFG.vapidPublic)});});})
+  .then(function(sb){var j=sb.toJSON();return SB.rpc("push_subscribe",{p_endpoint:j.endpoint,p_sub:j,p_device:(navigator.userAgent||"").slice(0,120)}).then(function(r){if(r.error)throw new Error("Server: "+r.error.message);});})
+  .then(function(){PUSH.on=true;PUSH.busy=false;PUSH.msg="Zapnuto. Upozornění přijdou na tento iPhone i na spárované Apple Watch.";render();},
+    function(e){PUSH.busy=false;PUSH.msg=String(e&&e.message||e);render();});}
+function pushDisable(){PUSH.busy=true;render();navigator.serviceWorker.ready.then(function(reg){return reg.pushManager.getSubscription();}).then(function(sb){if(!sb)return;var ep=sb.endpoint;return sb.unsubscribe().then(function(){return SB.rpc("push_unsubscribe",{p_endpoint:ep});});})
+  .then(function(){PUSH.on=false;PUSH.busy=false;PUSH.msg="Vypnuto.";render();},function(e){PUSH.busy=false;PUSH.msg=String(e&&e.message||e);render();});}
+function pushBlock(){if(!WEB)return "";if(PUSH.on===null){pushCheck().then(function(){if(ui.sheet&&(ui.sheet.kind==="menu"||ui.sheet.kind==="themes"))render();});}
+  return '<div class="f"><span class="lab">🔔 Upozornění (iPhone a Apple Watch)</span>'+
+    '<div class="pushrow"><b>'+(PUSH.on?'Zapnuto v tomto zařízení':'Vypnuto v tomto zařízení')+'</b>'+
+    (PUSH.on?'<button class="btn" data-act="pushoff"'+(PUSH.busy?' disabled':'')+'>Vypnout</button>':'<button class="btn primary" data-act="pushon"'+(PUSH.busy?' disabled':'')+'>'+(PUSH.busy?'Zapínám…':'Zapnout')+'</button>')+'</div>'+
+    (PUSH.msg?'<span class="hint">'+esc(PUSH.msg)+'</span>':'<span class="hint">Přijde upozornění, když se začne natáčet nový obraz, když se dotočí, a na MARTINI SHOT! a KONEC. Na Apple Watch se ukáže samo, když je iPhone zamčený.</span>')+
+    (canEdit?'<label class="chk"><input type="checkbox" id="fPushSend"'+(pushSendOn()?' checked':'')+'> Při změně stavu posílat upozornění štábu (z tohoto zařízení)</label>':'')+'</div>';}
+document.addEventListener("change",function(e){if(e.target&&e.target.id==="fPushSend"){try{localStorage.setItem("nd.pushsend",e.target.checked?"1":"0");}catch(_){}}});
 function uid(){return "r"+Math.random().toString(36).slice(2,9);}
 function pad(n){return (n<10?"0":"")+n;}
 function nowHM(){var d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());}
@@ -722,7 +755,7 @@ function headerHTML(d){
     '<div class="slot s-loc'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Lokace</span><span class="loc">'+esc(d.location||"—")+'</span></div>'+
     '<div class="slot s-shift'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Směna</span><span class="big">'+(d.shiftFrom||d.shiftTo?esc(d.shiftFrom||"?")+'–'+esc(d.shiftTo||"?"):"—")+'</span></div>'+
     '<div class="slot s-sun" title="'+esc(pl.name)+'"><span class="lab" aria-label="Slunce">'+SUN+'</span><span class="sunl"><i>VÝCHOD</i><span>'+(sun?sun.rise:"—")+'</span><i>ZÁPAD</i><span>'+(sun?sun.set:"—")+'</span></span></div>'+
-    '<div class="s-watch">'+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':'<button class="sharebtn thbtn" data-act="themesheet" aria-label="Barvy displeje" title="Barvy displeje">'+PALETTE+'</button>'+(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
+    '<div class="s-watch">'+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':'<button class="sharebtn thbtn" data-act="themesheet" aria-label="Nastavení" title="Nastavení (upozornění, barvy)">'+PALETTE+'</button>'+(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
     '<div class="slot s-clock"><span class="lab">Aktuální čas</span><span class="big clock">'+pad(t.getHours())+':'+pad(t.getMinutes())+'<small>:'+pad(t.getSeconds())+'</small></span>'+liveMiniHTML()+'</div>';
 }
 var CLOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.4 2"/></svg>';
@@ -1025,7 +1058,7 @@ function sheetHTML(){
     b='<h2>Menu</h2>'+
       ((S.plan&&S.plan.version)||day().planVer?'<span class="hint">Natáčecí plán: '+esc(day().planVer||S.plan.version)+'</span>':'')+
       '<span class="hint">Verze aplikace: '+APP_BUILD+'</span>'+(offlineInfo()?'<span class="hint">'+esc(offlineInfo())+'</span>':'')+
-      '<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span>'+themeTiles()+'</div>'+
+      pushBlock()+'<div class="f"><span class="lab">Barevná varianta (jen v tomto zařízení)</span>'+themeTiles()+'</div>'+
       '<button class="mitem" data-act="exportjson"'+(canDl?'':' disabled')+'><b>Uložit zálohu do souboru</b><span>Celý plán (všechny dny) jako soubor .json do Souborů / Stažených</span></button>'+
       (canEdit?'<button class="mitem" data-act="resetst"><b>Resetovat stavy dne</b><span>Vymaže stavy a jejich časy u všech obrazů a poznámek tohoto dne. Program zůstane.</span></button>':'')+
       (canEdit?'<button class="mitem" data-act="plan"><b>Natáčecí plán</b><span>'+(S.plan&&S.plan.version?'Načtena verze: <b>'+esc(S.plan.version)+'</b>. ':'')+'Nahrát natáčecí plán (PDF) a podle něj předběžně připravit natáčecí dny</span></button>':'')+
@@ -1195,7 +1228,7 @@ function sheetHTML(){
       '<label class="chk"><input type="checkbox" id="fSplitDone"'+(s.done?' checked':'')+'> Část 1 označit jako natočenou (teď)</label>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zrušit</button><button class="btn primary" data-act="splitok">Rozdělit</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';}
-  if(s.kind==="themes"){b='<h2>Barvy displeje</h2><p style="margin:0;color:var(--muted)">Platí jen v tomto zařízení.</p>'+themeTiles()+'<div class="actions"><div class="grp"></div><div class="grp"><button class="btn primary" data-act="close">Hotovo</button></div></div>';
+  if(s.kind==="themes"){b='<h2>Nastavení</h2>'+pushBlock()+'<span class="lab" style="margin-top:6px">Barvy displeje</span><p style="margin:0;color:var(--muted)">Platí jen v tomto zařízení.</p>'+themeTiles()+'<div class="actions"><div class="grp"></div><div class="grp"><button class="btn primary" data-act="close">Hotovo</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';}
   if(s.kind==="loc"){var lx=rowById(s.id);if(!lx){ui.sheet=null;return "";}var lr=lx.r,lt=rowLoc(lr);
     b='<h2>Lokace · O:'+esc(lr.scene||"")+'</h2><p style="margin:0;font-size:18px;font-weight:600;line-height:1.4">'+esc(lt||"Lokace není zadaná")+'</p>'+(lr.motif?'<p style="margin:0;color:var(--muted)">'+esc(lr.motif)+'</p>':'')+
@@ -2394,7 +2427,7 @@ function act(a,id,el){
       sr.status=v; sr.doneAt=(v==="done"||v==="moved"||v==="partial")?nowHM():""; if(fin(sr))sr.doneTs=Date.now(); else delete sr.doneTs; d.lastSet=v?sr.id:d.lastSet;
       var shiftedN=0;
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
-      ui.sheet=askUpd; changed();
+      ui.sheet=askUpd; changed(); pushStatus(d,sr,v);
       if(isMartini(sr)){if(v==="done")toast("MARTINI SHOT! natočeno v "+sr.doneAt);}
       else if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
       else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="partial")toast("Obraz "+sr.scene+" natočen částečně ("+sr.doneAt+") – zůstává v plánu"); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
@@ -2428,6 +2461,9 @@ function act(a,id,el){
         else if(pl==="start")ix=0;
         else if(pl==="time")ix=timeIndex(d,r.from);
         d.rows.splice(ix,0,r);
+        if(isMartini(r))pushSend("🍸 MARTINI SHOT!",(r.from?r.from+" · ":"")+"poslední záběr dne","nd-martini");
+        else if(isKonec(r))pushSend("🏁 KONEC NATÁČENÍ","Děkuji všem!"+(r.from?" ("+r.from+")":""),"nd-konec");
+        else if(/^POZOR/.test(r.kind||""))pushSend("⚠️ "+r.kind,(r.text||"")+(r.from?" ("+r.from+")":""),"nd-pozor");
         if(d.baseAt&&!fixedRow(r)&&toMin(r.from)!=null){r.origFrom=r.from;r.origTo=r.to||r.from;rcI=d.rows.indexOf(r);rcD=rowLen(r);}}
       else {var y=rowById(r.id); if(y){d.rows[y.i]=r;
         if(d.baseAt){if(!fixedRow(r)&&toMin(r.from)!=null){if(r.status==="rolling"&&r.origFrom)r.origTo=hm(toMin(r.origFrom)+rowLen(r));else if(!fin(r)){r.origFrom=r.from;r.origTo=r.to||r.from;}
@@ -2454,6 +2490,8 @@ function act(a,id,el){
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
     case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
     case "themesheet": ui.sheet={kind:"themes"}; render(); break;
+    case "pushon": pushEnable(); break;
+    case "pushoff": pushDisable(); break;
     case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{localStorage.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
     case "nowfrom": case "nowto": case "nowboth":{var nh=nowHM(),setv=function(idn){var inp=document.getElementById(idn);if(!inp)return;inp.value=nh;inp.dispatchEvent(new Event("input",{bubbles:true}));};
       if(a==="nowboth"){setv("fFrom");setv("fTo");}else setv(a==="nowfrom"?"fFrom":"fTo");
@@ -2642,7 +2680,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","pushon","pushoff","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
