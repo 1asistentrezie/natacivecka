@@ -528,8 +528,13 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .annsep{width:1px;height:24px;background:var(--line);margin:0 2px}
 .annhint{font-size:11px;color:var(--muted);flex:1 1 100%}
 .pgwrap{position:relative;line-height:0}
-.pdfauto{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.pdfauto .btn{min-height:36px;padding:0 12px}.pdfauto input{width:140px}.pdfauto .lab{margin:0 0 0 6px}.pdfauto b{font-size:13px;color:var(--muted);white-space:nowrap}
+.pdfauto{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:8px;border-left:1px solid var(--line)}
+.pdfauto .btn{min-height:38px;padding:0 10px;min-width:38px}.pdfauto input{width:64px}
+.pdfsearch #pdfQgo{min-width:42px;padding:0 8px}
+.pdfsearch input#pdfQ{min-width:56px}#pdfPanel .pdfsearch{gap:4px;padding:6px 6px}#pdfPanel .pdfsearch .btn{min-width:38px;padding:0 8px}
+#pdfPanel .annbar{flex-wrap:nowrap;overflow-x:auto;gap:3px;padding:6px 6px;scrollbar-width:none}
+@media (min-width:760px) and (max-width:1023px){.pdfpanel:not(.wide){width:72vw}}
+#pdfPanel .annbar .annt{flex:none;padding:0 8px}#pdfPanel .annbar .anni{font-size:18px;min-width:40px;font-weight:800}#pdfPanel .annbar .annsep{width:1px;margin:0 2px}#pdfPanel .annbar [data-ann=undo],#pdfPanel .annbar [data-ann=emo]{font-size:18px;min-width:38px}#pdfPanel .annbar .annhint{display:none}#pdfPanel .annbar .annc{flex:none;width:24px;height:24px}
 .annemo{max-height:30vh}.annsz{all:unset;cursor:pointer;font-weight:800;font-size:15px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;margin-right:4px}.annsz.sel{background:rgba(242,165,74,.35)}
 .srchl{position:absolute;background:rgba(255,214,0,.45);mix-blend-mode:multiply;border-radius:2px;pointer-events:none}
 .srchl.cur{background:rgba(255,140,0,.6);outline:2px solid #F2711C}
@@ -610,7 +615,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="9. 11. 17:40";
+var APP_BUILD="9. 11. 17:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2176,11 +2181,11 @@ function showPdf(r,k,full){
   pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+
     (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn pdfwide" id="pdfWide" title="'+(wide?'Zmenšit na polovinu':'Roztáhnout na celou obrazovku')+'">'+(wide?'⤡ Zmenšit':'⤢ Roztáhnout')+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
   var hd=pn.querySelector(".pdfhead");if(hd){var sb=document.createElement("div");sb.className="pdfsearch";
-    sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="'+(k==="brk"?'Hledat ve složkách…':'Hledat ve scénáři…')+'" autocomplete="off"><button class="btn" id="pdfQgo">Hledat</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
+    sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="Hledat…" autocomplete="off"><button class="btn" id="pdfQgo" aria-label="Hledat" title="Hledat">🔍</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
     hd.parentNode.insertBefore(sb,hd.nextSibling);
-    if(canEdit){var ab=document.createElement("div");ab.className="pdfauto";
-      ab.innerHTML='<button class="btn" id="asGo">▶ Autoscroll</button><span class="lab">Rychlost</span><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1"><button class="btn" id="asUp" aria-label="Rychleji">+</button><b id="asVal"></b>';
-      sb.parentNode.insertBefore(ab,sb.nextSibling);}}
+    if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
+      ab.innerHTML='<button class="btn" id="asGo" title="Autoscroll">▶</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button>';
+      sb.appendChild(ab);}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   if(!PSR||PSR.doc!==sc.id)PSR={doc:sc.id,q:"",hits:[],idx:-1};
   var qi=document.getElementById("pdfQ");qi.value=PSR.q||"";
@@ -2243,7 +2248,7 @@ function srchGo(i){PSR.idx=i;srchUI();srchPaintAll();var hh=PSR.hits[i],box=docu
 var AS={on:false,raf:0,last:0,acc:0,lvl:5};
 function asLvl(){try{return +localStorage.getItem("nd.aslvl")||5;}catch(_){return 5;}}
 function asPx(l){return Math.round(6*Math.pow(1.22,l));}
-function asUI(){var g=document.getElementById("asGo"),v=document.getElementById("asVal"),r=document.getElementById("asSp");if(g){g.textContent=AS.on?"⏸ Zastavit":"▶ Autoscroll";g.classList.toggle("primary",AS.on);}if(r)r.value=AS.lvl;if(v)v.textContent=AS.lvl+" ("+asPx(AS.lvl)+" px/s)";}
+function asUI(){var g=document.getElementById("asGo"),r=document.getElementById("asSp");if(g){g.textContent=AS.on?"⏸":"▶";g.title=AS.on?"Zastavit autoscroll":"Spustit autoscroll";g.classList.toggle("primary",AS.on);}if(r)r.value=AS.lvl;}
 function asSet(l){AS.lvl=Math.max(1,Math.min(20,l));try{localStorage.setItem("nd.aslvl",AS.lvl);}catch(_){}asUI();}
 function asStop(){AS.on=false;cancelAnimationFrame(AS.raf);asUI();}
 function asStep(t){if(!AS.on)return;var box=document.getElementById("pdfPages");if(!box){asStop();return;}var dt=AS.last?Math.min(0.1,(t-AS.last)/1000):0;AS.last=t;AS.acc+=asPx(AS.lvl)*dt;
@@ -2263,11 +2268,11 @@ function annKey(pg){return "nd.ann."+ANN.doc+"."+pg;}
 function annGet(pg){try{return JSON.parse(localStorage.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
 function annPut(pg,list,noUndo){try{if(!noUndo)ANN.undo.push({pg:pg,prev:localStorage.getItem(annKey(pg))});if(list.length)localStorage.setItem(annKey(pg),JSON.stringify(list));else localStorage.removeItem(annKey(pg));}catch(_){toast("Poznámku se nepodařilo uložit");}}
 function annBarHTML(){
-  var T=[["move","Posun"],["pen","Pero"],["hl","Zvýraznit"],["text","Text"]];
-  return '<div class="annbar" id="annBar">'+T.map(function(t){return '<button class="annt" data-ann="'+t[0]+'">'+t[1]+'</button>';}).join("")+
+  var T=[["move","✋","Posun / listování"],["pen","✏️","Pero"],["hl","🖍️","Zvýrazňovač"],["text","T","Text"]];
+  return '<div class="annbar" id="annBar">'+T.map(function(t){return '<button class="annt anni" data-ann="'+t[0]+'" title="'+t[2]+'" aria-label="'+t[2]+'">'+t[1]+'</button>';}).join("")+
     '<span class="annsep"></span>'+ANN_COLORS.map(function(c){return '<button class="annc" data-annc="'+c+'" style="background:'+c+'" aria-label="Barva"></button>';}).join("")+
-    '<span class="annsep"></span><button class="annt" data-ann="emo">😀 Nálepky</button>'+
-    '<span class="annsep"></span><button class="annt" data-ann="undo">Zpět</button><button class="annt" data-ann="clear">Smazat vše</button>'+
+    '<span class="annsep"></span><button class="annt" data-ann="emo" title="Nálepky">😀</button>'+
+    '<span class="annsep"></span><button class="annt" data-ann="undo" title="Zpět">↶</button><button class="annt" data-ann="clear">Smazat vše</button>'+
     '<span class="annhint">Poznámky se ukládají jen v tomto zařízení</span></div>'+
     '<div class="mnemo annemo" id="annEmo" hidden><div class="mnemog"><span>Velikost</span><div>'+[["S",.045],["M",.075],["L",.12]].map(function(z){return '<button class="annsz'+(ANN.ss===z[1]?' sel':'')+'" data-annsz="'+z[1]+'">'+z[0]+'</button>';}).join("")+'</div></div>'+
       MN_SVG_GROUPS.map(function(g){return '<div class="mnemog"><span>'+g[0].replace("barvou pera","barvou")+'</span><div>'+g[1].split(" ").map(function(k){return '<button class="svgst" data-annsv="'+k+'"><img src="'+mnSvgUrl(k,ANN.color)+'" alt=""></button>';}).join("")+'</div></div>';}).join("")+
