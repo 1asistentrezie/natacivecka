@@ -530,7 +530,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .pgwrap{position:relative;line-height:0}
 .pdfauto{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:8px;border-left:1px solid var(--line)}
 .pdfauto .btn{min-height:38px;padding:0 10px;min-width:38px}.pdfauto input{width:64px}
-.pdfauto .asgo{min-width:58px;min-height:44px;font-size:22px;background:#F4C631;border-color:#D9A800;color:#1E1A06}.pdfauto .asgo.primary{background:#F2A54A;border-color:#C9781F;color:#1E1A06}
+#pdfPanel .pdfsearch .pdfauto .btn.asgo{min-width:116px;padding:0 14px;flex:none;min-height:44px;font-size:22px;background:#F4C631;border-color:#D9A800;color:#1E1A06}#pdfPanel .pdfauto .asgo.primary{background:#F2A54A;border-color:#C9781F;color:#1E1A06}
 .pdfauto #asTop{font-size:20px;font-weight:800}
 
 .pdfsearch #pdfQgo{min-width:42px;padding:0 8px}
@@ -610,6 +610,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel>*{flex-shrink:0}#pdfPanel #pdfPages{flex-shrink:1}
 #pdfPanel .annbar{padding:8px 6px;min-height:64px}#pdfPanel .annbar .annt{min-height:48px;font-size:21px;min-width:46px}#pdfPanel .annbar .annc{width:34px;height:34px}#pdfPanel .annbar [data-ann=clear]{font-size:15px;padding:0 10px}
 #pdfQprev[hidden],#pdfQnext[hidden]{display:none}
+#pdfPanel .pdfsearch .pdfauto input[type=range]{width:80px;min-width:0;flex:none;margin:0 2px}#pdfPanel .pdfsearch input#pdfQ{min-width:72px}#pdfPanel .pdfsearch #pdfQgo{min-width:38px;padding:0 6px}#pdfPanel .pdfsearch .pdfauto .btn:not(.asgo){min-width:34px;padding:0 6px}#pdfPanel .pdfsearch .pdfauto{padding-left:6px;gap:3px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -623,7 +624,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 9:40";
+var APP_BUILD="10. 11. 8:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
