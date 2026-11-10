@@ -618,6 +618,10 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .annbar .annt[data-ann=erase],#pdfPanel .pdfsearch.withann .annbar .annt[data-ann=erase]{font-size:14px;font-weight:700;padding:0 8px}
 #pdfPanel.pdfpanel:not(.wide) .annbar .annt{min-width:42px;padding:0 5px}#pdfPanel.pdfpanel:not(.wide) .annbar .annc{width:30px;height:30px}#pdfPanel.pdfpanel:not(.wide) .annbar{gap:2px}#pdfPanel.pdfpanel:not(.wide) .annbar .annt[data-ann=erase],#pdfPanel.pdfpanel:not(.wide) .annbar .annt[data-ann=lasso],#pdfPanel.pdfpanel:not(.wide) .annbar [data-ann=clear]{font-size:13px;padding:0 6px}
 #pdfPanel .annbar .annt[data-ann=lasso],#pdfPanel .pdfsearch.withann .annbar .annt[data-ann=lasso]{font-size:14px;font-weight:700;padding:0 8px}
+/* černý pruh pod stavovým řádkem iPadu/iPhonu u scénáře a Moje poznámka */
+.pdfpanel{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
+.pdfpanel::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 8px);background:#000;pointer-events:none}
+.pdfpanel>.pdfhead{background:var(--surface)}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -631,7 +635,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 11:40";
+var APP_BUILD="10. 11. 15:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
