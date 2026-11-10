@@ -630,7 +630,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 9:55";
+var APP_BUILD="10. 11. 10:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2302,6 +2302,9 @@ function annBarHTML(){
       MN_SVG_GROUPS.map(function(g){return '<div class="mnemog"><span>'+g[0].replace("barvou pera","barvou")+'</span><div>'+g[1].split(" ").map(function(k){return '<button class="svgst" data-annsv="'+k+'"><img src="'+mnSvgUrl(k,ANN.color)+'" alt=""></button>';}).join("")+'</div></div>';}).join("")+
       MN_EMO.map(function(g){return '<div class="mnemog"><span>'+g[0]+'</span><div>'+g[1].split(" ").map(function(e){return '<button data-anne="'+e+'">'+e+'</button>';}).join("")+'</div></div>';}).join("")+'</div>';
 }
+function annEmoFit(pe){pe.style.maxHeight="none";pe.scrollTop=0;var top=pe.getBoundingClientRect().top,rows=[];
+  [].forEach.call(pe.querySelectorAll(".mnemog"),function(g){var y=Math.round(g.getBoundingClientRect().top-top);if(!rows.some(function(r){return Math.abs(r-y)<6;}))rows.push(y);});
+  rows.sort(function(x,y){return x-y;});pe.style.maxHeight=rows.length>2?(rows[2]-14)+"px":"";pe.style.overflowY="auto";}
 function annBarSync(){var b=document.getElementById("annBar");if(!b)return;
   [].forEach.call(b.querySelectorAll("[data-ann]"),function(x){var v=x.getAttribute("data-ann");if(v==="emo"){var pe=document.getElementById("annEmo");x.classList.toggle("on",!!(pe&&!pe.hidden)||ANN.tool==="sticker");return;}x.classList.toggle("on",v===ANN.tool);});
   [].forEach.call(b.querySelectorAll("[data-annc]"),function(x){x.classList.toggle("on",x.getAttribute("data-annc")===ANN.color);});
@@ -2326,7 +2329,7 @@ document.addEventListener("click",function(e){
   if(c){ANN.color=c.getAttribute("data-annc");if(ANN.tool==="move")ANN.tool="pen";annBarSync();
     [].forEach.call(document.querySelectorAll("[data-annsv] img"),function(im){var k=im.parentNode.getAttribute("data-annsv");im.src=mnSvgUrl(k,ANN.color);});return;}
   if(!t)return; var a=t.getAttribute("data-ann");
-  if(a==="emo"){var pe=document.getElementById("annEmo");if(pe){pe.hidden=!pe.hidden;t.classList.toggle("on",!pe.hidden);}return;}
+  if(a==="emo"){var pe=document.getElementById("annEmo");if(pe){pe.hidden=!pe.hidden;t.classList.toggle("on",!pe.hidden);if(!pe.hidden)annEmoFit(pe);}return;}
   if(a==="undo"){var u=ANN.undo.pop();if(!u){toast("Není co vrátit");return;}try{if(u.prev)localStorage.setItem(annKey(u.pg),u.prev);else localStorage.removeItem(annKey(u.pg));}catch(_){}annRedrawAll();return;}
   if(a==="clear"){if(ANN.arm!=="clear"){ANN.arm="clear";t.textContent="Opravdu smazat?";t.classList.add("armed");setTimeout(function(){ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");},4000);return;}
     ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");[].forEach.call(document.querySelectorAll("#pdfPages canvas.ann"),function(ov){var pg=+ov.getAttribute("data-pg");if(annGet(pg).length)annPut(pg,[]);});annRedrawAll();return;}
