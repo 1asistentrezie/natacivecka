@@ -530,6 +530,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .pgwrap{position:relative;line-height:0}
 .pdfauto{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:8px;border-left:1px solid var(--line)}
 .pdfauto .btn{min-height:38px;padding:0 10px;min-width:38px}.pdfauto input{width:64px}
+.pdfauto .asgo{min-width:58px;min-height:44px;font-size:22px;background:#F4C631;border-color:#D9A800;color:#1E1A06}.pdfauto .asgo.primary{background:#F2A54A;border-color:#C9781F;color:#1E1A06}
+.pdfauto #asTop{font-size:20px;font-weight:800}
+
 .pdfsearch #pdfQgo{min-width:42px;padding:0 8px}
 .pdfsearch input#pdfQ{min-width:56px}#pdfPanel .pdfsearch{gap:4px;padding:6px 6px}#pdfPanel .pdfsearch .btn{min-width:38px;padding:0 8px}
 #pdfPanel .annbar{flex-wrap:nowrap;overflow-x:auto;gap:3px;padding:6px 6px;scrollbar-width:none}
@@ -602,6 +605,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .sharebtn.shbig{width:auto;height:48px;padding:0 14px;display:inline-flex;gap:8px;align-items:center;border:3px solid #F2A54A;border-radius:10px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;color:var(--ink)}
 .sharebtn.shbig svg{width:24px;height:24px}
 @media (max-width:759px){.sharebtn.shbig{height:42px;padding:0 10px;font-size:16px}.sharebtn.shbig svg{width:21px;height:21px}}
+
+/* scénář: vyšší řádek anotací, řádky se nesmršťují */
+#pdfPanel>*{flex-shrink:0}#pdfPanel #pdfPages{flex-shrink:1}
+#pdfPanel .annbar{padding:8px 6px;min-height:64px}#pdfPanel .annbar .annt{min-height:48px;font-size:21px;min-width:46px}#pdfPanel .annbar .annc{width:34px;height:34px}#pdfPanel .annbar [data-ann=clear]{font-size:15px;padding:0 10px}
+#pdfQprev[hidden],#pdfQnext[hidden]{display:none}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -615,7 +623,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="9. 11. 17:55";
+var APP_BUILD="10. 11. 9:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2184,7 +2192,7 @@ function showPdf(r,k,full){
     sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="Hledat…" autocomplete="off"><button class="btn" id="pdfQgo" aria-label="Hledat" title="Hledat">🔍</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
     hd.parentNode.insertBefore(sb,hd.nextSibling);
     if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
-      ab.innerHTML='<button class="btn" id="asGo" title="Autoscroll">▶</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button>';
+      ab.innerHTML='<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
       sb.appendChild(ab);}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   if(!PSR||PSR.doc!==sc.id)PSR={doc:sc.id,q:"",hits:[],idx:-1};
@@ -2200,7 +2208,8 @@ function showPdf(r,k,full){
   srchUI(); if(canEdit)asInit();
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
-  document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}showPdf(r,k,full);};
+  document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};
+  PDF_FROM=from;
   openPdf(url).then(function(doc){
     var box=document.getElementById("pdfPages"); if(!box)return; box.innerHTML="";
     var w=box.clientWidth-24, dpr=Math.min(window.devicePixelRatio||1,2);
@@ -2220,10 +2229,11 @@ function showPdf(r,k,full){
       if(full&&"IntersectionObserver" in window){
         io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var pg=+e.target.getAttribute("data-page");renderSlot(pg,e.target);io.unobserve(e.target);}});},{root:box,rootMargin:"1200px 0px"});
         slots.forEach(function(s){io.observe(s);});
-        var cur=box.querySelector('[data-page="'+from+'"]'); if(cur)box.scrollTop=cur.offsetTop-box.offsetTop-8;
+        var cur=box.querySelector('[data-page="'+from+'"]'); if(cur)box.scrollTop=cur.offsetTop-box.offsetTop-8; pdfResume(box);
         if(PSR&&PSR.doc===sc.id&&PSR.q){var pend=PSR.pending;PSR.pending=false;if(pend||!PSR.hits.length){document.getElementById("pdfQn").textContent="Hledám…";srchRun(doc,sc.id,PSR.q).then(function(h){PSR.hits=h;PSR.idx=h.length?0:-1;srchUI();srchPaintAll();if(h.length)srchGo(0);});}else{srchUI();srchPaintAll();}}
       } else {var chain=Promise.resolve();slots.forEach(function(s){chain=chain.then(function(){return renderSlot(+s.getAttribute("data-page"),s);});});
-        if(full){var cur2=box.querySelector('[data-page="'+from+'"]'); if(cur2)box.scrollTop=cur2.offsetTop-box.offsetTop-8;}}
+        if(full){var cur2=box.querySelector('[data-page="'+from+'"]'); if(cur2)box.scrollTop=cur2.offsetTop-box.offsetTop-8;}
+        if(PDF_RESUME)chain.then(function(){pdfResume(box);});}
     });
   }).catch(function(e){var box=document.getElementById("pdfPages");if(box)box.innerHTML='<div class="pdfmsg">Soubor se nepodařilo otevřít ('+esc(e&&e.message?e.message:"chyba")+'). Zkuste stránku obnovit.</div>';});
 }
@@ -2238,13 +2248,18 @@ function srchRun(doc,id,q){var nq=srchNorm(q),hits=[],chain=Promise.resolve();
     P.items.forEach(function(it){var i=it.n.indexOf(nq);while(i>=0){var L=it.s.length||1;hits.push({pg:pg,l:(it.x+it.w*i/L)/P.w,t:(P.h-it.y-it.h*0.95)/P.h,ww:Math.max(it.w*nq.length/L,4)/P.w,hh:(it.h*1.2)/P.h});i=it.n.indexOf(nq,i+nq.length);}});});});})(pg);
   return chain.then(function(){return hits;});}
 function srchUI(){var n=document.getElementById("pdfQn");if(!n||!PSR)return;n.textContent=PSR.q?(PSR.hits.length?(PSR.idx+1)+" / "+PSR.hits.length:"nenalezeno"):"";
-  ["pdfQprev","pdfQnext"].forEach(function(i){var b=document.getElementById(i);if(b)b.disabled=!(PSR.hits.length>1);});}
+  ["pdfQprev","pdfQnext"].forEach(function(i){var b=document.getElementById(i);if(b){b.disabled=!(PSR.hits.length>1);b.hidden=!PSR.hits.length;}});}
 function srchPaint(wrap,pg){if(!wrap)return;[].slice.call(wrap.querySelectorAll(".srchl")).forEach(function(x){x.remove();});if(!PSR||!PSR.q)return;
   PSR.hits.forEach(function(hh,i){if(hh.pg!==pg)return;var d=document.createElement("span");d.className="srchl"+(i===PSR.idx?" cur":"");d.style.left=(hh.l*100)+"%";d.style.top=(hh.t*100)+"%";d.style.width=(hh.ww*100)+"%";d.style.height=(hh.hh*100)+"%";wrap.appendChild(d);});}
 function srchPaintAll(){var box=document.getElementById("pdfPages");if(!box)return;[].slice.call(box.querySelectorAll(".pgwrap")).forEach(function(w){srchPaint(w,+w.getAttribute("data-page"));});}
 function srchGo(i){PSR.idx=i;srchUI();srchPaintAll();var hh=PSR.hits[i],box=document.getElementById("pdfPages");if(!hh||!box)return;var w=box.querySelector('[data-page="'+hh.pg+'"]');if(!w)return;
   box.scrollTop=w.offsetTop-box.offsetTop+hh.t*w.offsetHeight-box.clientHeight*0.3;}
 /* ---------- autoscroll (editor) ---------- */
+var PDF_RESUME=null, PDF_FROM=1;
+function pdfPos(){var box=document.getElementById("pdfPages");if(!box)return {};var y=box.scrollTop,ws=box.querySelectorAll(".pgwrap");
+  for(var i=0;i<ws.length;i++){var w=ws[i],t=w.offsetTop-box.offsetTop;if(y<t+w.offsetHeight||i===ws.length-1)return {pg:+w.getAttribute("data-page"),frac:Math.max(0,(y-t)/(w.offsetHeight||1))};}return {};}
+function pdfResume(box){var R0=PDF_RESUME;if(!R0||!R0.pg)return;PDF_RESUME=null;var w=box.querySelector('[data-page="'+R0.pg+'"]');if(w)box.scrollTop=w.offsetTop-box.offsetTop+R0.frac*w.offsetHeight;
+  if(R0.on&&canEdit){AS.on=true;AS.last=0;AS.acc=0;asUI();cancelAnimationFrame(AS.raf);AS.raf=requestAnimationFrame(asStep);}}
 var AS={on:false,raf:0,last:0,acc:0,lvl:5};
 function asLvl(){try{return +localStorage.getItem("nd.aslvl")||5;}catch(_){return 5;}}
 function asPx(l){return Math.round(6*Math.pow(1.22,l));}
@@ -2256,7 +2271,8 @@ function asStep(t){if(!AS.on)return;var box=document.getElementById("pdfPages");
   AS.raf=requestAnimationFrame(asStep);}
 function asInit(){AS.lvl=asLvl();AS.on=false;asUI();
   document.getElementById("asGo").onclick=function(){if(AS.on){asStop();return;}AS.on=true;AS.last=0;AS.acc=0;asUI();AS.raf=requestAnimationFrame(asStep);};
-  document.getElementById("asDn").onclick=function(){asSet(AS.lvl-1);};document.getElementById("asUp").onclick=function(){asSet(AS.lvl+1);};
+  document.getElementById("asDn").onclick=function(){asSet(AS.lvl-1);};
+  document.getElementById("asTop").onclick=function(){var box=document.getElementById("pdfPages");if(!box)return;var w=box.querySelector('[data-page="'+PDF_FROM+'"]');box.scrollTop=w?w.offsetTop-box.offsetTop-8:0;};document.getElementById("asUp").onclick=function(){asSet(AS.lvl+1);};
   document.getElementById("asSp").oninput=function(){asSet(+this.value);};}
 function closePdf(){AS.on=false;cancelAnimationFrame(AS.raf);var p=document.getElementById("pdfPanel");if(p)p.remove();}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closePdf();});
