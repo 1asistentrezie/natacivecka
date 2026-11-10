@@ -611,6 +611,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .annbar{padding:8px 6px;min-height:64px}#pdfPanel .annbar .annt{min-height:48px;font-size:21px;min-width:46px}#pdfPanel .annbar .annc{width:34px;height:34px}#pdfPanel .annbar [data-ann=clear]{font-size:15px;padding:0 10px}
 #pdfQprev[hidden],#pdfQnext[hidden]{display:none}
 #pdfPanel .pdfsearch .pdfauto input[type=range]{width:80px;min-width:0;flex:none;margin:0 2px}#pdfPanel .pdfsearch input#pdfQ{min-width:72px}#pdfPanel .pdfsearch #pdfQgo{min-width:38px;padding:0 6px}#pdfPanel .pdfsearch .pdfauto .btn:not(.asgo){min-width:34px;padding:0 6px}#pdfPanel .pdfsearch .pdfauto{padding-left:6px;gap:3px}
+#pdfPanel .pdfsearch.withann{gap:6px}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 190px;min-width:110px}
+#pdfPanel .pdfsearch.withann .annbar{flex:0 1 auto;min-width:0;border:0;border-left:1px solid var(--line);padding:0 0 0 6px;min-height:0;background:none;margin:0}
+#pdfPanel .pdfsearch.withann .annbar .annhint{display:none}#pdfPanel .pdfsearch .pdfqn:empty{display:none}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 150px;min-width:90px}#pdfPanel .pdfsearch.withann .annbar{gap:3px}#pdfPanel .pdfsearch.withann .annbar .annt{min-height:44px;min-width:40px;font-size:19px;padding:0 5px}#pdfPanel .pdfsearch.withann .annbar .annc{width:28px;height:28px}#pdfPanel .pdfsearch.withann .annbar [data-ann=clear]{font-size:13px;padding:0 6px}#pdfPanel .pdfsearch.withann .pdfauto .btn.asgo{min-width:96px}#pdfPanel .pdfsearch.withann .pdfauto{flex:none}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -624,7 +627,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 8:30";
+var APP_BUILD="10. 11. 9:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2194,7 +2197,8 @@ function showPdf(r,k,full){
     hd.parentNode.insertBefore(sb,hd.nextSibling);
     if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
       ab.innerHTML='<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
-      sb.appendChild(ab);}}
+      sb.appendChild(ab);}
+    if(wide&&window.innerWidth>=1100){var anb=pn.querySelector(".annbar");if(anb){sb.classList.add("withann");sb.insertBefore(anb,sb.querySelector(".pdfauto"));}}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   if(!PSR||PSR.doc!==sc.id)PSR={doc:sc.id,q:"",hits:[],idx:-1};
   var qi=document.getElementById("pdfQ");qi.value=PSR.q||"";
