@@ -615,6 +615,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .pdfsearch.withann .annbar{flex:0 1 auto;min-width:0;border:0;border-left:1px solid var(--line);padding:0 0 0 6px;min-height:0;background:none;margin:0}
 #pdfPanel .pdfsearch.withann .annbar .annhint{display:none}#pdfPanel .pdfsearch .pdfqn:empty{display:none}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 150px;min-width:90px}#pdfPanel .pdfsearch.withann .annbar{gap:3px}#pdfPanel .pdfsearch.withann .annbar .annt{min-height:44px;min-width:40px;font-size:19px;padding:0 5px}#pdfPanel .pdfsearch.withann .annbar .annc{width:28px;height:28px}#pdfPanel .pdfsearch.withann .annbar [data-ann=clear]{font-size:13px;padding:0 6px}#pdfPanel .pdfsearch.withann .pdfauto .btn.asgo{min-width:96px}#pdfPanel .pdfsearch.withann .pdfauto{flex:none}
 .pdfpanel.wide .annemo .mnemog>div{max-width:none;flex-wrap:nowrap}.pdfpanel.wide .annemo{gap:8px 22px;max-height:40vh}
+#pdfPanel .annbar .annt[data-ann=erase],#pdfPanel .pdfsearch.withann .annbar .annt[data-ann=erase]{font-size:14px;font-weight:700;padding:0 8px}
+#pdfPanel.pdfpanel:not(.wide) .annbar .annt{min-width:42px;padding:0 5px}#pdfPanel.pdfpanel:not(.wide) .annbar .annc{width:30px;height:30px}#pdfPanel.pdfpanel:not(.wide) .annbar{gap:2px}#pdfPanel.pdfpanel:not(.wide) .annbar .annt[data-ann=erase],#pdfPanel.pdfpanel:not(.wide) .annbar [data-ann=clear]{font-size:13px;padding:0 6px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -628,7 +630,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 9:15";
+var APP_BUILD="10. 11. 9:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2290,7 +2292,7 @@ function annKey(pg){return "nd.ann."+ANN.doc+"."+pg;}
 function annGet(pg){try{return JSON.parse(localStorage.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
 function annPut(pg,list,noUndo){try{if(!noUndo)ANN.undo.push({pg:pg,prev:localStorage.getItem(annKey(pg))});if(list.length)localStorage.setItem(annKey(pg),JSON.stringify(list));else localStorage.removeItem(annKey(pg));}catch(_){toast("Poznámku se nepodařilo uložit");}}
 function annBarHTML(){
-  var T=[["move","✋","Posun / listování"],["pen","✏️","Pero"],["hl","🖍️","Zvýrazňovač"],["text","T","Text"]];
+  var T=[["move","✋","Posun / listování"],["pen","✏️","Pero"],["hl","🖍️","Zvýrazňovač"],["text","T","Text"],["erase","Guma","Guma – smaže text, nálepku nebo čáru"]];
   return '<div class="annbar" id="annBar">'+T.map(function(t){return '<button class="annt anni" data-ann="'+t[0]+'" title="'+t[2]+'" aria-label="'+t[2]+'">'+t[1]+'</button>';}).join("")+
     '<span class="annsep"></span>'+ANN_COLORS.map(function(c){return '<button class="annc" data-annc="'+c+'" style="background:'+c+'" aria-label="Barva"></button>';}).join("")+
     '<span class="annsep"></span><button class="annt" data-ann="emo" title="Nálepky">😀</button>'+
@@ -2334,14 +2336,22 @@ document.addEventListener("pointerdown",function(e){
   var ov=e.target.closest&&e.target.closest("canvas.ann"); if(!ov||ANN.tool==="move")return;
   e.preventDefault(); var pg=+ov.getAttribute("data-pg"), p=annPos(ov,e);
   if(ANN.tool==="text"){annText(ov,pg,p);return;}
+  if(ANN.tool==="erase"){ANN.er={ov:ov,pg:pg,pid:e.pointerId,first:true};try{ov.setPointerCapture(e.pointerId);}catch(_){}annErase(ov,pg,p);return;}
   if(ANN.tool==="sticker"&&ANN.st){var lst=annGet(pg),W0=ov.width,H0=ov.height;lst.push(ANN.st.e?{t:"emo",e:ANN.st.e,x:p[0],y:p[1],s:ANN.ss}:{t:"svg",k:ANN.st.k,c:ANN.color,x:p[0],y:p[1],s:ANN.ss*1.25});annPut(pg,lst);annDraw(ov);return;}
   ANN.cur={ov:ov,pg:pg,pid:e.pointerId,a:{t:ANN.tool,c:ANN.tool==="hl"&&ANN.color==="#E5483D"?"#F4C631":ANN.color,w:ANN.tool==="hl"?0.022:0.0045,pts:[p]}};
   try{ov.setPointerCapture(e.pointerId);}catch(_){}
 },{passive:false});
-document.addEventListener("pointermove",function(e){var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;e.preventDefault();c.a.pts.push(annPos(c.ov,e));
+document.addEventListener("pointermove",function(e){var er=ANN.er;if(er&&e.pointerId===er.pid){e.preventDefault();annErase(er.ov,er.pg,annPos(er.ov,e));return;}var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;e.preventDefault();c.a.pts.push(annPos(c.ov,e));
   var list=annGet(c.pg).concat([c.a]);var g=c.ov.getContext("2d");annDrawList(c.ov,list);},{passive:false});
 function annDrawList(ov,list){var keep=annGet;annGet=function(){return list;};annDraw(ov);annGet=keep;}
-function annEnd(e){var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;ANN.cur=null;var list=annGet(c.pg);list.push(c.a);annPut(c.pg,list);annDraw(c.ov);}
+function annHit(ov,a,p){var W=ov.width,H=ov.height,px=p[0]*W,py=p[1]*H,tol=0.012*W;
+  if(a.t==="emo"||a.t==="svg"){var h=a.s*W/2+tol;return Math.abs(px-a.x*W)<=h&&Math.abs(py-a.y*H)<=h;}
+  if(a.t==="text"){var g=ov.getContext("2d"),f=a.s*W,ls=String(a.text).split("\n");g.font="700 "+Math.round(f)+"px -apple-system,Helvetica,Arial,sans-serif";
+    var w=Math.max.apply(null,ls.map(function(l){return g.measureText(l).width;}));return px>=a.x*W-tol&&px<=a.x*W+w+tol&&py>=a.y*H-tol&&py<=a.y*H+ls.length*f*1.2+tol;}
+  var r=(a.w||0.005)*W/2+tol,P=a.pts||[];for(var i=0;i<P.length;i++){var x1=P[i][0]*W,y1=P[i][1]*H,q=P[i+1]||P[i],x2=q[0]*W,y2=q[1]*H,dx=x2-x1,dy=y2-y1,L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/L)):0,ex=x1+t*dx-px,ey=y1+t*dy-py;if(ex*ex+ey*ey<=r*r)return true;}return false;}
+function annErase(ov,pg,p){var list=annGet(pg),n=list.filter(function(a){return !annHit(ov,a,p);});if(n.length===list.length)return;
+  var er=ANN.er;annPut(pg,n,!(er&&er.first));if(er)er.first=false;annDraw(ov);}
+function annEnd(e){if(ANN.er&&e.pointerId===ANN.er.pid){ANN.er=null;return;}var c=ANN.cur;if(!c||e.pointerId!==c.pid)return;ANN.cur=null;var list=annGet(c.pg);list.push(c.a);annPut(c.pg,list);annDraw(c.ov);}
 document.addEventListener("pointerup",annEnd);document.addEventListener("pointercancel",annEnd);
 function annText(ov,pg,p){
   var wrap=ov.parentNode, old=wrap.querySelector(".anninput"); if(old)old.blur();
