@@ -614,6 +614,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .pdfsearch.withann{gap:6px}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 190px;min-width:110px}
 #pdfPanel .pdfsearch.withann .annbar{flex:0 1 auto;min-width:0;border:0;border-left:1px solid var(--line);padding:0 0 0 6px;min-height:0;background:none;margin:0}
 #pdfPanel .pdfsearch.withann .annbar .annhint{display:none}#pdfPanel .pdfsearch .pdfqn:empty{display:none}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 150px;min-width:90px}#pdfPanel .pdfsearch.withann .annbar{gap:3px}#pdfPanel .pdfsearch.withann .annbar .annt{min-height:44px;min-width:40px;font-size:19px;padding:0 5px}#pdfPanel .pdfsearch.withann .annbar .annc{width:28px;height:28px}#pdfPanel .pdfsearch.withann .annbar [data-ann=clear]{font-size:13px;padding:0 6px}#pdfPanel .pdfsearch.withann .pdfauto .btn.asgo{min-width:96px}#pdfPanel .pdfsearch.withann .pdfauto{flex:none}
+.pdfpanel.wide .annemo .mnemog>div{max-width:none;flex-wrap:nowrap}.pdfpanel.wide .annemo{gap:8px 22px;max-height:40vh}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -627,7 +628,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 9:05";
+var APP_BUILD="10. 11. 9:15";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
