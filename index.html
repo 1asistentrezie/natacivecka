@@ -622,6 +622,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .pdfpanel{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
 .pdfpanel::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 8px);background:#000;pointer-events:none}
 .pdfpanel>.pdfhead{background:var(--surface)}
+#pdfPanel .pdfsearch.withann .annbar .annc{width:26px;height:26px;margin:0 -1px}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 100px;min-width:70px}#pdfPanel .pdfsearch.withann .annbar .annt{min-width:38px}#pdfPanel .pdfsearch.withann{gap:4px}#pdfPanel.pdfpanel:not(.wide) .annbar .annc{width:26px;height:26px}
+#pdfPanel .pdfsearch.withann .annbar [data-ann=clear].trash{font-size:20px;padding:0 6px;min-width:40px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -635,7 +637,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="10. 11. 15:35";
+var APP_BUILD="11. 11. 12:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2223,7 +2225,7 @@ function showPdf(r,k,full){
     if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
       ab.innerHTML='<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
       sb.appendChild(ab);}
-    if(wide&&window.innerWidth>=1100){var anb=pn.querySelector(".annbar");if(anb){sb.classList.add("withann");sb.insertBefore(anb,sb.querySelector(".pdfauto"));}}}
+    if(wide&&window.innerWidth>=1100){var anb=pn.querySelector(".annbar");if(anb){sb.classList.add("withann");var clb=anb.querySelector("[data-ann=clear]");if(clb){clb.textContent="🗑";clb.title="Smazat vše";clb.classList.add("trash");}sb.insertBefore(anb,sb.querySelector(".pdfauto"));}}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
   if(!PSR||PSR.doc!==sc.id)PSR={doc:sc.id,q:"",hits:[],idx:-1};
   var qi=document.getElementById("pdfQ");qi.value=PSR.q||"";
@@ -2309,7 +2311,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape")closePdf();}
 
 /* ---------- annotations on script / breakdown pages: pen, highlighter, text; kept on this device ---------- */
 var ANN={doc:null,tool:"move",color:"#E5483D",undo:[],cur:null,ss:.075,st:null};
-var ANN_COLORS=["#E5483D","#1D69BF","#111111","#2FA862"];
+var ANN_COLORS=["#E5483D","#F08A24","#F2C21B","#2FA862","#1D69BF","#8A3FC4","#111111"];
 function inPoly(x,y,P){var c=false;for(var i=0,j=P.length-1;i<P.length;j=i++){var xi=P[i][0],yi=P[i][1],xj=P[j][0],yj=P[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
 function annKey(pg){return "nd.ann."+ANN.doc+"."+pg;}
 function annGet(pg){try{return JSON.parse(localStorage.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
