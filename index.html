@@ -626,7 +626,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .pdfsearch.withann .annbar [data-ann=clear].trash{font-size:20px;padding:0 6px;min-width:40px}
 .smk{position:absolute;left:8px;z-index:3;line-height:1.2;font:800 15px -apple-system,Helvetica,sans-serif;padding:5px 10px;border-radius:8px;color:#fff;background:#2FA862;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
 .smk.part{color:#1E1A06;background:repeating-linear-gradient(135deg,#2FA862 0 10px,#F4C631 10px 20px)}
-.pgwrap.smkon{box-shadow:inset 6px 0 0 #2FA862}
+.pgwrap.smkon::before{content:"";position:absolute;left:-1px;top:-6px;bottom:-6px;width:10px;z-index:2;background:#2FA862;border-radius:3px;pointer-events:none}.pgwrap.smkon.smkpart::before{background:repeating-linear-gradient(180deg,#2FA862 0 14px,#F4C631 14px 28px)}.pgwrap.smkon .smk{left:18px}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn{min-width:44px;padding:0 6px;color:var(--ink,inherit)}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn.done{background:#2FA862;border-color:#238a4f;color:#fff}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn.part{background:repeating-linear-gradient(135deg,#2FA862 0 7px,#F4C631 7px 14px);color:#111}
@@ -647,7 +647,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 9:45";
+var APP_BUILD="13. 11. 9:50";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1304,6 +1304,10 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne, nechat časy</button><button class="btn primary" data-act="recalcok">Ano, přepočítat</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
+  if(s.kind==="smkask"){var sx=rowById(s.id);if(!sx){ui.sheet=null;return "";}var srr=sx.r,pp=srr.pages;
+    b='<h2>Označit obraz '+esc(srr.scene||"")+' i ve scénáři?</h2><p style="margin:0">Ve scénáři se stránky '+pp.from+(+pp.to>+pp.from?'–'+pp.to:'')+' označí jako <b>'+(s.v==="partial"?'natočené částečně':'natočené')+'</b> a podél nich bude '+(s.v==="partial"?'zelenožlutá':'zelená')+' linka.</p>'+
+      '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne</button><button class="btn primary" data-act="smkok">Ano, označit</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';}
   if(s.kind==="rollupd"){var ux2=rowById(s.id); if(!ux2){ui.sheet=null;return "";} var ur2=ux2.r, UL2=rowLen(ur2), nf=s.t, nt=hm(toMin(nf)+UL2), df2=toMin(ur2.from)-toMin(nf);
     var nm=ur2.type==="shot"?"obrazu "+esc(ur2.scene||""):"poznámky "+esc(ur2.kind||"");
     b='<h2>Chceš aktualizovat čas '+nm+'?</h2>'+
@@ -2225,7 +2229,8 @@ function smkMap(doc){S.scriptMarks=S.scriptMarks||{};return S.scriptMarks[doc]||
 function smkPaint(wrap,pg){[].slice.call(wrap.querySelectorAll(".smk")).forEach(function(x){x.remove();});var C=SMK_CUR;if(!C)return;var M=smkMap(C.doc),n=0;
   Object.keys(M).forEach(function(sc){var m=M[sc];if(!m||pg<m.from||pg>m.to)return;var t=document.createElement("div");t.className="smk "+(m.v==="partial"?"part":"done");
     t.style.top=(8+n*34)+"px";t.textContent=(m.v==="partial"?"":"✓ ")+sc+(m.v==="partial"?" natočeno částečně":" natočeno")+(m.at?" · "+m.at:"");wrap.appendChild(t);n++;});
-  wrap.classList.toggle("smkon",n>0);}
+  var any=Object.keys(M).map(function(k){return M[k];}).filter(function(m){return m&&pg>=m.from&&pg<=m.to;});
+  wrap.classList.toggle("smkon",n>0);wrap.classList.toggle("smkpart",n>0&&!any.some(function(m){return m.v==="done";}));}
 function smkPaintAll(){var box=document.getElementById("pdfPages");if(box)[].slice.call(box.querySelectorAll(".pgwrap")).forEach(function(w){smkPaint(w,+w.getAttribute("data-page"));});smkBtnSync();}
 function smkBtnSync(){var b=document.getElementById("smkBtn"),C=SMK_CUR;if(!b||!C)return;var m=smkMap(C.doc)[C.scene];b.classList.toggle("done",!!m&&m.v==="done");b.classList.toggle("part",!!m&&m.v==="partial");}
 function smkInit(r,k,sc,from,to){SMK_CUR=k==="script"?{doc:sc.id,scene:String(r.scene||""),from:from,to:to}:null;smkBtnSync();
@@ -2575,11 +2580,15 @@ function act(a,id,el){
       sr.status=v; sr.doneAt=(v==="done"||v==="moved"||v==="partial")?nowHM():""; if(fin(sr))sr.doneTs=Date.now(); else delete sr.doneTs; d.lastSet=v?sr.id:d.lastSet;
       var shiftedN=0;
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
+      if(!askUpd&&sr.type==="shot"&&(v==="done"||v==="partial")&&sr.pages&&sr.pages.sid&&sr.scene){var pm=smkMap(sr.pages.sid)[String(sr.scene)];if(!pm||pm.v!==v)askUpd={kind:"smkask",id:sr.id,v:v};}
       ui.sheet=askUpd; changed(); pushStatus(d,sr,v);
       if(isMartini(sr)){if(v==="done")toast("MARTINI SHOT! natočeno v "+sr.doneAt);}
       else if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
       else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="partial")toast("Obraz "+sr.scene+" natočen částečně ("+sr.doneAt+") – zůstává v plánu"); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
       break;}
+    case "smkok":{var sq=ui.sheet&&ui.sheet.kind==="smkask"?ui.sheet:null,sx2=sq&&rowById(sq.id);ui.sheet=null;
+      if(sx2){var r2=sx2.r,p2=r2.pages;S.scriptMarks=S.scriptMarks||{};var M2=S.scriptMarks[p2.sid]=S.scriptMarks[p2.sid]||{};var f2=+p2.from||1;
+        M2[String(r2.scene)]={v:sq.v,from:f2,to:Math.max(f2,+p2.to||f2),at:nowHM()+" "+(day()&&day().label||"")};changed();toast("Obraz "+r2.scene+" označen i ve scénáři");}else render();break;}
     case "rollupdok":{var uq=ui.sheet&&ui.sheet.kind==="rollupd"?ui.sheet:null,ux=uq&&rowById(uq.id);ui.sheet=null;
       if(ux&&ux.r.status==="rolling"){var ur=ux.r,UL=rowLen(ur);if(!ur.origFrom){ur.origFrom=ur.from;ur.origTo=ur.to||ur.from;}ur.from=uq.t;ur.to=hm(toMin(uq.t)+UL);ur.rollMoved=true;
         changed();toast("Čas aktualizován: "+ur.from+"–"+ur.to+" (plán "+ur.origFrom+"–"+ur.origTo+")");} else render(); break;}
