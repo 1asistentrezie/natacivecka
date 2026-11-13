@@ -644,6 +644,10 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 #pdfPanel .pdfsearch.withann .pdfauto{flex:1 1 auto;margin-left:0;min-width:0;gap:5px}
 #pdfPanel .pdfsearch.withann .pdfauto input[type=range]{flex:1 1 auto;width:auto;min-width:60px}
 #pdfPanel .pdfsearch.withann .pdfauto>.btn{flex:none}#pdfPanel .pdfsearch.withann .pdfauto input[type=range]#asSp{flex:1 1 0;width:auto}#pdfPanel .pdfsearch.withann .pdfauto #asDn,#pdfPanel .pdfsearch.withann .pdfauto #asUp{flex:none;min-width:46px;max-width:52px;font-size:24px;font-weight:800}
+.pdfauto .aswrap{position:relative;display:flex;align-items:center;width:84px;flex:none;align-self:stretch}
+.pdfauto .aswrap #asNum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 30px/1 -apple-system,Helvetica,sans-serif;opacity:.4;pointer-events:none;z-index:0}
+#pdfPanel .pdfauto .aswrap input[type=range]#asSp{position:relative;z-index:1;width:100%;min-width:0;flex:1 1 auto;margin:0;background:transparent}
+#pdfPanel .pdfsearch.withann .pdfauto .aswrap{flex:1 1 0;width:auto;min-width:70px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -657,7 +661,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 16:05";
+var APP_BUILD="13. 11. 16:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2284,7 +2288,7 @@ function showPdf(r,k,full){
     sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="Hledat…" autocomplete="off"><button class="btn" id="pdfQgo" aria-label="Hledat" title="Hledat">🔍</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
     hd.parentNode.insertBefore(sb,hd.nextSibling);
     if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
-      ab.innerHTML=(k==="script"?'<button class="btn smkbtn" id="smkBtn" aria-label="Označit scénu jako natočenou" title="Označit scénu jako natočenou">'+SMK_ICON+'</button>':'')+'<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
+      ab.innerHTML=(k==="script"?'<button class="btn smkbtn" id="smkBtn" aria-label="Označit scénu jako natočenou" title="Označit scénu jako natočenou">'+SMK_ICON+'</button>':'')+'<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><span class="aswrap"><span id="asNum" aria-hidden="true"></span><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"></span><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
       sb.appendChild(ab);}
     if(wide&&window.innerWidth>=1100){var anb=pn.querySelector(".annbar");if(anb){sb.classList.add("withann");var clb=anb.querySelector("[data-ann=clear]");if(clb){clb.textContent="🗑";clb.title="Smazat vše";clb.classList.add("trash");}sb.insertBefore(anb,sb.querySelector(".pdfauto"));}}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
@@ -2356,7 +2360,7 @@ function pdfResume(box){var R0=PDF_RESUME;if(!R0||!R0.pg)return;PDF_RESUME=null;
 var AS={on:false,raf:0,last:0,acc:0,lvl:5};
 function asLvl(){try{return +localStorage.getItem("nd.aslvl")||5;}catch(_){return 5;}}
 function asPx(l){return Math.round(6*Math.pow(1.22,l));}
-function asUI(){var g=document.getElementById("asGo"),r=document.getElementById("asSp");if(g){g.textContent=AS.on?"⏸":"▶";g.title=AS.on?"Zastavit autoscroll":"Spustit autoscroll";g.classList.toggle("primary",AS.on);}if(r)r.value=AS.lvl;}
+function asUI(){var g=document.getElementById("asGo"),r=document.getElementById("asSp");if(g){g.textContent=AS.on?"⏸":"▶";g.title=AS.on?"Zastavit autoscroll":"Spustit autoscroll";g.classList.toggle("primary",AS.on);}if(r)r.value=AS.lvl;var nn=document.getElementById("asNum");if(nn)nn.textContent=AS.lvl;}
 function asSet(l){AS.lvl=Math.max(1,Math.min(20,l));try{localStorage.setItem("nd.aslvl",AS.lvl);}catch(_){}asUI();}
 function asStop(){AS.on=false;cancelAnimationFrame(AS.raf);asUI();}
 function asStep(t){if(!AS.on)return;var box=document.getElementById("pdfPages");if(!box){asStop();return;}var dt=AS.last?Math.min(0.1,(t-AS.last)/1000):0;AS.last=t;AS.acc+=asPx(AS.lvl)*dt;
