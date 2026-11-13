@@ -644,9 +644,9 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 #pdfPanel .pdfsearch.withann .pdfauto{flex:1 1 auto;margin-left:0;min-width:0;gap:5px}
 #pdfPanel .pdfsearch.withann .pdfauto input[type=range]{flex:1 1 auto;width:auto;min-width:60px}
 #pdfPanel .pdfsearch.withann .pdfauto>.btn{flex:none}#pdfPanel .pdfsearch.withann .pdfauto input[type=range]#asSp{flex:1 1 0;width:auto}#pdfPanel .pdfsearch.withann .pdfauto #asDn,#pdfPanel .pdfsearch.withann .pdfauto #asUp{flex:none;min-width:46px;max-width:52px;font-size:24px;font-weight:800}
-.pdfauto .aswrap{position:relative;display:flex;align-items:center;width:84px;flex:none;align-self:stretch}
-.pdfauto .aswrap #asNum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 30px/1 -apple-system,Helvetica,sans-serif;opacity:.4;pointer-events:none;z-index:0}
-#pdfPanel .pdfauto .aswrap input[type=range]#asSp{position:relative;z-index:1;width:100%;min-width:0;flex:1 1 auto;margin:0;background:transparent}
+.pdfauto .aswrap{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:stretch;width:84px;flex:none;align-self:stretch;gap:0}
+.pdfauto .aswrap #asNum{display:block;text-align:center;font:800 15px/1 -apple-system,Helvetica,sans-serif;opacity:.85;pointer-events:none;margin-bottom:-2px}
+#pdfPanel .pdfauto .aswrap input[type=range]#asSp{width:100%;min-width:0;flex:none;margin:0;background:transparent}
 #pdfPanel .pdfsearch.withann .pdfauto .aswrap{flex:1 1 0;width:auto;min-width:70px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
@@ -661,7 +661,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 16:30";
+var APP_BUILD="13. 11. 16:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
