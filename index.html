@@ -634,6 +634,10 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .smkmenu .btn{justify-content:flex-start;min-height:46px;font-size:16px}.smkmenu .smkh{font-weight:800;font-size:13px;opacity:.7;padding:0 2px 2px}
 #pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 84px;min-width:64px}#pdfPanel .pdfsearch.withann .pdfauto input[type=range]{width:66px}
 .smkmenu .smksw{display:inline-block;width:18px;height:18px;border-radius:50%;margin-right:8px;background:repeating-linear-gradient(135deg,#2FA862 0 5px,#F4C631 5px 10px);vertical-align:-3px}
+.shl{max-height:62vh;overflow:auto}.shi{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;padding:8px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;border-left:8px solid #2FA862}
+.shi.part{border-left-color:transparent;border-image:repeating-linear-gradient(180deg,#2FA862 0 8px,#F4C631 8px 16px) 0 0 0 8}
+.shi .shst{font-weight:800;color:#2FA862;text-align:right;white-space:nowrap}.shi.part .shst{color:#B8890A}.shi .shst small{display:block;font-weight:600;opacity:.7;color:var(--ink,inherit)}
+button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64px minmax(0,1fr) auto;gap:8px}}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -647,7 +651,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 9:50";
+var APP_BUILD="13. 11. 10:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -989,7 +993,7 @@ function render(){
   var tools=(canEdit||standalone?'<span class="daynav"><button class="btn dnav" data-act="dayprev" aria-label="Předchozí den"'+(di>0?'':' disabled')+'>‹</button><select id="daySel" aria-label="Natáčecí den">'+opts+'</select><button class="btn dnav" data-act="daynext" aria-label="Další den"'+(di<DS.length-1?'':' disabled')+'>›</button></span>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
-      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
+      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="shotlist" role="menuitem">Natočené obrazy</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
       (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button><button data-act="resetbase" role="menuitem">Resetovat vše podle výchozího nastavení<small>'+(d.baseAt?'vrátí časy z '+esc(d.baseAt):'výchozí čas zatím nenastaven')+'</small></button></span>':'')+'</span>'+
       '<button class="btn rfed hist" data-act="hundo" aria-label="Krok zpět" title="Krok zpět ('+UNDO.length+')"'+(UNDO.length?'':' disabled')+'>'+UNDO_I+'</button>'+
@@ -1171,6 +1175,23 @@ function sheetHTML(){
         (docList("brk").length?'<button class="btn" data-act="obrfromslozky"'+(s.busy?' disabled':'')+'>Načíst z nahraných složek</button>':'')+
         (OL.length?'<button class="btn danger'+(ui.arm==="obrclr"?" armed":"")+'" data-act="obrclr">'+(ui.arm==="obrclr"?"Opravdu smazat seznam?":"Smazat seznam")+'</button>':'')+'</div>'+
       '<div class="grp"><button class="btn" data-act="close">Zavřít</button><button class="btn primary" id="obrAdd" data-act="obradd"'+(nsel?'':' disabled')+'>'+(nsel?'Přidat do dne ('+nsel+')':'Přidat do dne')+'</button></div></div>';
+    return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+b+'</div></div>';
+  }
+  if(s.kind==="shotlist"){
+    var SL=[],seen={};
+    S.days.forEach(function(d){d.rows.forEach(function(r){if(r.type!=="shot"||(r.status!=="done"&&r.status!=="partial"))return;SL.push({d:d,r:r,key:(d.date||"9999")+" "+(r.doneAt||r.from||"99:99")});seen[String(r.scene)]=1;});});
+    var MK=S.scriptMarks||{},extra=[];Object.keys(MK).forEach(function(doc){Object.keys(MK[doc]).forEach(function(sc){if(!seen[sc]){seen[sc]=1;extra.push({sc:sc,m:MK[doc][sc]});}});});
+    SL.sort(function(a,b){return a.key<b.key?-1:a.key>b.key?1:0;});
+    var nD=SL.filter(function(x){return x.r.status==="done";}).length,nP=SL.length-nD,e8=SL.reduce(function(t,x){return t+(x.r.status==="done"?(eighths(x.r.len)||0):0);},0);
+    var f8=function(e){var w=Math.floor(e/8),r=e%8;return (w?w:"")+(w&&r?" ":"")+(r?r+"/8":"")||"0";};
+    var lastD=null;
+    b='<h2>Natočené obrazy</h2><div class="scsum">Natočeno celých: <b>'+nD+'</b> · částečně: <b>'+nP+'</b>'+(e8?' · natočeno stran: <b>'+f8(e8)+'</b>':'')+'</div>'+
+      '<div class="obrlist shl">'+(SL.length||extra.length?'':'<p class="memo2" style="padding:12px">Zatím není žádný obraz označený jako natočený.</p>')+
+      SL.map(function(x){var h="";if(x.d!==lastD){lastD=x.d;h='<div class="obrep">'+esc(x.d.label||"")+(x.d.date?' · '+esc(fmtDate(x.d.date)):'')+'</div>';}
+        var pt=x.r.status==="partial";
+        return h+'<button class="shi'+(pt?' part':'')+'" data-act="chrogo" data-day="'+x.d.id+'" data-id="'+x.r.id+'"><span class="obrno">'+esc(x.r.scene||"")+'</span><span class="obrb"><span class="obrm">'+esc(x.r.motif||"—")+'</span><span class="obrr">'+esc(x.r.roles||"")+'</span></span><span class="shst">'+(pt?'částečně':'natočeno')+(x.r.doneAt?' '+esc(x.r.doneAt):'')+(x.r.len?'<small>'+esc(x.r.len)+' str.</small>':'')+'</span></button>';}).join("")+
+      (extra.length?'<div class="obrep">Označeno jen ve scénáři</div>'+extra.map(function(x){var pt=x.m.v==="partial";return '<div class="shi'+(pt?' part':'')+'"><span class="obrno">'+esc(x.sc)+'</span><span class="obrb"><span class="obrm">str. '+x.m.from+(x.m.to>x.m.from?'–'+x.m.to:'')+'</span></span><span class="shst">'+(pt?'částečně':'natočeno')+(x.m.at?'<small>'+esc(x.m.at)+'</small>':'')+'</span></div>';}).join(""):'')+
+      '</div><div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="chrono"){
@@ -2726,6 +2747,7 @@ function act(a,id,el){
     case "setbase": ui.timeMenu=false; ui.sheet=null; setBase(d); changed(); toast("Výchozí čas uložen ("+d.baseAt+") – podle něj se počítá náskok / zpoždění"); break;
     case "basen": d.baseAsked=d.date||todayISO(); ui.sheet=null; render(); queueSave(); lastSnap=snapS(); break;
     case "planclose": ui.planMenu=false; render(); break;
+    case "shotlist": ui.planMenu=false; ui.sheet={kind:"shotlist"}; render(); break;
     case "chrono": ui.planMenu=false; ui.sheet={kind:"chrono",q:"",mode:"all"}; render(); filterChrono(); break;
     case "chromode": ui.sheet.mode=el.getAttribute("data-m"); var sy=(document.querySelector(".chrlist")||{}).scrollTop||0; render(); filterChrono(); break;
     case "chrogo":{ var did=el.getAttribute("data-day"), rid=el.getAttribute("data-id"); ui.dayId=did; ui.dayPicked=true; ls("nd.day",did); ui.sheet=null; ui.showDone=true; render();
