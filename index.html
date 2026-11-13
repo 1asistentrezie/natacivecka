@@ -653,7 +653,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 11:55";
+var APP_BUILD="13. 11. 12:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2247,7 +2247,7 @@ function uploadDoc(k){
   };
   inp.click();
 }
-var SMK_ICON='<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 22V10l10 12V10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M6.8 25.2 25.2 6.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',SMK_CUR=null;
+var SMK_ICON='<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 22V10l10 12V10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>',SMK_CUR=null;
 function smkMap(doc){S.scriptMarks=S.scriptMarks||{};return S.scriptMarks[doc]||{};}
 function smkPaint(wrap,pg){[].slice.call(wrap.querySelectorAll(".smk")).forEach(function(x){x.remove();});var C=SMK_CUR;if(!C)return;var M=smkMap(C.doc),n=0;
   Object.keys(M).forEach(function(sc){var m=M[sc];if(!m||pg<m.from||pg>m.to)return;var t=document.createElement("div");t.className="smk "+(m.v==="partial"?"part":"done");
