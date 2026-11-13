@@ -624,6 +624,16 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .pdfpanel>.pdfhead{background:var(--surface)}
 #pdfPanel .pdfsearch.withann .annbar .annc{width:26px;height:26px;margin:0 -1px}#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 100px;min-width:70px}#pdfPanel .pdfsearch.withann .annbar .annt{min-width:38px}#pdfPanel .pdfsearch.withann{gap:4px}#pdfPanel.pdfpanel:not(.wide) .annbar .annc{width:26px;height:26px}
 #pdfPanel .pdfsearch.withann .annbar [data-ann=clear].trash{font-size:20px;padding:0 6px;min-width:40px}
+.smk{position:absolute;left:8px;z-index:3;line-height:1.2;font:800 15px -apple-system,Helvetica,sans-serif;padding:5px 10px;border-radius:8px;color:#fff;background:#2FA862;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
+.smk.part{color:#1E1A06;background:repeating-linear-gradient(135deg,#2FA862 0 10px,#F4C631 10px 20px)}
+.pgwrap.smkon{box-shadow:inset 6px 0 0 #2FA862}
+#pdfPanel .pdfsearch .pdfauto .btn.smkbtn{min-width:44px;padding:0 6px;color:var(--ink,inherit)}
+#pdfPanel .pdfsearch .pdfauto .btn.smkbtn.done{background:#2FA862;border-color:#238a4f;color:#fff}
+#pdfPanel .pdfsearch .pdfauto .btn.smkbtn.part{background:repeating-linear-gradient(135deg,#2FA862 0 7px,#F4C631 7px 14px);color:#111}
+.smkmenu{position:absolute;z-index:30;display:flex;flex-direction:column;gap:6px;padding:10px;min-width:220px;background:var(--surface,#fff);border:1px solid var(--line,#ccc);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.smkmenu .btn{justify-content:flex-start;min-height:46px;font-size:16px}.smkmenu .smkh{font-weight:800;font-size:13px;opacity:.7;padding:0 2px 2px}
+#pdfPanel .pdfsearch.withann input#pdfQ{flex:0 1 84px;min-width:64px}#pdfPanel .pdfsearch.withann .pdfauto input[type=range]{width:66px}
+.smkmenu .smksw{display:inline-block;width:18px;height:18px;border-radius:50%;margin-right:8px;background:repeating-linear-gradient(135deg,#2FA862 0 5px,#F4C631 5px 10px);vertical-align:-3px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -637,7 +647,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="11. 11. 12:55";
+var APP_BUILD="13. 11. 9:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2210,6 +2220,25 @@ function uploadDoc(k){
   };
   inp.click();
 }
+var SMK_ICON='<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 22V10l10 12V10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M6.8 25.2 25.2 6.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',SMK_CUR=null;
+function smkMap(doc){S.scriptMarks=S.scriptMarks||{};return S.scriptMarks[doc]||{};}
+function smkPaint(wrap,pg){[].slice.call(wrap.querySelectorAll(".smk")).forEach(function(x){x.remove();});var C=SMK_CUR;if(!C)return;var M=smkMap(C.doc),n=0;
+  Object.keys(M).forEach(function(sc){var m=M[sc];if(!m||pg<m.from||pg>m.to)return;var t=document.createElement("div");t.className="smk "+(m.v==="partial"?"part":"done");
+    t.style.top=(8+n*34)+"px";t.textContent=(m.v==="partial"?"":"✓ ")+sc+(m.v==="partial"?" natočeno částečně":" natočeno")+(m.at?" · "+m.at:"");wrap.appendChild(t);n++;});
+  wrap.classList.toggle("smkon",n>0);}
+function smkPaintAll(){var box=document.getElementById("pdfPages");if(box)[].slice.call(box.querySelectorAll(".pgwrap")).forEach(function(w){smkPaint(w,+w.getAttribute("data-page"));});smkBtnSync();}
+function smkBtnSync(){var b=document.getElementById("smkBtn"),C=SMK_CUR;if(!b||!C)return;var m=smkMap(C.doc)[C.scene];b.classList.toggle("done",!!m&&m.v==="done");b.classList.toggle("part",!!m&&m.v==="partial");}
+function smkInit(r,k,sc,from,to){SMK_CUR=k==="script"?{doc:sc.id,scene:String(r.scene||""),from:from,to:to}:null;smkBtnSync();
+  var b=document.getElementById("smkBtn");if(!b)return;
+  b.onclick=function(e){e.stopPropagation();var old=document.getElementById("smkMenu");if(old){old.remove();return;}var C=SMK_CUR,m=smkMap(C.doc)[C.scene];
+    var mn=document.createElement("div");mn.id="smkMenu";mn.className="smkmenu";
+    mn.innerHTML='<div class="smkh">Obraz '+esc(C.scene)+' · str. '+C.from+(C.to!==C.from?'–'+C.to:'')+'</div><button class="btn" data-smk="done">✓ Natočeno celé</button><button class="btn" data-smk="partial"><i class="smksw"></i>Natočeno částečně</button>'+(m?'<button class="btn" data-smk="">Zrušit označení</button>':'');
+    var pn=document.getElementById("pdfPanel"),rb=b.getBoundingClientRect(),pr=pn.getBoundingClientRect();pn.appendChild(mn);
+    mn.style.top=(rb.bottom-pr.top+6)+"px";mn.style.left=Math.max(8,Math.min(rb.left-pr.left,pr.width-mn.offsetWidth-8))+"px";
+    mn.onclick=function(ev){var x=ev.target.closest("[data-smk]");if(!x)return;var v=x.getAttribute("data-smk");S.scriptMarks=S.scriptMarks||{};var M=S.scriptMarks[C.doc]=S.scriptMarks[C.doc]||{};
+      if(v)M[C.scene]={v:v,from:C.from,to:C.to,at:nowHM()+" "+(day()&&day().label||"")};else delete M[C.scene];mn.remove();queueSave();smkPaintAll();
+      toast(v?"Obraz "+C.scene+(v==="partial"?" označen jako natočený částečně":" označen jako natočený"):"Označení obrazu "+C.scene+" zrušeno");};
+    setTimeout(function(){document.addEventListener("pointerdown",function cl(ev){if(!mn.contains(ev.target)&&ev.target!==b){mn.remove();}document.removeEventListener("pointerdown",cl,true);},true);},0);};}
 function showPdf(r,k,full){
   k=k||"script"; var f=r[DK[k].field], sc=f&&docById(k,f.sid); if(!sc)return;
   var url=blobUrl(sc.id), from=+f.from||1, to=Math.max(from,+f.to||from);
@@ -2223,7 +2252,7 @@ function showPdf(r,k,full){
     sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="Hledat…" autocomplete="off"><button class="btn" id="pdfQgo" aria-label="Hledat" title="Hledat">🔍</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
     hd.parentNode.insertBefore(sb,hd.nextSibling);
     if(canEdit){var ab=document.createElement("span");ab.className="pdfauto";
-      ab.innerHTML='<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
+      ab.innerHTML=(k==="script"?'<button class="btn smkbtn" id="smkBtn" aria-label="Označit scénu jako natočenou" title="Označit scénu jako natočenou">'+SMK_ICON+'</button>':'')+'<button class="btn" id="asTop" aria-label="Na začátek obrazu" title="Na začátek obrazu">⤒</button><button class="btn" id="asDn" aria-label="Pomaleji">−</button><input type="range" id="asSp" min="1" max="20" step="1" aria-label="Rychlost posunu"><button class="btn" id="asUp" aria-label="Rychleji">+</button><button class="btn asgo" id="asGo" title="Autoscroll">▶</button>';
       sb.appendChild(ab);}
     if(wide&&window.innerWidth>=1100){var anb=pn.querySelector(".annbar");if(anb){sb.classList.add("withann");var clb=anb.querySelector("[data-ann=clear]");if(clb){clb.textContent="🗑";clb.title="Smazat vše";clb.classList.add("trash");}sb.insertBefore(anb,sb.querySelector(".pdfauto"));}}}
   document.body.appendChild(pn); ANN.doc=sc.id; ANN.tool="move"; annBarSync();
@@ -2237,7 +2266,7 @@ function showPdf(r,k,full){
   qi.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doSearch();qi.blur();}});
   document.getElementById("pdfQprev").onclick=function(){if(PSR.hits.length){srchGo((PSR.idx-1+PSR.hits.length)%PSR.hits.length);}};
   document.getElementById("pdfQnext").onclick=function(){if(PSR.hits.length){srchGo((PSR.idx+1)%PSR.hits.length);}};
-  srchUI(); if(canEdit)asInit();
+  srchUI(); if(canEdit)asInit(); smkInit(r,k,sc,from,to);
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
   document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};
@@ -2254,7 +2283,7 @@ function showPdf(r,k,full){
           var vv=page.getViewport({scale:1}), sc2=w/vv.width*dpr, v=page.getViewport({scale:sc2});
           var c=document.createElement("canvas");c.width=v.width;c.height=v.height;c.setAttribute("aria-label","Strana "+pg);
           var ov=document.createElement("canvas");ov.className="ann";ov.width=v.width;ov.height=v.height;ov.setAttribute("data-pg",pg);
-          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);
+          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);smkPaint(wrap,pg);
           return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){annDraw(ov);});});}
       for(var pg=a;pg<=b;pg++){var wrap=document.createElement("div");wrap.className="pgwrap"+(full&&pg>=from&&pg<=to?" cur":"");wrap.setAttribute("data-page",pg);
         wrap.style.height=Math.round((w)*ratio)+"px";if(full)wrap.innerHTML='<span class="pgno">str. '+pg+'</span>';box.appendChild(wrap);slots.push(wrap);}
@@ -2955,7 +2984,7 @@ function publicState(){
   if(!ds.length){var all=S.days.filter(function(d){return d.date;}).sort(function(a,b){return a.date<b.date?-1:1;});ds=all.slice(-1);}
   if(!ds.length)ds=S.days.slice(0,1);
   ds=ds.map(function(d){var c=JSON.parse(JSON.stringify(d));c.rows.forEach(function(r){if(r.type!=="shot")return;var de=rowDesc(r),lo=rowLoc(r);if(de)r.desc=de;if(lo)r.loc=lo;});return c;});
-  return {project:S.project||"",plan:S.plan||null,cast:castList(),scripts:scripts(),slozky:docList("brk"),days:ds,savedAt:S.savedAt};
+  return {project:S.project||"",plan:S.plan||null,cast:castList(),scripts:scripts(),slozky:docList("brk"),scriptMarks:S.scriptMarks||{},days:ds,savedAt:S.savedAt};
 }
 function cacheKey(){return "nd.cache."+liveRow;}
 function cacheSave(){try{localStorage.setItem(cacheKey(),JSON.stringify(S));}catch(_){}}
