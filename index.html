@@ -626,7 +626,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 #pdfPanel .pdfsearch.withann .annbar [data-ann=clear].trash{font-size:20px;padding:0 6px;min-width:40px}
 .smk{position:absolute;left:8px;z-index:3;line-height:1.2;font:800 15px -apple-system,Helvetica,sans-serif;padding:5px 10px;border-radius:8px;color:#fff;background:#2FA862;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
 .smk.part{color:#1E1A06;background:repeating-linear-gradient(135deg,#2FA862 0 10px,#F4C631 10px 20px)}
-.pgwrap.smkon .smk{left:66px}.pgwrap.smkon::before{content:"";position:absolute;left:38px;right:auto;top:-6px;bottom:-6px;width:19px;z-index:2;background:#2FA862;border-radius:3px;pointer-events:none}.pgwrap.smkon.smkpart::before{background:repeating-linear-gradient(180deg,#2FA862 0 14px,#F4C631 14px 28px)}
+.pgwrap.smkon .smk{left:calc(min(38px,3%) + 18px)}.pgwrap.smkon::before{content:"";position:absolute;left:min(38px,3%);right:auto;top:-6px;bottom:-6px;width:10px;opacity:.55;z-index:2;background:#2FA862;border-radius:3px;pointer-events:none}.pgwrap.smkon.smkpart::before{background:repeating-linear-gradient(180deg,#2FA862 0 14px,#F4C631 14px 28px)}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn{min-width:44px;padding:0 6px;background:#000;border-color:#000;color:#34C46E}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn.done{background:#2FA862;border-color:#238a4f;color:#fff}
 #pdfPanel .pdfsearch .pdfauto .btn.smkbtn.part{background:repeating-linear-gradient(135deg,#2FA862 0 7px,#F4C631 7px 14px);color:#111}
@@ -653,7 +653,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 15:50";
+var APP_BUILD="13. 11. 15:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
