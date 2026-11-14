@@ -659,6 +659,8 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .pdfpanel:not(.wide) .pdftime .ppl{display:none}.pdfpanel:not(.wide) .pdftime .ptm{font-size:16px}.pdfpanel:not(.wide) .pdftime{padding:2px 6px;gap:5px}
 .pdfhead .pdfclock{flex:none;font:800 22px var(--f-display,inherit);letter-spacing:.03em;padding:2px 4px 2px 8px;margin-left:2px;border-left:1px solid var(--line);font-variant-numeric:tabular-nums}.pdfpanel:not(.wide) .pdfhead .btn{padding:0 8px;font-size:13px}.pdfpanel:not(.wide) .pdfhead{gap:6px;padding:10px 10px}
 .pdfauto .aswrap{overflow:hidden;padding:0 2px}
+.pdfhead .pdftime .ptm{padding:1px 10px;border-radius:7px;border:2px solid transparent}
+.pdfhead .pdftime.pc-ahead .ptm{background:#F4C631;color:#1E1A06}.pdfhead .pdftime.pc-ok .ptm{background:#2FA862;color:#fff}.pdfhead .pdftime.pc-late .ptm{background:#E5483D;color:#fff}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -672,7 +674,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="14. 11. 17:25";
+var APP_BUILD="14. 11. 18:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1049,11 +1051,11 @@ function tbHTML(pc){return pc&&pc.t?'<span class="tb '+pc.k+'"><small>'+PACE_LBL
 function paceCls(r){var pc=paceOf(r);return pc&&pc.t?' pc-'+pc.k:'';}
 setInterval(function(){var c=document.getElementById("pdfClock");if(c){var t=nowHM();if(c.textContent!==t)c.textContent=t;}},5000);
 function pdfTimeHTML(r){if(!r||!r.from)return "";var st=r.status==="done"?'<i class="pts done">natočeno</i>':r.status==="partial"?'<i class="pts part">částečně</i>':r.status==="rolling"?'<i class="pts roll">probíhá</i>':'';
-  return '<div class="pdftime"><b class="ptm">'+esc(r.from)+(r.to?'–'+esc(r.to):'')+'</b>'+(r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<small class="ppl">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</small>':'')+paceHTML(r)+st+'</div>';}
+  return '<div class="pdftime'+paceCls(r)+'"><b class="ptm">'+esc(r.from)+(r.to?'–'+esc(r.to):'')+'</b>'+(r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<small class="ppl">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</small>':'')+paceHTML(r)+st+'</div>';}
 function paceHTML(r){return '<span class="pace" data-pace="'+r.id+'">'+tbHTML(paceOf(r))+'</span>';}
 function planLine(r){return r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<span class="origplan">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</span>':'';}
 function tickPace(){var d=day();[].forEach.call(document.querySelectorAll("[data-pace]"),function(el){var id=el.getAttribute("data-pace"),r=null;for(var i=0;i<d.rows.length;i++)if(d.rows[i].id===id){r=d.rows[i];break;}
-  if(!r)return;var pc=paceOf(r),h=tbHTML(pc);if(el.innerHTML!==h)el.innerHTML=h;var t=el.closest(".time");if(t)["ahead","ok","late"].forEach(function(k){t.classList.toggle("pc-"+k,!!(pc&&pc.t&&pc.k===k));});});}
+  if(!r)return;var pc=paceOf(r),h=tbHTML(pc);if(el.innerHTML!==h)el.innerHTML=h;var t=el.closest(".time")||el.closest(".pdftime");if(t)["ahead","ok","late"].forEach(function(k){t.classList.toggle("pc-"+k,!!(pc&&pc.t&&pc.k===k));});});}
 function tick(){tickCd();tickPace();
   if(Date.now()-(ui.hkT||0)>15000){ui.hkT=Date.now();try{var hk=Object.keys(hiddenRows(day())).sort().join(",");if(ui.hk!=null&&hk!==ui.hk&&!ui.sheet&&!ui.drag)render();ui.hk=hk;}catch(_){}}var dB=day();if(askBase(dB)){ui.sheet={kind:"basepr"};render();}var b=document.getElementById("bar");if(b&&!ui.drag){b.innerHTML=headerHTML(day());b.classList.toggle("tracking",!!ui.track);}}
 
