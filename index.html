@@ -648,6 +648,15 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .pdfauto .aswrap #asNum{display:block;text-align:center;font:800 15px/1 -apple-system,Helvetica,sans-serif;opacity:.85;pointer-events:none;margin-bottom:-2px}
 #pdfPanel .pdfauto .aswrap input[type=range]#asSp{width:100%;min-width:0;flex:none;margin:0;background:transparent}
 #pdfPanel .pdfsearch.withann .pdfauto .aswrap{flex:1 1 0;width:auto;min-width:70px}
+.pdfhead .pdftime{display:flex;align-items:center;gap:8px;flex:none;margin:0 auto 0 4px;padding:3px 10px;border-radius:10px;background:rgba(127,127,127,.12);white-space:nowrap}
+.pdfhead .pdftime .ptm{font:800 20px var(--f-display,inherit);letter-spacing:.02em}.pdfhead .pdftime .ppl{font-size:13px;color:var(--muted)}
+.pdfhead .pdftime .pace{flex:none;color:inherit;font-size:inherit}.pdfhead .pdftime .pace .tb{font-size:14px}
+.pdfhead .pdftime .pts{font-style:normal;font-weight:800;font-size:13px;padding:2px 8px;border-radius:6px}.pts.done{background:#2FA862;color:#fff}.pts.part{background:repeating-linear-gradient(135deg,#2FA862 0 6px,#F4C631 6px 12px);color:#111}.pts.roll{background:#F4C631;color:#111}
+.pdfhead>span{flex:0 1 auto}
+@media (max-width:760px){.pdfhead .pdftime .ppl{display:none}}
+.pdftime .tb{display:inline-flex;align-items:baseline;gap:5px;border-radius:6px;padding:2px 8px;font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.03em;white-space:nowrap}.pdftime .tb small{font-size:12px}
+.pdftime .tb.ahead{background:#F4C631;color:#1E1A06}.pdftime .tb.late{background:#E5483D;color:#fff}.pdftime .tb.ok{background:#2FA862;color:#fff}
+.pdfpanel:not(.wide) .pdftime .ppl{display:none}.pdfpanel:not(.wide) .pdftime .ptm{font-size:16px}.pdfpanel:not(.wide) .pdftime{padding:2px 6px;gap:5px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -661,7 +670,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="13. 11. 16:35";
+var APP_BUILD="14. 11. 17:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1036,6 +1045,8 @@ function paceOf(r){if(!r.origFrom||fin(r))return null;
 var PACE_LBL={ahead:"NÁSKOK",ok:"ON TIME",late:"ZPOŽDĚNÍ"};
 function tbHTML(pc){return pc&&pc.t?'<span class="tb '+pc.k+'"><small>'+PACE_LBL[pc.k]+'</small>'+pc.t+'</span>':'';}
 function paceCls(r){var pc=paceOf(r);return pc&&pc.t?' pc-'+pc.k:'';}
+function pdfTimeHTML(r){if(!r||!r.from)return "";var st=r.status==="done"?'<i class="pts done">natočeno</i>':r.status==="partial"?'<i class="pts part">částečně</i>':r.status==="rolling"?'<i class="pts roll">probíhá</i>':'';
+  return '<div class="pdftime"><b class="ptm">'+esc(r.from)+(r.to?'–'+esc(r.to):'')+'</b>'+(r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<small class="ppl">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</small>':'')+paceHTML(r)+st+'</div>';}
 function paceHTML(r){return '<span class="pace" data-pace="'+r.id+'">'+tbHTML(paceOf(r))+'</span>';}
 function planLine(r){return r.origFrom&&(r.origFrom!==r.from||(r.origTo||"")!==(r.to||""))?'<span class="origplan">plán '+esc(r.origFrom)+(r.origTo&&r.origTo!==r.origFrom?'–'+esc(r.origTo):'')+'</span>':'';}
 function tickPace(){var d=day();[].forEach.call(document.querySelectorAll("[data-pace]"),function(el){var id=el.getAttribute("data-pace"),r=null;for(var i=0;i<d.rows.length;i++)if(d.rows[i].id===id){r=d.rows[i];break;}
@@ -2282,7 +2293,7 @@ function showPdf(r,k,full){
   var wide=false;try{wide=localStorage.getItem("nd.pdfwide")==="1";}catch(_){}
   var pn=document.createElement("div");pn.className="pdfpanel"+(wide?" wide":"");pn.id="pdfPanel";
   var lblAll=k==="brk"?"Celé složky":"Celý scénář";
-  pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+
+  pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+pdfTimeHTML(r)+
     (canEdit&&r.id&&rowById(r.id)?'<button class="btn" data-act="pgedit" data-id="'+r.id+'" data-dk="'+k+'">Stránky…</button>':'')+'<button class="btn" id="pdfAll">'+(full?'Jen tento obraz':lblAll)+'</button><button class="btn pdfwide" id="pdfWide" title="'+(wide?'Zmenšit na polovinu':'Roztáhnout na celou obrazovku')+'">'+(wide?'⤡ Zmenšit':'⤢ Roztáhnout')+'</button><button class="btn" id="pdfClose">Zavřít</button></div>'+annBarHTML()+'<div class="pdfpages" id="pdfPages"><div class="pdfmsg">Načítám…</div></div>';
   var hd=pn.querySelector(".pdfhead");if(hd){var sb=document.createElement("div");sb.className="pdfsearch";
     sb.innerHTML='<input id="pdfQ" type="search" enterkeyhint="search" placeholder="Hledat…" autocomplete="off"><button class="btn" id="pdfQgo" aria-label="Hledat" title="Hledat">🔍</button><span id="pdfQn" class="pdfqn"></span><button class="btn" id="pdfQprev" aria-label="Předchozí výskyt">‹</button><button class="btn" id="pdfQnext" aria-label="Další výskyt">›</button>';
