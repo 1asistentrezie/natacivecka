@@ -693,6 +693,8 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .pdfauto .aswrap{overflow:hidden;padding:0 2px}
 .pdfhead .pdftime .ptm{padding:1px 10px;border-radius:7px;border:2px solid transparent}
 .pdfhead .pdftime.pc-ahead .ptm{background:#F4C631;color:#1E1A06}.pdfhead .pdftime.pc-ok .ptm{background:#2FA862;color:#fff}.pdfhead .pdftime.pc-late .ptm{background:#E5483D;color:#fff}
+@media (min-width:1024px){.row.shot{grid-template-columns:30px minmax(112px,max-content) 88px 78px minmax(0,1fr) 82px 44px 156px}
+  .row.shot .time>span:first-child{font-size:20px;letter-spacing:-.01em}.row.shot .no{font-size:31px}.row.shot .no.sz-m{font-size:23px}}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -710,7 +712,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="17. 11. 22:30";
+var APP_BUILD="17. 11. 22:45";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
