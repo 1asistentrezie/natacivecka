@@ -665,16 +665,20 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
 <script id="main">
+/* projekt: ND_CONFIG.project odděluje data (řádky plánu, úložiště v zařízení) – bez něj původní chování */
+var NS_PRE=(window.ND_CONFIG&&window.ND_CONFIG.project)||"",PID_MAIN=NS_PRE?NS_PRE+"-main":"main",PID_PUB=NS_PRE?NS_PRE+"-public":"public",DOCS_CACHE=NS_PRE?NS_PRE+"-docs":"nd-docs";
+var LS={getItem:function(k){return localStorage.getItem((NS_PRE?NS_PRE+":":"")+k);},setItem:function(k,v){return localStorage.setItem((NS_PRE?NS_PRE+":":"")+k,v);},removeItem:function(k){return localStorage.removeItem((NS_PRE?NS_PRE+":":"")+k);}};
+
 (function(){
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
 var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papír",["#0B0D0E","#E9E6DF","#FFFFFF","#F4C631"]],["c","Noční modrá",["#000","#0A1120","#14203A","#F4C631"]],["d","Espresso",["#000","#12100D","#211C17","#F4C631"]],["e","Kontrast",["#000","#000","#121212","#F4C631"]],["f","Lesní",["#000","#0C1411","#15221D","#F4C631"]]];
 function themeTiles(){return '<div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div>';}
 var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.1-.9-1.5-.9-2.5 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="10" cy="7" r="1.4"/><circle cx="14.5" cy="7" r="1.4"/><circle cx="17" cy="10.5" r="1.4"/></svg>';
-function curTheme(){var t="b";try{t=localStorage.getItem("nd.theme")||"b";}catch(_){}return t;}
+function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="14. 11. 18:00";
+var APP_BUILD="17. 11. 12:40";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -683,7 +687,7 @@ var S = JSON.parse(document.getElementById("state").textContent);
 function migrate(o){(o.days||[]).forEach(function(d){(d.rows||[]).forEach(function(r){if(r.status===undefined){r.status=r.done?"done":(r.current?"rolling":"");delete r.done;delete r.current;}});});}
 migrate(S);
 var art = null, canEdit = false, preview = false, dl = null, standalone = location.protocol==="file:";
-var CFG=window.ND_CONFIG||null, WEB=!!CFG&&!standalone, SB=null, sbUser=null, liveRow="public", liveChan=null;
+var CFG=window.ND_CONFIG||null, WEB=!!CFG&&!standalone, SB=null, sbUser=null, liveRow=PID_PUB, liveChan=null;
 function blobUrl(id){if(WEB)return CFG.url.replace(/\/$/,"")+"/storage/v1/object/public/docs/"+id+".pdf";return "/_blob/"+id;}
 var ui = { dayId:null, sheet:null, drag:null, arm:null, track:false, showDone:false };
 var saveTimer = null, saveMsg = "", upstreamRetried = false;
@@ -693,7 +697,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){retur
 function splitNames(sc){sc=String(sc||"").trim();var m=/^(.*?)\s*část\s*(\d+)$/i.exec(sc);if(m)return [m[1]+"část"+m[2],m[1]+"část"+(+m[2]+1)];return [sc+"část1",sc+"část2"];}
 /* ---------- upozornění (Web Push → iPhone a Apple Watch) ---------- */
 function pushOk(){return !!(WEB&&SB&&CFG&&CFG.vapidPublic&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window);}
-function pushSendOn(){try{return localStorage.getItem("nd.pushsend")!=="0";}catch(_){return true;}}
+function pushSendOn(){try{return LS.getItem("nd.pushsend")!=="0";}catch(_){return true;}}
 function pushSend(title,body,tag){if(!canEdit||!pushOk()||!pushSendOn())return;try{SB.functions.invoke("notify",{body:{title:title,body:body||"",tag:tag||"nd",url:location.origin+location.pathname}}).then(function(r){if(r&&r.error)console.warn("notify",r.error);},function(e){console.warn("notify",e);});}catch(e){console.warn(e);}}
 function nextShot(d,r){var i=d.rows.indexOf(r);for(var k=i+1;k<d.rows.length;k++){var z=d.rows[k];if(z.type==="shot"&&!fin(z)&&z.status!=="rolling")return z;}return null;}
 function pushStatus(d,r,v){if(!v)return;var O=function(z){return "O:"+(z.scene||"?");};
@@ -722,7 +726,7 @@ function pushBlock(){if(!WEB)return "";if(PUSH.on===null){pushCheck().then(funct
     (PUSH.on?'<button class="btn" data-act="pushoff"'+(PUSH.busy?' disabled':'')+'>Vypnout</button>':'<button class="btn primary" data-act="pushon"'+(PUSH.busy?' disabled':'')+'>'+(PUSH.busy?'Zapínám…':'Zapnout')+'</button>')+'</div>'+
     (PUSH.msg?'<span class="hint">'+esc(PUSH.msg)+'</span>':'<span class="hint">Přijde upozornění, když se začne natáčet nový obraz, když se dotočí, a na MARTINI SHOT! a KONEC. Na Apple Watch se ukáže samo, když je iPhone zamčený.</span>')+
     (canEdit?'<label class="chk"><input type="checkbox" id="fPushSend"'+(pushSendOn()?' checked':'')+'> Při změně stavu posílat upozornění štábu (z tohoto zařízení)</label>':'')+'</div>';}
-document.addEventListener("change",function(e){if(e.target&&e.target.id==="fPushSend"){try{localStorage.setItem("nd.pushsend",e.target.checked?"1":"0");}catch(_){}}});
+document.addEventListener("change",function(e){if(e.target&&e.target.id==="fPushSend"){try{LS.setItem("nd.pushsend",e.target.checked?"1":"0");}catch(_){}}});
 function uid(){return "r"+Math.random().toString(36).slice(2,9);}
 function pad(n){return (n<10?"0":"")+n;}
 function nowHM(){var d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());}
@@ -736,7 +740,7 @@ function shortDay(x){var l=(x.label||"Den").replace(/^FD\s+/,"FD"),dt="";if(x.da
 function fmtDate(iso){if(!iso)return "—";var p=iso.split("-");var d=new Date(+p[0],+p[1]-1,+p[2]);return DOW[d.getDay()]+" "+(+p[2])+". "+(+p[1])+". "+p[0];}
 function day(){return S.days.filter(function(d){return d.id===ui.dayId;})[0]||(S.days.length?viewerDay():S.days[0]);}
 function ss(get,val){try{if(get)return JSON.parse(sessionStorage.getItem("nd.ui")||"null");sessionStorage.setItem("nd.ui",JSON.stringify(val));}catch(e){return null;}}
-function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+function ls(k,v){try{if(v===undefined)return LS.getItem(k);LS.setItem(k,v);}catch(e){return null;}}
 function delta(r){var a=toMin(r.doneAt),b=toMin(r.to);return (a==null||b==null)?null:a-b;}
 
 /* ---------- sunrise / sunset ---------- */
@@ -1568,7 +1572,7 @@ var MN_SVG=(function(){var o={},A='<path d="M10 42h52V24l30 26-30 26V58H10z" fil
   return o;})();
 var MN_SVG_GROUPS=[["Šipky (barvou pera)","a0 a1 a2 a3 a4 a5 a6 a7"],["Postavy (barvou pera)","p1 p2 p3 p4 p5 p6"],["Auta (barvou pera)","c1 c2 c3 c4 c5"],["Budovy (barvou pera)","h1 h2"]];
 function mnSvgUrl(k,c){return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'+MN_SVG[k].replace(/\{C\}/g,c||"#1d1d1f")+'</svg>');}
-function mnDb(){if(mnDbP)return mnDbP;mnDbP=new Promise(function(ok,no){try{var q=indexedDB.open("nd-mynotes",1);q.onupgradeneeded=function(){q.result.createObjectStore("n");};q.onsuccess=function(){ok(q.result);};q.onerror=function(){no(q.error);};}catch(e){no(e);}});return mnDbP;}
+function mnDb(){if(mnDbP)return mnDbP;mnDbP=new Promise(function(ok,no){try{var q=indexedDB.open(NS_PRE?NS_PRE+"-mynotes":"nd-mynotes",1);q.onupgradeneeded=function(){q.result.createObjectStore("n");};q.onsuccess=function(){ok(q.result);};q.onerror=function(){no(q.error);};}catch(e){no(e);}});return mnDbP;}
 function mnGet(id){return mnDb().then(function(db){return new Promise(function(ok){var t=db.transaction("n").objectStore("n").get(id);t.onsuccess=function(){ok(t.result||null);};t.onerror=function(){ok(null);};});}).catch(function(){return null;});}
 function mnPut(id,v){return mnDb().then(function(db){return new Promise(function(ok){var tx=db.transaction("n","readwrite"),st=tx.objectStore("n");if(v)st.put(v,id);else st.delete(id);tx.oncomplete=function(){ok(true);};tx.onerror=function(){ok(false);};});}).catch(function(){return false;});}
 function mnKeys(){return mnDb().then(function(db){return new Promise(function(ok){var t=db.transaction("n").objectStore("n").getAllKeys();t.onsuccess=function(){ok(t.result||[]);};t.onerror=function(){ok([]);};});}).catch(function(){return [];});}
@@ -1762,7 +1766,7 @@ var pdfDocCache={};
 var OFF={done:0,total:0,busy:false,at:null};
 function offlineDocs(){if(!WEB||!("caches" in window))return;if(OFF.busy)return;var ids=[];docList("script").concat(docList("brk")).forEach(function(x){if(x&&x.id&&ids.indexOf(x.id)<0)ids.push(x.id);});
   if(!ids.length)return;OFF.busy=true;OFF.total=ids.length;OFF.done=0;
-  caches.open("nd-docs").then(function(c){
+  caches.open(DOCS_CACHE).then(function(c){
     var urls=ids.map(blobUrl),chain=Promise.resolve();
     urls.forEach(function(u){chain=chain.then(function(){return c.match(u).then(function(hit){if(hit){OFF.done++;return;}
       return fetch(u,{cache:"no-store"}).then(function(r){if(r.ok){OFF.done++;return c.put(u,r);}}).catch(function(){});});});});
@@ -1776,7 +1780,7 @@ function openPdf(src){
   if(key&&pdfDocCache[key])return pdfDocCache[key];
   var p=pdfjs().then(function(L){var o={isEvalSupported:false,disableFontFace:true};if(key){o.url=key;o.disableRange=true;o.disableStream=true;}else o.data=src;
     return L.getDocument(o).promise.catch(function(err){if(!key||!("caches" in window))throw err;
-      return caches.open("nd-docs").then(function(c){return c.match(key);}).then(function(hit){if(!hit)throw err;return hit.arrayBuffer();}).then(function(buf){return L.getDocument({isEvalSupported:false,disableFontFace:true,data:new Uint8Array(buf)}).promise;});});});
+      return caches.open(DOCS_CACHE).then(function(c){return c.match(key);}).then(function(hit){if(!hit)throw err;return hit.arrayBuffer();}).then(function(buf){return L.getDocument({isEvalSupported:false,disableFontFace:true,data:new Uint8Array(buf)}).promise;});});});
   if(key){pdfDocCache[key]=p;p.catch(function(){delete pdfDocCache[key];});}
   return p;
 }
@@ -2295,7 +2299,7 @@ function showPdf(r,k,full){
   k=k||"script"; var f=r[DK[k].field], sc=f&&docById(k,f.sid); if(!sc)return;
   var url=blobUrl(sc.id), from=+f.from||1, to=Math.max(from,+f.to||from);
   closePdf();
-  var wide=false;try{wide=localStorage.getItem("nd.pdfwide")==="1";}catch(_){}
+  var wide=false;try{wide=LS.getItem("nd.pdfwide")==="1";}catch(_){}
   var pn=document.createElement("div");pn.className="pdfpanel"+(wide?" wide":"");pn.id="pdfPanel";
   var lblAll=k==="brk"?"Celé složky":"Celý scénář";
   pn.innerHTML='<div class="pdfhead"><b>'+(k==="brk"?"Složka · ":"")+'O:'+esc(r.scene||"")+'</b><span>'+esc(r.motif||"")+' · str. '+from+(to!==from?'–'+to:'')+'</span>'+(wide?pdfTimeHTML(r):'')+
@@ -2321,7 +2325,7 @@ function showPdf(r,k,full){
   srchUI(); if(canEdit)asInit(); smkInit(r,k,sc,from,to);
   document.getElementById("pdfClose").onclick=closePdf;
   document.getElementById("pdfAll").onclick=function(){var y=null;showPdf(r,k,!full);};
-  document.getElementById("pdfWide").onclick=function(){try{localStorage.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};
+  document.getElementById("pdfWide").onclick=function(){try{LS.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};
   PDF_FROM=from;
   openPdf(url).then(function(doc){ANN.pdf=doc;
     var box=document.getElementById("pdfPages"); if(!box)return; box.innerHTML="";
@@ -2374,10 +2378,10 @@ function pdfPos(){var box=document.getElementById("pdfPages");if(!box)return {};
 function pdfResume(box){var R0=PDF_RESUME;if(!R0||!R0.pg)return;PDF_RESUME=null;var w=box.querySelector('[data-page="'+R0.pg+'"]');if(w)box.scrollTop=w.offsetTop-box.offsetTop+R0.frac*w.offsetHeight;
   if(R0.on&&canEdit){AS.on=true;AS.last=0;AS.acc=0;asUI();cancelAnimationFrame(AS.raf);AS.raf=requestAnimationFrame(asStep);}}
 var AS={on:false,raf:0,last:0,acc:0,lvl:5};
-function asLvl(){try{return +localStorage.getItem("nd.aslvl")||5;}catch(_){return 5;}}
+function asLvl(){try{return +LS.getItem("nd.aslvl")||5;}catch(_){return 5;}}
 function asPx(l){return Math.round(6*Math.pow(1.22,l));}
 function asUI(){var g=document.getElementById("asGo"),r=document.getElementById("asSp");if(g){g.textContent=AS.on?"⏸":"▶";g.title=AS.on?"Zastavit autoscroll":"Spustit autoscroll";g.classList.toggle("primary",AS.on);}if(r)r.value=AS.lvl;var nn=document.getElementById("asNum");if(nn)nn.textContent=AS.lvl;}
-function asSet(l){AS.lvl=Math.max(1,Math.min(20,l));try{localStorage.setItem("nd.aslvl",AS.lvl);}catch(_){}asUI();}
+function asSet(l){AS.lvl=Math.max(1,Math.min(20,l));try{LS.setItem("nd.aslvl",AS.lvl);}catch(_){}asUI();}
 function asStop(){AS.on=false;cancelAnimationFrame(AS.raf);asUI();}
 function asStep(t){if(!AS.on)return;var box=document.getElementById("pdfPages");if(!box){asStop();return;}var dt=AS.last?Math.min(0.1,(t-AS.last)/1000):0;AS.last=t;AS.acc+=asPx(AS.lvl)*dt;
   if(AS.acc>=1){var n=Math.floor(AS.acc);AS.acc-=n;var before=box.scrollTop;box.scrollTop+=n;if(box.scrollTop===before&&box.scrollTop+box.clientHeight>=box.scrollHeight-2){asStop();toast("Konec dokumentu");return;}}
@@ -2395,8 +2399,8 @@ var ANN={doc:null,tool:"move",color:"#E5483D",undo:[],cur:null,ss:.075,st:null};
 var ANN_COLORS=["#E5483D","#F08A24","#F2C21B","#2FA862","#1D69BF","#8A3FC4","#111111"];
 function inPoly(x,y,P){var c=false;for(var i=0,j=P.length-1;i<P.length;j=i++){var xi=P[i][0],yi=P[i][1],xj=P[j][0],yj=P[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
 function annKey(pg){return "nd.ann."+ANN.doc+"."+pg;}
-function annGet(pg){try{return JSON.parse(localStorage.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
-function annPut(pg,list,noUndo){try{if(!noUndo)ANN.undo.push({pg:pg,prev:localStorage.getItem(annKey(pg))});if(list.length)localStorage.setItem(annKey(pg),JSON.stringify(list));else localStorage.removeItem(annKey(pg));}catch(_){toast("Poznámku se nepodařilo uložit");}}
+function annGet(pg){try{return JSON.parse(LS.getItem(annKey(pg))||"[]")||[];}catch(_){return [];}}
+function annPut(pg,list,noUndo){try{if(!noUndo)ANN.undo.push({pg:pg,prev:LS.getItem(annKey(pg))});if(list.length)LS.setItem(annKey(pg),JSON.stringify(list));else LS.removeItem(annKey(pg));}catch(_){toast("Poznámku se nepodařilo uložit");}}
 function annBarHTML(){
   var T=[["move","✋","Posun / listování"],["pen","✏️","Pero"],["hl","🖍️","Zvýrazňovač – táhni přes řádek textu a zvýrazní se přesně text"],["strike","<s>S</s>","Přeškrtnout text – táhni přes text"],["text","T","Text"],["erase","Guma","Guma – smaže text, nálepku nebo čáru"],["lasso","Laso","Laso – zakroužkuj kresbu, text nebo nálepku a pak ji přetáhni"]];
   return '<div class="annbar" id="annBar">'+T.map(function(t){return '<button class="annt anni" data-ann="'+t[0]+'" title="'+t[2]+'" aria-label="'+t[2]+'">'+t[1]+'</button>';}).join("")+
@@ -2441,7 +2445,7 @@ document.addEventListener("click",function(e){
   if(!t)return; var a=t.getAttribute("data-ann");
   if(a==="emo"){var pe=document.getElementById("annEmo");if(pe){pe.hidden=!pe.hidden;t.classList.toggle("on",!pe.hidden);if(!pe.hidden)annEmoFit(pe);}return;}
   if(ANN.ls&&a!=="emo"){var lo=ANN.ls.ov;ANN.ls=null;if(lo)annDraw(lo);}
-  if(a==="undo"){var u=ANN.undo.pop();if(!u){toast("Není co vrátit");return;}try{if(u.prev)localStorage.setItem(annKey(u.pg),u.prev);else localStorage.removeItem(annKey(u.pg));}catch(_){}annRedrawAll();return;}
+  if(a==="undo"){var u=ANN.undo.pop();if(!u){toast("Není co vrátit");return;}try{if(u.prev)LS.setItem(annKey(u.pg),u.prev);else LS.removeItem(annKey(u.pg));}catch(_){}annRedrawAll();return;}
   if(a==="clear"){if(ANN.arm!=="clear"){ANN.arm="clear";t.textContent="Opravdu smazat?";t.classList.add("armed");setTimeout(function(){ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");},4000);return;}
     ANN.arm=null;t.textContent="Smazat vše";t.classList.remove("armed");[].forEach.call(document.querySelectorAll("#pdfPages canvas.ann"),function(ov){var pg=+ov.getAttribute("data-pg");if(annGet(pg).length)annPut(pg,[]);});annRedrawAll();return;}
   ANN.tool=a; annBarSync();
@@ -2461,7 +2465,7 @@ document.addEventListener("pointerdown",function(e){
 },{passive:false});
 document.addEventListener("pointermove",function(e){
   var ld=ANN.ld;if(ld&&e.pointerId===ld.pid){e.preventDefault();var q=annPos(ld.ov,e),dx=q[0]-ld.p0[0],dy=q[1]-ld.p0[1];
-    if(!ld.moved){ld.moved=true;ANN.undo.push({pg:ld.pg,prev:localStorage.getItem(annKey(ld.pg))});}
+    if(!ld.moved){ld.moved=true;ANN.undo.push({pg:ld.pg,prev:LS.getItem(annKey(ld.pg))});}
     var L=JSON.parse(JSON.stringify(ld.orig));ANN.ls.idx.forEach(function(i){var a=L[i];if(!a)return;if(a.pts)a.pts=a.pts.map(function(t){return [t[0]+dx,t[1]+dy];});else if(a.r)a.r=a.r.map(function(q){return [q[0]+dx,q[1]+dy,q[2],q[3]];});else{a.x+=dx;a.y+=dy;}});
     annPut(ld.pg,L,true);annDraw(ld.ov);return;}
   var lp=ANN.lp;if(lp&&e.pointerId===lp.pid){e.preventDefault();lp.pts.push(annPos(lp.ov,e));annDraw(lp.ov);return;}
@@ -2718,7 +2722,7 @@ function act(a,id,el){
     case "themesheet": ui.sheet={kind:"themes"}; render(); break;
     case "pushon": pushEnable(); break;
     case "pushoff": pushDisable(); break;
-    case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{localStorage.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
+    case "theme":{var tv=el&&el.getAttribute("data-v")||"b";try{LS.setItem("nd.theme",tv);}catch(_){}applyTheme(tv);render();break;}
     case "nowfrom": case "nowto": case "nowboth":{var nh=nowHM(),setv=function(idn){var inp=document.getElementById(idn);if(!inp)return;inp.value=nh;inp.dispatchEvent(new Event("input",{bubbles:true}));};
       if(a==="nowboth"){setv("fFrom");setv("fTo");}else setv(a==="nowfrom"?"fFrom":"fTo");
       if(ui.sheet&&ui.sheet.isNew&&a!=="nowto"){ui.sheet.place="time";var rt=document.querySelector('input[name=fPlace][value=time]');if(rt)rt.checked=true;}
@@ -2949,7 +2953,7 @@ document.addEventListener("pointercancel",endDrag);
 /* ---------- saving (the page itself is the shared record) ---------- */
 function setSave(m){saveMsg=m;var el=document.getElementById("saveMsg");if(el){el.textContent=m;el.classList.toggle("err",/neulo|chyb|nepoda/i.test(m));}}
 function queueSave(){
-  if(standalone){try{localStorage.setItem("nd.offline",JSON.stringify(S));setSave("Uloženo v tomto prohlížeči");}catch(_){setSave("Neuloženo – stáhněte zálohu přes Menu");}return;}
+  if(standalone){try{LS.setItem("nd.offline",JSON.stringify(S));setSave("Uloženo v tomto prohlížeči");}catch(_){setSave("Neuloženo – stáhněte zálohu přes Menu");}return;}
   if(preview){setSave("Náhled – změny se neukládají");return;}
   if(!art&&!(WEB&&canEdit)){setSave("Neuloženo");return;}
   clearTimeout(saveTimer); setSave("Ukládám…");
@@ -3051,7 +3055,7 @@ function poll(){
 function goStandalone(){
   if(!standalone)return;
   canEdit=true;
-  try{var keep=localStorage.getItem("nd.offline");if(keep){var k=JSON.parse(keep);if(k&&k.days&&k.days.length){S=k;ui.dayId=S.days[0].id;}}}catch(_){}
+  try{var keep=LS.getItem("nd.offline");if(keep){var k=JSON.parse(keep);if(k&&k.days&&k.days.length){S=k;ui.dayId=S.days[0].id;}}}catch(_){}
   setSave("Offline kopie · ukládá se v tomto prohlížeči");render();
 }
 
@@ -3066,11 +3070,11 @@ function publicState(){
   return {project:S.project||"",plan:S.plan||null,cast:castList(),scripts:scripts(),slozky:docList("brk"),scriptMarks:S.scriptMarks||{},days:ds,savedAt:S.savedAt};
 }
 function cacheKey(){return "nd.cache."+liveRow;}
-function cacheSave(){try{localStorage.setItem(cacheKey(),JSON.stringify(S));}catch(_){}}
-function cacheLoad(){try{var o=JSON.parse(localStorage.getItem(cacheKey())||"null");if(o&&o.days&&o.days.length){S=o;migrate(S);lastSnap=snapS();if(!ui.dayPicked)ui.dayId=viewerDay().id;return true;}}catch(_){}return false;}
+function cacheSave(){try{LS.setItem(cacheKey(),JSON.stringify(S));}catch(_){}}
+function cacheLoad(){try{var o=JSON.parse(LS.getItem(cacheKey())||"null");if(o&&o.days&&o.days.length){S=o;migrate(S);lastSnap=snapS();if(!ui.dayPicked)ui.dayId=viewerDay().id;return true;}}catch(_){}return false;}
 function webSave(){
   var now=S.savedAt||Date.now();
-  return SB.from("plan").upsert([{id:"main",json:S,saved_at:now,updated_at:new Date().toISOString()},{id:"public",json:publicState(),saved_at:now,updated_at:new Date().toISOString()}]).then(function(r){
+  return SB.from("plan").upsert([{id:PID_MAIN,json:S,saved_at:now,updated_at:new Date().toISOString()},{id:PID_PUB,json:publicState(),saved_at:now,updated_at:new Date().toISOString()}]).then(function(r){
     if(r.error){var e=new Error(r.error.message);e.code=/row-level security|permission/i.test(r.error.message)?"not_writer":"upstream";throw e;}
     cacheSave(); lastLive=Date.now(); liveInd();
   });
@@ -3098,7 +3102,7 @@ function webSubscribe(){
   webFetch(); startPoll();
 }
 function becomeEditor(user){
-  sbUser=user; canEdit=true; liveRow="main"; ui.sheet=null; mnInit();
+  sbUser=user; canEdit=true; liveRow=PID_MAIN; ui.sheet=null; mnInit();
   assetsNs={upload:function(file){var id=(crypto.randomUUID?crypto.randomUUID():uid()+Date.now()).replace(/-/g,"");
     return SB.storage.from("docs").upload(id+".pdf",file,{contentType:"application/pdf",upsert:false}).then(function(r){if(r.error){var e=new Error(r.error.message);e.code="upload";throw e;}return {id:id};});}};
   cacheLoad(); render(); webSubscribe();
@@ -3125,7 +3129,7 @@ function webConnect(){
   try{SB.auth.onAuthStateChange(function(ev){if(ev==="PASSWORD_RECOVERY"||(isRecovery&&ev==="SIGNED_IN")){isRecovery=false;setTimeout(function(){ui.sheet={kind:"newpass"};render();},300);}});}catch(_){}
   cacheLoad(); render();
   SB.auth.getSession().then(function(r){var u=r.data&&r.data.session&&r.data.session.user;
-    return checkEditor(u).then(function(ok){if(ok)becomeEditor(u);else{liveRow="public";webSubscribe();if(/[?&]login\b/.test(location.search))act("login");}});
+    return checkEditor(u).then(function(ok){if(ok)becomeEditor(u);else{liveRow=PID_PUB;webSubscribe();if(/[?&]login\b/.test(location.search))act("login");}});
   },function(){webSubscribe();});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&SB)webFetch();});
   window.addEventListener("online",function(){if(SB)webSubscribe();});
