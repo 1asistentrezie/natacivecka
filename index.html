@@ -38,6 +38,7 @@ html[data-theme="f"]{--bg:#0C1411;--surface:#15221D;--ink:#E6F0EB;--muted:#93AAA
 /* téma „Papír“ (výchozí): světlá stránka, černé horní menu */
 .bar{--bg:#15191B;--surface:#0B0D0E;--ink:#EEF1F0;--muted:#9AA4A8;--line:#2A3236;background:#0B0D0E;color:#EEF1F0;color-scheme:dark}
 body::before{background:#0B0D0E!important}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.35}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 #app{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px;max-width:1180px;margin:0 auto}
@@ -99,6 +100,34 @@ body.ed::before{background:#000}
 .status.late{background:var(--late);color:var(--on-strong)}
 .s-clock{flex:0 0 auto;align-items:flex-end;text-align:right}
 .s-menu{flex:0 0 auto;display:flex;align-items:center}
+#bar{zoom:var(--unzoom,1)}
+/* hlavička vždy v jednom řádku (tablet a širší) */
+@media (min-width:760px){
+  .bar{flex-wrap:nowrap;gap:10px 14px}
+  .bar>*{flex-shrink:0}
+  .s-proj{flex:0 1 auto;min-width:0;max-width:150px}.s-proj .big{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-wrap:nowrap}
+  .s-loc{flex:1 1 60px;min-width:44px}
+}
+@media (min-width:760px) and (max-width:1279px){
+  .bar{gap:8px 10px;padding-inline:max(10px,env(safe-area-inset-left,0px))}
+  .big{font-size:19px}.s-clock .big{font-size:30px}.s-clock .big small{font-size:19px}
+  .s-shift{padding:3px 8px}
+  .s-zoom{margin-inline:0 2px}.s-zoom button{min-width:30px;font-size:19px;height:36px;padding:0 4px}.s-zoom button.zv{min-width:38px;font-size:10px}
+  .sharebtn.shbig span{display:none}.sharebtn.shbig{padding:0 10px}
+  .menubtn{padding:6px 8px}
+}
+@media (min-width:760px) and (max-width:1149px){.bar.ed .s-zoom button.zv{display:none}.bar .s-proj.tap .big::after,.bar .s-loc.tap .loc::after,.bar .s-shift.tap .big::after,.bar .s-date.tap .big::after{content:none}.bar .loc{-webkit-line-clamp:3;font-size:13px}}
+@media (min-width:760px) and (max-width:1023px){
+  .s-sun{display:none}
+  .s-zoom button.zv{display:none}
+  .s-clock .big{font-size:26px}.s-clock .big small{font-size:16px}
+  .lab{font-size:10px;letter-spacing:.08em}
+}
+.s-zoom{flex:0 0 auto;display:flex;align-items:center;gap:0;border:1px solid rgba(255,255,255,.22);border-radius:8px;overflow:hidden;margin-inline:2px 6px}
+.s-zoom button{background:transparent;color:#fff;border:0;font:inherit;font-weight:800;font-size:22px;line-height:1;min-width:38px;height:40px;padding:0 6px;cursor:pointer}
+.s-zoom button.zv{font-size:12px;letter-spacing:.04em;min-width:46px;color:rgba(255,255,255,.75);border-inline:1px solid rgba(255,255,255,.22)}
+.s-zoom.ph{display:none}
+.s-zoom button:disabled{opacity:.3;cursor:default}.s-zoom button:active{background:rgba(255,255,255,.12)}
 .menubtn{min-height:48px;min-width:48px;border:1px solid var(--line);border-radius:8px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 10px;
   font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;color:var(--muted)}
 .menubtn .bars{display:flex;flex-direction:column;gap:3px}
@@ -113,7 +142,8 @@ body.ed::before{background:#000}
 .dayname{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.03em}
 .offline{font-family:var(--f-display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:var(--roll);border:1px solid var(--roll);border-radius:4px;padding:3px 8px}
 @media (min-width:1000px){
-  .bar{display:grid;grid-template-columns:auto minmax(0,.6fr) auto minmax(0,.6fr) auto auto auto auto;gap:10px 14px}
+  .bar{display:flex;flex-wrap:nowrap;gap:10px 14px}
+  .bar .s-proj{flex:0 1 auto;min-width:56px;max-width:180px}.bar .s-loc{flex:1 1 0;min-width:60px}
   .big{font-size:22px}
   .clock{font-size:34px}
   .clock small{font-size:21px}
@@ -356,7 +386,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 @media (max-width:759px){
   /* phone header: two rows — projekt · datum · čas / lokace · směna · stopky */
   .bar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"proj date clock" "loc shift watch";gap:4px 10px;padding-block:6px;align-items:center}
-  .s-menu,.s-sun{display:none}
+  .s-menu,.s-sun,.s-zoom{display:none}
+  .bar .s-zoom.ph{display:flex;flex-direction:column;margin:0;border-radius:6px}.bar .s-zoom.ph button{min-width:30px;width:30px;height:21px;font-size:17px;padding:0}.bar .s-zoom.ph button+button{border-top:1px solid rgba(255,255,255,.22)}.bar .s-zoom.ph button.zv{display:none}.bar .s-zoom.ph button.zv+button{border-top:0}
   .s-proj{grid-area:proj}.s-date{grid-area:date}.s-clock{grid-area:clock}
   .s-loc{grid-area:loc}.s-shift{grid-area:shift}.s-watch{grid-area:watch;justify-content:flex-end}
   .bar .s-watch.is-open{grid-area:watch;width:auto;justify-self:end}
@@ -605,6 +636,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;color:var(--in
 .sharebtn.shbig{width:auto;height:48px;padding:0 14px;display:inline-flex;gap:8px;align-items:center;border:3px solid #F2A54A;border-radius:10px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;color:var(--ink)}
 .sharebtn.shbig svg{width:24px;height:24px}
 @media (max-width:759px){.sharebtn.shbig{height:42px;padding:0 10px;font-size:16px}.sharebtn.shbig svg{width:21px;height:21px}}
+@media (max-width:479px){.sharebtn.shbig span{display:none}.sharebtn.shbig{padding:0 9px}}
 
 /* scénář: vyšší řádek anotací, řádky se nesmršťují */
 #pdfPanel>*{flex-shrink:0}#pdfPanel #pdfPages{flex-shrink:1}
@@ -678,7 +710,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="17. 11. 12:40";
+var APP_BUILD="17. 11. 22:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -815,18 +847,24 @@ function leftTxt(d){
   var l=shiftLeft(d); if(l==null)return esc(d.shiftTo);
   return l>=0?dur(l):"skončila";
 }
+/* ---------- velikost zobrazení (zoom + / −), pamatuje se v tomto prohlížeči ---------- */
+var ZOOMS=[.6,.7,.8,.9,1,1.1,1.2,1.3,1.4,1.5,1.6];
+function zoomGet(){var z=+(LS.getItem("nd.zoom")||1);return z>=.5&&z<=2?z:1;}
+function zoomApply(){var a=document.getElementById("app"),z=zoomGet();if(!a)return;a.style.zoom=z===1?"":String(z);a.style.maxWidth=z===1?"":(1180/z)+"px";a.style.setProperty("--unzoom",z===1?"1":String(1/z));}
+function zoomStep(dir){var z=zoomGet(),i=0,b=1e9;ZOOMS.forEach(function(v,j){var dd=Math.abs(v-z);if(dd<b){b=dd;i=j;}});i=Math.max(0,Math.min(ZOOMS.length-1,i+dir));try{LS.setItem("nd.zoom",String(ZOOMS[i]));}catch(_){}zoomApply();render();}
+function zoomHTML(ph){var z=zoomGet();return '<div class="s-zoom'+(ph?' ph':'')+'" role="group" aria-label="Velikost zobrazení"><button data-act="zoomout" aria-label="Zmenšit"'+(z<=ZOOMS[0]?' disabled':'')+'>−</button><button class="zv" data-act="zoomreset" title="Původní velikost">'+Math.round(z*100)+' %</button><button data-act="zoomin" aria-label="Zvětšit"'+(z>=ZOOMS[ZOOMS.length-1]?' disabled':'')+'>+</button></div>';}
 function headerHTML(d){
   var st=status(d), t=new Date(), sun=null, pl=sunPlace(d);
   if(d.date)sun=sunTimes(d.date,pl.lat,pl.lon);
   var p=d.date?d.date.split("-"):null, dw=p?DOW[new Date(+p[0],+p[1]-1,+p[2]).getDay()]:"";
   var left=d.shiftTo?leftTxt(d):"";
-  return (canEdit?'':'<div class="s-menu" hidden></div>')+'<div class="s-menu'+(canEdit?'':' ro-hide')+'"><button class="menubtn" data-act="menu" aria-label="Menu"><span class="bars"><i></i><i></i><i></i></span>MENU</button></div>'+
+  return (canEdit?'':'<div class="s-menu" hidden></div>')+'<div class="s-menu'+(canEdit?'':' ro-hide')+'"><button class="menubtn" data-act="menu" aria-label="Menu"><span class="bars"><i></i><i></i><i></i></span>MENU</button></div>'+zoomHTML()+
     '<div class="slot s-proj'+(canEdit?' tap" data-act="project':'')+'"><span class="lab">Projekt</span><span class="big">'+(S.project?esc(S.project):'<span class="ph">'+(canEdit?'Zadat název':'—')+'</span>')+'</span></div>'+
     '<div class="slot s-date'+(canEdit?' tap" data-act="editdate':'')+'"><span class="lab">'+(dw?esc(dw):"Datum")+(d.label?' · '+esc(d.label):'')+'</span><span class="big">'+(p?(+p[2])+'. '+(+p[1])+'. '+p[0]:"—")+'</span></div>'+
     '<div class="slot s-loc'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Lokace</span><span class="loc">'+esc(d.location||"—")+'</span></div>'+
     '<div class="slot s-shift'+(canEdit?' tap" data-act="shiftloc':'')+'"><span class="lab">Směna</span><span class="big">'+(d.shiftFrom||d.shiftTo?esc(d.shiftFrom||"?")+'–'+esc(d.shiftTo||"?"):"—")+'</span></div>'+
     '<div class="slot s-sun" title="'+esc(pl.name)+'"><span class="lab" aria-label="Slunce">'+SUN+'</span><span class="sunl"><i>VÝCHOD</i><span>'+(sun?sun.rise:"—")+'</span><i>ZÁPAD</i><span>'+(sun?sun.set:"—")+'</span></span></div>'+
-    '<div class="s-watch">'+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':'<button class="sharebtn thbtn" data-act="themesheet" aria-label="Nastavení" title="Nastavení (upozornění, barvy)">'+PALETTE+'</button>'+(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
+    '<div class="s-watch">'+zoomHTML(1)+(canEdit?'<button class="sharebtn shbig" data-act="share" aria-label="Sdílet">'+SHARE+'<span>Sdílet</span></button>':'<button class="sharebtn thbtn" data-act="themesheet" aria-label="Nastavení" title="Nastavení (upozornění, barvy)">'+PALETTE+'</button>'+(!standalone?'<button class="sharebtn rfbtn" data-act="refresh" aria-label="Obnovit">'+REFRESH+'</button>':''))+'</div>'+
     '<div class="slot s-clock"><span class="lab">Aktuální čas</span><span class="big clock">'+pad(t.getHours())+':'+pad(t.getMinutes())+'<small>:'+pad(t.getSeconds())+'</small></span>'+liveMiniHTML()+'</div>';
 }
 var CLOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.4 2"/></svg>';
@@ -1011,7 +1049,7 @@ function rowHTML(r){
 /* viewers see only the current shooting day: today, else the next one, else the last */
 function viewerDay(){var t=todayISO(),ds=S.days.filter(function(x){return x.date;}).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
   return ds.filter(function(x){return x.date===t;})[0]||ds.filter(function(x){return x.date>t;})[0]||ds[ds.length-1]||S.days[0];}
-function render(){
+function render(){zoomApply();
   try{document.body.classList.toggle("ed",!!canEdit);}catch(_){}
   if(!canEdit&&!standalone){var vd=viewerDay(); if(vd)ui.dayId=vd.id;}
   var d=day(); ui.dayId=d.id;
@@ -2718,6 +2756,9 @@ function act(a,id,el){
     case "savedate": d.date=val("fDate"); d.label=val("fLabel"); S.days.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;}); ui.sheet=null; changed(); break;
     case "track": ui.track=!ui.track; tick(); break;
     case "loc": if(x){ui.sheet={kind:"loc",id:id};render();} break;
+    case "zoomin": zoomStep(1); break;
+    case "zoomout": zoomStep(-1); break;
+    case "zoomreset": try{LS.removeItem("nd.zoom");}catch(_){} zoomApply(); render(); break;
     case "dayprev": case "daynext":{var DS2=daysSorted(),cI=DS2.indexOf(d),nI=cI+(a==="daynext"?1:-1);if(nI<0||nI>=DS2.length)break;ui.dayPicked=true;ui.dayId=DS2[nI].id;ls("nd.day",ui.dayId);ui.sheet=null;render();window.scrollTo(0,0);break;}
     case "themesheet": ui.sheet={kind:"themes"}; render(); break;
     case "pushon": pushEnable(); break;
@@ -2911,7 +2952,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","pushon","pushoff","forgot","setnewpass","book","lupa","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","pushon","pushoff","forgot","setnewpass","book","lupa","zoomin","zoomout","zoomreset","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
