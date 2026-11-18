@@ -705,6 +705,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .acttab td.at{font-variant-numeric:tabular-nums;color:var(--muted)}.acttab tr.ended td{opacity:.55}.acttab tr.fin td.ar{color:#E5483D}
 .aend{font-weight:800;color:#E5483D}.amut{color:var(--muted)}.ablink{animation:herblink 1s steps(2,start) infinite;min-height:36px}
 .actleg{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.actleg i{display:inline-block;width:18px;height:14px;border-radius:3px;margin-left:8px}
+.acttab th.ash{text-align:center;font:800 14px var(--f-display,inherit);letter-spacing:0;color:inherit;border-left:1px solid var(--line);min-width:52px}.acttab th.ash.d{color:#E5483D}.acttab td.as.e{background:transparent}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -722,7 +723,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="18. 11. 16:20";
+var APP_BUILD="18. 11. 16:25";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1560,11 +1561,11 @@ function renameRole(oldName,newName){
 var ACTOR_END="Skončil herec";
 function roleShots(d,role){var k=fold(role);return d.rows.filter(function(r){return r.type==="shot"&&r.roles&&r.roles.split(",").some(function(x){return fold(x.trim())===k;});});}
 function actorsDone(d){var E=endedActors(d),A=d.actAsk||{};return dayActors(d).filter(function(a){var k=fold(a);if(E[k]||A[k])return false;var sh=roleShots(d,a);return sh.length&&sh.every(function(r){return r.status==="done"||r.status==="moved";});});}
-function actorsHTML(d){var E=endedActors(d),R=dayActors(d),fd=actorsDone(d),max=0;R.forEach(function(a){max=Math.max(max,roleShots(d,a).length);});
-  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th><th colspan="'+Math.max(1,max)+'">Obrazy</th><th>Na place</th><th>Stav</th></tr></thead><tbody>'+
+function actorsHTML(d){var E=endedActors(d),R=dayActors(d),fd=actorsDone(d),SH=d.rows.filter(function(r){return r.type==="shot";}),max=SH.length;
+  var stc=function(r){return r.status==="done"?"d":r.status==="partial"?"p":r.status==="rolling"?"r":r.status==="moved"?"m":"";};
+  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th>'+SH.map(function(r){return '<th class="ash '+stc(r)+'">'+esc(r.scene||"–")+'</th>';}).join("")+'<th>Na place</th><th>Stav</th></tr></thead><tbody>'+
     R.map(function(a){var sh=roleShots(d,a),e=E[fold(a)],fin=fd.indexOf(a)>=0,t0=sh.length?sh[0].from:"",t1=sh.length?(sh[sh.length-1].to||""):"";
-      return '<tr class="'+(e?'ended':fin?'fin':'')+'"><td class="ar">'+esc(a)+'</td>'+sh.map(function(r){var c=r.status==="done"?"d":r.status==="partial"?"p":r.status==="rolling"?"r":r.status==="moved"?"m":"";return '<td class="as '+c+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+
-        new Array(max-sh.length+1).join('<td class="as e"></td>')+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
+      return '<tr class="'+(e?'ended':fin?'fin':'')+'"><td class="ar">'+esc(a)+'</td>'+SH.map(function(r){return sh.indexOf(r)<0?'<td class="as e"></td>':'<td class="as '+stc(r)+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
         (e?'<span class="aend">skončil'+(e.t?' '+esc(e.t):'')+'</span>':fin?'<button class="btn ablink" data-act="actendask" data-role="'+esc(a)+'">Skončil?</button>':'<span class="amut">točí</span>')+'</td></tr>';}).join("")+
     '</tbody></table></div><p class="memo2 actleg"><i class="as d"></i> natočeno <i class="as p"></i> částečně <i class="as r"></i> probíhá</p>':'<p class="memo2">V tomto dni nejsou u obrazů zadané role.</p>')+
     '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';}
