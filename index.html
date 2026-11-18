@@ -706,6 +706,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .aend{font-weight:800;color:#E5483D}.amut{color:var(--muted)}.ablink{animation:herblink 1s steps(2,start) infinite;min-height:36px}
 .actleg{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.actleg i{display:inline-block;width:18px;height:14px;border-radius:3px;margin-left:8px}
 .acttab th.ash{text-align:center;font:800 14px var(--f-display,inherit);letter-spacing:0;color:inherit;border-left:1px solid var(--line);min-width:52px}.acttab th.ash.d{color:#E5483D}.acttab td.as.e{background:transparent}
+.acthl{margin:0 0 10px;padding:10px 12px;border-radius:10px;background:rgba(229,72,61,.12);border:1px solid #E5483D}.acttab tr.hl td:not(.as),.acttab tr.hl td.as.e{background:rgba(244,198,49,.18)}.aends{display:inline-flex;gap:6px}.aends .btn{min-height:38px;padding:0 10px;font-size:14px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -723,7 +724,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="18. 11. 16:25";
+var APP_BUILD="18. 11. 18:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1407,7 +1408,7 @@ function sheetHTML(){
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Ne, nechat časy</button><button class="btn primary" data-act="recalcok">Ano, přepočítat</button></div></div>';
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
-  if(s.kind==="actors"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+actorsHTML(day())+'</div></div>';}
+  if(s.kind==="actors"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+actorsHTML(day(),s.hl)+'</div></div>';}
   if(s.kind==="actend"){var ro=s.roles||[];
     b='<h2>'+(ro.length>1?'Herci už dnes nemají žádný obraz':'Role už dnes nemá žádný obraz')+'</h2><p style="margin:0">'+ro.map(function(a){return '<b>'+esc(a)+'</b>';}).join(", ")+' – všechny '+(ro.length>1?'jejich':'její')+' obrazy jsou natočené. Skončil'+(ro.length>1?'i':'')+' herec'+(ro.length>1?'i':'')+'?</p>'+
       '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="actendno">Ne, ještě ne</button><button class="btn primary" data-act="actendyes">Ano, přidat do plánu</button></div></div>';
@@ -1561,12 +1562,13 @@ function renameRole(oldName,newName){
 var ACTOR_END="Skončil herec";
 function roleShots(d,role){var k=fold(role);return d.rows.filter(function(r){return r.type==="shot"&&r.roles&&r.roles.split(",").some(function(x){return fold(x.trim())===k;});});}
 function actorsDone(d){var E=endedActors(d),A=d.actAsk||{};return dayActors(d).filter(function(a){var k=fold(a);if(E[k]||A[k])return false;var sh=roleShots(d,a);return sh.length&&sh.every(function(r){return r.status==="done"||r.status==="moved";});});}
-function actorsHTML(d){var E=endedActors(d),R=dayActors(d),fd=actorsDone(d),SH=d.rows.filter(function(r){return r.type==="shot";}),max=SH.length;
+function actorsHTML(d,hl){hl=hl||[];var E=endedActors(d),R=dayActors(d),fd=actorsDone(d),SH=d.rows.filter(function(r){return r.type==="shot";}),max=SH.length;
   var stc=function(r){return r.status==="done"?"d":r.status==="partial"?"p":r.status==="rolling"?"r":r.status==="moved"?"m":"";};
-  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th>'+SH.map(function(r){return '<th class="ash '+stc(r)+'">'+esc(r.scene||"–")+'</th>';}).join("")+'<th>Na place</th><th>Stav</th></tr></thead><tbody>'+
+  var hlNow=hl.filter(function(a){return fd.indexOf(a)>=0;});
+  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(hlNow.length?'<p class="acthl">'+hlNow.map(function(a){return '<b>'+esc(a)+'</b>';}).join(", ")+(hlNow.length>1?' už dnes nemají žádný obraz.':' už dnes nemá žádný obraz.')+' Skončil'+(hlNow.length>1?'i':'')+'? Potvrď v tabulce a zapíše se to do plánu.</p>':'')+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th>'+SH.map(function(r){return '<th class="ash '+stc(r)+'">'+esc(r.scene||"–")+'</th>';}).join("")+'<th>Na place</th><th>Stav</th></tr></thead><tbody>'+
     R.map(function(a){var sh=roleShots(d,a),e=E[fold(a)],fin=fd.indexOf(a)>=0,t0=sh.length?sh[0].from:"",t1=sh.length?(sh[sh.length-1].to||""):"";
-      return '<tr class="'+(e?'ended':fin?'fin':'')+'"><td class="ar">'+esc(a)+'</td>'+SH.map(function(r){return sh.indexOf(r)<0?'<td class="as e"></td>':'<td class="as '+stc(r)+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
-        (e?'<span class="aend">skončil'+(e.t?' '+esc(e.t):'')+'</span>':fin?'<button class="btn ablink" data-act="actendask" data-role="'+esc(a)+'">Skončil?</button>':'<span class="amut">točí</span>')+'</td></tr>';}).join("")+
+      return '<tr class="'+(e?'ended':fin?'fin':'')+(fin&&hl.indexOf(a)>=0?' hl':'')+'"><td class="ar">'+esc(a)+'</td>'+SH.map(function(r){return sh.indexOf(r)<0?'<td class="as e"></td>':'<td class="as '+stc(r)+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
+        (e?'<span class="aend">skončil'+(e.t?' '+esc(e.t):'')+'</span>':fin?'<span class="aends"><button class="btn primary ablink" data-act="actendok" data-role="'+esc(a)+'">✓ Skončil – zapsat</button><button class="btn" data-act="actendno1" data-role="'+esc(a)+'">Ne</button></span>':'<span class="amut">točí</span>')+'</td></tr>';}).join("")+
     '</tbody></table></div><p class="memo2 actleg"><i class="as d"></i> natočeno <i class="as p"></i> částečně <i class="as r"></i> probíhá</p>':'<p class="memo2">V tomto dni nejsou u obrazů zadané role.</p>')+
     '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';}
 function isActorEnd(k){var f=fold(k||"");return f===fold(ACTOR_END)||f===fold("Herec končí");}
@@ -2721,18 +2723,22 @@ function act(a,id,el){
       var shiftedN=0;
       if(v==="rolling"){sr.startAt=nowHM();sr.startTs=Date.now();}
       if(!askUpd&&sr.type==="shot"&&(v==="done"||v==="partial")&&sr.pages&&sr.pages.sid&&sr.scene){var pm=smkMap(sr.pages.sid)[String(sr.scene)];if(!pm||pm.v!==v)askUpd={kind:"smkask",id:sr.id,v:v};}
-      if(sr.type==="shot"&&v==="done"&&sr.roles){var fr=actorsDone(d).filter(function(a){return sr.roles.split(",").some(function(x){return fold(x.trim())===fold(a);});});if(fr.length){if(askUpd)ui.actQ=fr;else askUpd={kind:"actend",roles:fr};}}
+      if(sr.type==="shot"&&v==="done"&&sr.roles){var fr=actorsDone(d).filter(function(a){return sr.roles.split(",").some(function(x){return fold(x.trim())===fold(a);});});if(fr.length){if(askUpd)ui.actQ=fr;else askUpd={kind:"actors",hl:fr};}}
       ui.sheet=askUpd; changed(); pushStatus(d,sr,v);
       if(isMartini(sr)){if(v==="done")toast("MARTINI SHOT! natočeno v "+sr.doneAt);}
       else if(sr.type==="note"){if(v==="done")toast("Skončeno v "+sr.doneAt+": "+(sr.kind||"poznámka")); else if(v==="moved")toast("Zrušeno / přesunuto: "+(sr.kind||"poznámka"));}
       else if(v==="done")toast("Obraz "+sr.scene+" natočen v "+sr.doneAt+(shiftedN?" · čas dalšího řádku upraven":"")); else if(v==="partial")toast("Obraz "+sr.scene+" natočen částečně ("+sr.doneAt+") – zůstává v plánu"); else if(v==="moved")toast("Obraz "+sr.scene+" nenatočen / přesunut");
       break;}
     case "actors": ui.planMenu=false; ui.timeMenu=false; ui.sheet={kind:"actors"}; render(); break;
+    case "actendok":{var ra=el.getAttribute("data-role"),tn=nowHM(),an2=curAnchor(d),ix2=an2?d.rows.indexOf(an2)+1:timeIndex(d,tn);
+      d.rows.splice(ix2,0,{id:uid(),type:"note",kind:ACTOR_END,actors:[ra],from:tn,to:tn,text:"",status:"",doneAt:""});
+      if(ui.sheet&&ui.sheet.kind!=="actors")ui.sheet={kind:"actors",hl:[]};changed();toast("Zapsáno do plánu: skončil herec – "+ra+" ("+tn+")");break;}
+    case "actendno1":{d.actAsk=d.actAsk||{};d.actAsk[fold(el.getAttribute("data-role"))]=1;changed();break;}
     case "actendask": ui.sheet={kind:"actend",roles:[el.getAttribute("data-role")],back:"actors"}; render(); break;
     case "actendno":{var sa=ui.sheet;d.actAsk=d.actAsk||{};(sa.roles||[]).forEach(function(a){d.actAsk[fold(a)]=1;});ui.sheet=sa.back?{kind:"actors"}:null;changed();break;}
     case "actendyes":{var sy=ui.sheet,ro2=sy.roles||[],pl3=curAnchor(d)?"cur":"end",t3=nowHM();
       ui.sheet={kind:"row",isNew:true,place:pl3,data:{id:uid(),type:"note",kind:ACTOR_END,actors:ro2.slice(),from:t3,to:t3,text:"",status:"",doneAt:""}};render();toast("Zkontroluj čas a ulož");break;}
-    case "smkok":{var sq=ui.sheet&&ui.sheet.kind==="smkask"?ui.sheet:null,sx2=sq&&rowById(sq.id);ui.sheet=null;if(ui.actQ){ui.sheet={kind:"actend",roles:ui.actQ};ui.actQ=null;}
+    case "smkok":{var sq=ui.sheet&&ui.sheet.kind==="smkask"?ui.sheet:null,sx2=sq&&rowById(sq.id);ui.sheet=null;if(ui.actQ){ui.sheet={kind:"actors",hl:ui.actQ};ui.actQ=null;}
       if(sx2){var r2=sx2.r,p2=r2.pages;S.scriptMarks=S.scriptMarks||{};var M2=S.scriptMarks[p2.sid]=S.scriptMarks[p2.sid]||{};var f2=+p2.from||1;
         M2[String(r2.scene)]={v:sq.v,from:f2,to:Math.max(f2,+p2.to||f2),at:nowHM()+" "+(day()&&day().label||"")};changed();toast("Obraz "+r2.scene+" označen i ve scénáři");}else render();break;}
     case "rollupdok":{var uq=ui.sheet&&ui.sheet.kind==="rollupd"?ui.sheet:null,ux=uq&&rowById(uq.id);ui.sheet=null;
@@ -2962,7 +2968,7 @@ function act(a,id,el){
     case "dologin": webLogin(val("fEmail"),(document.getElementById("fPass")||{}).value||""); break;
     case "logout": SB.auth.signOut().then(function(){location.reload();}); break;
     case "reload": if(saveTimer!=null||saveMsg==="Ukládám…"){toast("Ukládám změny, za chvíli obnovím…");setTimeout(function(){act("reload");},1500);break;} location.reload(); break;
-    case "close": case "veil": if(ui.sheet&&ui.sheet.kind==="basepr"){act("basen");break;} ui.sheet=null; ui.arm=null; if(ui.actQ){ui.sheet={kind:"actend",roles:ui.actQ};ui.actQ=null;} render(); if(saveTimer==null&&saveMsg==="Neuloženo")queueSave(); break;
+    case "close": case "veil": if(ui.sheet&&ui.sheet.kind==="basepr"){act("basen");break;} ui.sheet=null; ui.arm=null; if(ui.actQ){ui.sheet={kind:"actors",hl:ui.actQ};ui.actQ=null;} render(); if(saveTimer==null&&saveMsg==="Neuloženo")queueSave(); break;
   }
 }
 function shiftables(d,i){var out=[];for(var k=i+1;k<d.rows.length;k++){var r=d.rows[k];if(fixedRow(r)||fin(r)||r.status==="rolling"||toMin(r.from)==null)continue;out.push(r);}return out;}
