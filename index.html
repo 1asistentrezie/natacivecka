@@ -775,6 +775,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .pdfsplitbox .brkpane{border-left:0}
 .pzctl{position:absolute;z-index:6;display:flex;align-items:center;gap:4px;background:rgba(30,26,22,.85);border-radius:10px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .pzctl .btn{min-width:40px;min-height:38px;padding:0;font-size:22px;font-weight:800;background:#2B2620;color:#F3EEE4;border-color:#4A4238}.pzctl span{color:#F3EEE4;font:700 13px var(--f-display,inherit);min-width:44px;text-align:center}
+.bkcard .bkpanel{padding:4px 10px 5px}.bkcard .bkph{margin-bottom:0}.bkcard .bkph .bkplus{min-height:28px;min-width:30px}.bkcard .bkitems{gap:0 14px}.bkcard .bkit{padding:0;line-height:1.25}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -792,7 +793,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 11:30";
+var APP_BUILD="19. 11. 12:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
