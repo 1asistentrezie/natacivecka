@@ -754,6 +754,12 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .bpcats{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.bpfoot{display:flex;justify-content:flex-end;margin-top:12px}.bpfoot .btn{background:#fff;color:#1B1F22;border-color:#C9C2B6}
 .bpfloat{position:fixed;z-index:190;background:#F4C631;color:#1E1A06;border-color:#D9A800;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.3)}
 #pdfPanel .annbar .annt[data-ann=pick]{font-size:17px}
+.pgwrap canvas{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.txtl{position:absolute;inset:0;z-index:1;pointer-events:none;line-height:1;overflow:hidden;-webkit-user-select:none;user-select:none}
+.txtl span{position:absolute;white-space:pre;color:transparent;transform-origin:0 0;font-family:"Courier New",Courier,monospace;cursor:text}
+.txtl span::selection{background:rgba(30,115,232,.35);color:transparent}
+#pdfPages.seltext .txtl{pointer-events:auto;-webkit-user-select:text;user-select:text}#pdfPages.seltext .txtl span{-webkit-user-select:text;user-select:text}
+#pdfPages:not(.seltext) .pgwrap,.pgwrap{-webkit-user-select:none;user-select:none}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -771,7 +777,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 10:20";
+var APP_BUILD="19. 11. 10:35";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1728,10 +1734,10 @@ function brkPickOpen(raw){if(!canEdit)return;var r=brkPickRow();if(!r){toast("Ne
 /* označený text v kartě složky (popis děje apod.) */
 (function(){var fb=null,tm=null;function hide(){if(fb){fb.remove();fb=null;}}
   document.addEventListener("selectionchange",function(){clearTimeout(tm);tm=setTimeout(function(){var sel=window.getSelection(),t=sel&&String(sel).trim();
-    if(!canEdit||!t||t.length>80||!sel.rangeCount){hide();return;}var n=sel.anchorNode&&(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentNode);if(!n||!n.closest||!n.closest(".bkcard")||n.closest("input")){hide();return;}
+    if(!canEdit||!t||t.length>80||!sel.rangeCount){hide();return;}var n=sel.anchorNode&&(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentNode);if(!n||!n.closest||!(n.closest(".bkcard")||n.closest(".txtl"))||n.closest("input")){hide();return;}
     var rc=sel.getRangeAt(0).getBoundingClientRect();if(!fb){fb=document.createElement("button");fb.className="btn bpfloat";fb.textContent="📁 Přidat do složky";document.body.appendChild(fb);
-      fb.addEventListener("pointerdown",function(e){e.preventDefault();var tx=String(window.getSelection()).trim();hide();if(tx)brkPickOpen(tx);});}
-    fb.style.left=Math.max(8,Math.min(window.innerWidth-200,rc.left))+"px";fb.style.top=Math.max(8,rc.top-52)+"px";},250);});})();
+      fb.addEventListener("pointerdown",function(e){e.preventDefault();var tx=String(window.getSelection()).replace(/\s+/g," ").trim();hide();try{window.getSelection().removeAllRanges();}catch(_){}if(tx)brkPickOpen(tx.replace(/^[\s,.;:!?„“"'()–-]+|[\s,.;:!?„“"'()–-]+$/g,""));});}
+    fb.style.left=Math.max(8,Math.min(window.innerWidth-200,rc.left))+"px";fb.style.top=(rc.bottom+60<window.innerHeight?rc.bottom+14:Math.max(8,rc.top-52))+"px";},250);});})();
 function brkRefresh(){if(ui.sheet&&ui.sheet.kind==="brk")render();var pane=document.getElementById("brkPages");if(pane&&BRK.cur){pane.innerHTML=brkCardHTML(BRK.cur,true);}brkFocus();}
 function brkFocus(){setTimeout(function(){var i=document.getElementById("brkIn");if(i&&document.activeElement!==i){i.focus();try{i.setSelectionRange(i.value.length,i.value.length);}catch(_){}}},30);}
 function brkCommit(inp,keep){var E=ui.brkEdit;if(!E)return;var b=brkData(E.sc),v=inp.value.trim();b.c=b.c||{};
@@ -2564,7 +2570,7 @@ function showPdf(r,k,full){PDF_ROW=r;
           var vv=page.getViewport({scale:1}), sc2=w/vv.width*dpr, v=page.getViewport({scale:sc2});
           var c=document.createElement("canvas");c.width=v.width;c.height=v.height;c.setAttribute("aria-label","Strana "+pg);
           var ov=document.createElement("canvas");ov.className="ann";ov.width=v.width;ov.height=v.height;ov.setAttribute("data-pg",pg);
-          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);smkPaint(wrap,pg);
+          wrap.innerHTML="";wrap.style.height="";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);txtLayer(wrap,pg);smkPaint(wrap,pg);
           return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){annDraw(ov);});});}
       for(var pg=a;pg<=b;pg++){var wrap=document.createElement("div");wrap.className="pgwrap"+(full&&pg>=from&&pg<=to?" cur":"");wrap.setAttribute("data-page",pg);
         wrap.style.height=Math.round((w)*ratio)+"px";if(full)wrap.innerHTML='<span class="pgno">str. '+pg+'</span>';box.appendChild(wrap);slots.push(wrap);}
@@ -2582,6 +2588,12 @@ function showPdf(r,k,full){PDF_ROW=r;
 /* ---------- vyhledávání ve scénáři / složkách ---------- */
 var PSR=null, SRCH_TXT={};
 function srchNorm(t){var o="";for(var i=0;i<t.length;i++){var c=t[i].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();o+=c.length===1?c:(c[0]||" ");}return o;}
+/* neviditelná textová vrstva – ve scénáři jde označit slovo (v režimu ✋) */
+function txtLayer(wrap,pg){if(!ANN.pdf||!canEdit)return;srchPageText(ANN.pdf,ANN.doc,pg).then(function(P){if(!wrap.isConnected||wrap.querySelector(".txtl"))return;
+  var L=document.createElement("div");L.className="txtl";wrap.appendChild(L);var H=wrap.clientHeight||1,W=wrap.clientWidth||1;
+  P.items.forEach(function(it){if(!it.s.trim())return;var sp=document.createElement("span");sp.textContent=it.s;var fs=it.h/P.h*H;
+    sp.style.left=(it.x/P.w*100)+"%";sp.style.top=((P.h-it.y-it.h*0.88)/P.h*100)+"%";sp.style.fontSize=fs+"px";sp.setAttribute("data-w",it.w/P.w*W);L.appendChild(sp);});
+  [].forEach.call(L.children,function(sp){var tw=+sp.getAttribute("data-w"),aw=sp.offsetWidth;if(aw>0&&tw>0)sp.style.transform="scaleX("+(tw/aw)+")";});});}
 function srchPageText(doc,id,pg){var key=id+":"+pg;if(SRCH_TXT[key])return Promise.resolve(SRCH_TXT[key]);
   return doc.getPage(pg).then(function(page){var vp=page.getViewport({scale:1});return page.getTextContent().then(function(tc){
     var o={w:vp.width,h:vp.height,items:tc.items.filter(function(it){return it.str;}).map(function(it){var t=it.transform,fh=Math.hypot(t[2],t[3])||it.height||10;return {s:it.str,n:srchNorm(it.str),x:t[4],y:t[5],w:it.width,h:fh};})};SRCH_TXT[key]=o;return o;});});}
@@ -2640,7 +2652,7 @@ function annBarHTML(){
 function annEmoFit(pe){pe.style.maxHeight="none";pe.scrollTop=0;var top=pe.getBoundingClientRect().top,rows=[];
   [].forEach.call(pe.querySelectorAll(".mnemog"),function(g){var y=Math.round(g.getBoundingClientRect().top-top);if(!rows.some(function(r){return Math.abs(r-y)<6;}))rows.push(y);});
   rows.sort(function(x,y){return x-y;});pe.style.maxHeight=rows.length>2?(rows[2]-14)+"px":"";pe.style.overflowY="auto";}
-function annBarSync(){var b=document.getElementById("annBar");if(!b)return;
+function annBarSync(){var pp=document.getElementById("pdfPages");if(pp)pp.classList.toggle("seltext",ANN.tool==="move");var b=document.getElementById("annBar");if(!b)return;
   [].forEach.call(b.querySelectorAll("[data-ann]"),function(x){var v=x.getAttribute("data-ann");if(v==="emo"){var pe=document.getElementById("annEmo");x.classList.toggle("on",!!(pe&&!pe.hidden)||ANN.tool==="sticker");return;}x.classList.toggle("on",v===ANN.tool);});
   [].forEach.call(b.querySelectorAll("[data-annc]"),function(x){x.classList.toggle("on",x.getAttribute("data-annc")===ANN.color);});
   var pp=document.getElementById("pdfPages");if(pp)pp.classList.toggle("drawing",ANN.tool!=="move");}
