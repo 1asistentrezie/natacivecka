@@ -776,6 +776,12 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .pzctl{position:absolute;z-index:6;display:flex;align-items:center;gap:4px;background:rgba(30,26,22,.85);border-radius:10px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .pzctl .btn{min-width:40px;min-height:38px;padding:0;font-size:22px;font-weight:800;background:#2B2620;color:#F3EEE4;border-color:#4A4238}.pzctl span{color:#F3EEE4;font:700 13px var(--f-display,inherit);min-width:44px;text-align:center}
 .bkcard .bkpanel{padding:4px 10px 5px}.bkcard .bkph{margin-bottom:0}.bkcard .bkph .bkplus{min-height:28px;min-width:30px}.bkcard .bkitems{gap:0 14px}.bkcard .bkit{padding:0;line-height:1.25}
+.wxstrip{display:flex;gap:2px;margin:2px 0 4px;padding:0 2px;height:24px;overflow:hidden}
+.wxc{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:3px;border-radius:4px;font-variant-numeric:tabular-nums;line-height:1;
+  background:color-mix(in srgb,#8C969E calc(var(--cl)*55%),transparent);box-shadow:inset 0 calc(-1 * var(--rb,0px)) 0 #378ADD;overflow:hidden}
+.wxc i{font-style:normal;font-size:9px;color:var(--muted)}.wxc b{font-size:12px;font-weight:800}.wxc u{text-decoration:none;font-size:9px;font-weight:800;color:#378ADD}
+.wxc.now{outline:2px solid #F4C631;outline-offset:-2px}.wxna{font-size:12px;color:var(--muted);align-self:center}
+.wxtog{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:15px}.wxtog input{width:20px;height:20px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -788,12 +794,29 @@ var LS={getItem:function(k){return localStorage.getItem((NS_PRE?NS_PRE+":":"")+k
 "use strict";
 var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}";
 var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papír",["#0B0D0E","#E9E6DF","#FFFFFF","#F4C631"]],["c","Noční modrá",["#000","#0A1120","#14203A","#F4C631"]],["d","Espresso",["#000","#12100D","#211C17","#F4C631"]],["e","Kontrast",["#000","#000","#121212","#F4C631"]],["f","Lesní",["#000","#0C1411","#15221D","#F4C631"]]];
-function themeTiles(){return '<div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div>';}
+/* ---------- počasí (Open-Meteo, hodinově přes směnu) ---------- */
+var WX={};
+function wxToggle(){return '<label class="wxtog"><input type="checkbox" data-act="wxtoggle"'+(wxOn()?' checked':'')+'> Počasí – hodinový pruh přes směnu (teplota, oblačnost, déšť)</label>';}
+function wxOn(){return LS.getItem("nd.wx")==="1";}
+function wxKey(pl){return pl.lat.toFixed(2)+","+pl.lon.toFixed(2);}
+function wxLoad(pl){var k=wxKey(pl),c=WX[k];if(!c){try{c=JSON.parse(LS.getItem("nd.wx."+k)||"null");}catch(_){c=null;}if(c)WX[k]=c;}
+  if(c&&Date.now()-c.at<55*60000)return;if(WX["_busy"+k])return;WX["_busy"+k]=1;
+  fetch("https://api.open-meteo.com/v1/forecast?latitude="+pl.lat+"&longitude="+pl.lon+"&hourly=temperature_2m,cloud_cover,precipitation_probability,precipitation&timezone=Europe%2FPrague&forecast_days=16")
+   .then(function(r){return r.ok?r.json():null;}).then(function(j){WX["_busy"+k]=0;if(!j||!j.hourly)return;var H=j.hourly,m={};H.time.forEach(function(t,i){m[t]=[Math.round(H.temperature_2m[i]),H.cloud_cover[i],H.precipitation_probability[i],H.precipitation[i]];});
+     WX[k]={at:Date.now(),h:m};try{LS.setItem("nd.wx."+k,JSON.stringify(WX[k]));}catch(_){}var el=document.getElementById("wxStrip");if(el)el.outerHTML=wxHTML(day());})
+   .catch(function(){WX["_busy"+k]=0;});}
+function wxHTML(d){if(!wxOn()||!d||!d.date)return "";var pl=sunPlace(d),k=wxKey(pl);wxLoad(pl);var c=WX[k];
+  var f=toMin(d.shiftFrom||"07:00"),t=toMin(d.shiftTo||"19:00");if(f==null)f=420;if(t==null||t<=f)t=f+720;var h0=Math.floor(f/60),h1=Math.ceil(t/60)-1;
+  var nw=new Date(),nowH=d.date===todayISO()?nw.getHours():-1,cells="",any=false;
+  for(var h=h0;h<=Math.min(23,h1);h++){var v=c&&c.h[d.date+"T"+pad(h)+":00"];if(v)any=true;
+    cells+='<span class="wxc'+(h===nowH?' now':'')+'" style="--cl:'+(v?v[1]/100:0)+';--rb:'+(v?Math.round(v[2]/14):0)+'px" title="'+pad(h)+':00'+(v?' · '+v[0]+' °C · oblačnost '+v[1]+' % · déšť '+v[2]+' %'+(v[3]?' ('+v[3]+' mm)':''):'')+'"><i>'+h+'</i><b>'+(v?v[0]+'°':'·')+'</b>'+(v&&v[3]>=0.3?'<u>'+(Math.round(v[3]*10)/10)+'</u>':'')+'</span>';}
+  return '<div class="wxstrip" id="wxStrip" title="Počasí · '+esc(pl.name)+(c?' · aktualizováno '+new Date(c.at).toLocaleTimeString("cs-CZ",{hour:"2-digit",minute:"2-digit"}):'')+'">'+(any||!c?cells:'<span class="wxna">Předpověď pro tento den zatím není (max. 16 dní dopředu)</span>')+'</div>';}
+function themeTiles(){return '<div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div>'+wxToggle();}
 var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.1-.9-1.5-.9-2.5 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="10" cy="7" r="1.4"/><circle cx="14.5" cy="7" r="1.4"/><circle cx="17" cy="10.5" r="1.4"/></svg>';
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 15:30";
+var APP_BUILD="19. 11. 15:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1163,7 +1186,7 @@ function render(){zoomApply();
   var add='';
   document.getElementById("app").innerHTML=
     '<header class="bar'+(ui.track?' tracking':'')+(canEdit?' ed':'')+'" id="bar">'+headerHTML(d)+'</header>'+
-    '<div class="tools">'+tools+'</div>'+
+    '<div class="tools">'+tools+'</div>'+wxHTML(d)+
     '<div class="cols" aria-hidden="true"><span></span><span>Čas</span><span>Obraz</span><span>Doba · den · str.</span><span>Motiv · role</span><span></span><span></span><span>Stav</span></div>'+
     list+add+(WEB&&!canEdit?'<div class="loginbar"><button class="linkbtn" data-act="login">Přihlásit (editor)</button></div>':'')+(ui.sheet?sheetHTML():"")+'<div id="toastBox"></div>';
   if(typeof liveInd==="function")liveInd();
@@ -3072,6 +3095,7 @@ function act(a,id,el){
       var dl3=docList(dk3), ds=dl3[di], F3=DK[dk3].field, A3=DK[dk3].auto; if(ds){dl3.splice(di,1);if(WEB&&SB)SB.storage.from("docs").remove([ds.id+".pdf"]).catch(function(){}); S.days.forEach(function(dd){dd.rows.forEach(function(r){if(r[F3]&&r[F3].sid===ds.id){delete r[F3];delete r[A3];}});});}
       ui.sheet.summary=""; changed(); toast("Soubor odebrán"); break;}
     case "mynote": if(x)openMyNote(x.r); break;
+    case "wxtoggle":{try{LS.setItem("nd.wx",wxOn()?"0":"1");}catch(_){}render();break;}
     case "lupa":{ui.brkEdit=null;var xl=rowById(id);if(xl&&hasDoc(xl.r,"script")&&window.innerWidth>=700){try{LS.setItem("nd.pdfsplit","1");LS.setItem("nd.pdfwide","1");}catch(_){}showPdf(xl.r,"script");}else{ui.sheet={kind:"brk",id:id};render();}break;}
     case "brknav":{if(id&&id!=="undefined"){ui.brkEdit=null;ui.sheet={kind:"brk",id:id};render();}break;}
     case "brkpdf":{var xb=rowById(id);if(xb){ui.sheet=null;render();showPdf(xb.r,"brk");}break;}
@@ -3218,7 +3242,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","pushon","pushoff","forgot","setnewpass","book","lupa","brknav","brkpdf","brktab","zoomin","zoomout","zoomreset","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","wxtoggle","pushon","pushoff","forgot","setnewpass","book","lupa","brknav","brkpdf","brktab","zoomin","zoomout","zoomreset","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
