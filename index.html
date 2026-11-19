@@ -795,6 +795,8 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 @media (max-width:700px){.wxc .wxp s{font-size:8px}}
 .wxc .wxh{font-size:11px;font-weight:700;color:var(--muted);display:block}.wxc u{display:block;min-height:15px;font-size:13px;line-height:15px}.wxc u.z{visibility:hidden}.wxc b{font-size:15px}
 .wxc u.n{color:#8FB3DA;font-weight:600}
+.wxc .wxh{font-size:14px;font-weight:900;color:var(--ink,inherit);font-style:normal;letter-spacing:.02em}.wxc .wxm{display:flex;align-items:center;gap:6px}.wxc .wxm b{font-size:17px}.wxc .wxb{height:22px}
+@media (max-width:700px){.wxc .wxh{font-size:11px}.wxc .wxm{gap:2px}.wxc .wxm b{font-size:13px}.wxc .wxb{height:14px}}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -822,14 +824,14 @@ function wxHTML(d){if(!wxOn()||!d||!d.date)return "";var pl=sunPlace(d),k=wxKey(
   var f=toMin(d.shiftFrom||"07:00"),t=toMin(d.shiftTo||"19:00");if(f==null)f=420;if(t==null||t<=f)t=f+720;var h0=Math.floor(f/60),h1=Math.ceil(t/60)-1;
   var nw=new Date(),nowH=d.date===todayISO()?nw.getHours():-1,cells="",any=false;
   for(var h=h0;h<=Math.min(23,h1);h++){var v=c&&c.h[d.date+"T"+pad(h)+":00"];if(v)any=true;
-    cells+='<span class="wxc'+(h===nowH?' now':'')+'" style="--ch:'+(v?Math.max(2,Math.round(v[1]*0.18)):0)+'px;--rh:'+(v?Math.max(v[2]?2:0,Math.round(v[2]*0.18)):0)+'px" title="'+pad(h)+':00'+(v?' · '+v[0]+' °C · oblačnost '+v[1]+' % · déšť '+v[2]+' %'+(v[3]?' ('+v[3]+' mm)':''):'')+'"><i class="wxh">'+h+':00</i>'+(v?'<span class="wxp"><s>'+v[1]+'%</s><s class="r">'+v[2]+'%</s></span>':'')+'<span class="wxb"><em class="cl"></em><em class="rn"></em></span>'+(v&&(v[2]>0||v[3]>0)?'<u'+(v[3]>0?'':' class="n"')+'>'+(Math.round(v[3]*10)/10).toFixed(1)+' mm</u>':'<u class="z"></u>')+'<b>'+(v?v[0]+'°':'·')+'</b></span>';}
+    cells+='<span class="wxc'+(h===nowH?' now':'')+'" style="--ch:'+(v?Math.max(2,Math.round(v[1]*0.18)):0)+'px;--rh:'+(v?Math.max(v[2]?2:0,Math.round(v[2]*0.18)):0)+'px" title="'+pad(h)+':00'+(v?' · '+v[0]+' °C · oblačnost '+v[1]+' % · déšť '+v[2]+' %'+(v[3]?' ('+v[3]+' mm)':''):'')+'"><i class="wxh">'+h+':00</i>'+(v?'<span class="wxp"><s>'+v[1]+'%</s><s class="r">'+v[2]+'%</s></span>':'')+'<span class="wxm"><b>'+(v?v[0]+'°':'·')+'</b><span class="wxb"><em class="cl"></em><em class="rn"></em></span></span>'+(v&&(v[2]>0||v[3]>0)?'<u'+(v[3]>0?'':' class="n"')+'>'+(Math.round(v[3]*10)/10).toFixed(1)+' mm</u>':'<u class="z"></u>')+'</span>';}
   return '<div class="wxstrip" id="wxStrip" title="Počasí · '+esc(pl.name)+(c?' · aktualizováno '+new Date(c.at).toLocaleTimeString("cs-CZ",{hour:"2-digit",minute:"2-digit"}):'')+'">'+(any||!c?cells:'<span class="wxna">Předpověď pro tento den zatím není (max. 16 dní dopředu)</span>')+'</div>';}
 function themeTiles(){return '<div class="themes">'+THEMES.map(function(t){return '<button class="thm'+(curTheme()===t[0]?' sel':'')+'" data-act="theme" data-v="'+t[0]+'"><span class="sw">'+t[2].map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</span>'+esc(t[1])+'</button>';}).join("")+'</div>'+wxToggle();}
 var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.1-.9-1.5-.9-2.5 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="10" cy="7" r="1.4"/><circle cx="14.5" cy="7" r="1.4"/><circle cx="17" cy="10.5" r="1.4"/></svg>';
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 16:15";
+var APP_BUILD="19. 11. 16:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
