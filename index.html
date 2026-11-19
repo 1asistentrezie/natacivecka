@@ -797,6 +797,11 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .wxc u.n{color:#8FB3DA;font-weight:600}
 .wxc .wxh{font-size:14px;font-weight:900;color:var(--ink,inherit);font-style:normal;letter-spacing:.02em}.wxc .wxm{display:flex;align-items:center;gap:6px}.wxc .wxm b{font-size:17px}.wxc .wxb{height:22px}
 @media (max-width:700px){.wxc .wxh{font-size:11px}.wxc .wxm{gap:2px}.wxc .wxm b{font-size:13px}.wxc .wxb{height:14px}}
+.wxc+.wxc{border-left:1px solid var(--line);border-top-left-radius:0;border-bottom-left-radius:0}
+.wxrow{display:inline-flex;align-items:center;gap:5px;margin-top:3px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);line-height:1;white-space:nowrap}
+.wxrow .wxrb{display:flex;gap:2px;align-items:flex-end;height:16px}.wxrow .wxrb em{display:block;width:5px;border-radius:1px;background:#9AA1A8}.wxrow .wxrb em.rn{background:#378ADD}
+.wxrow .wxrt{display:flex;flex-direction:column;gap:1px}.wxrow s{text-decoration:none;font-size:10px;font-weight:700;color:var(--muted)}.wxrow s.r{color:#2E7FD6}
+.wxrow .wxrt{flex-direction:row;gap:5px;align-items:baseline}.wxrow s{font-size:11px}.wxrow{padding:2px 7px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -818,8 +823,13 @@ function wxLoad(pl){var k=wxKey(pl),c=WX[k];if(!c){try{c=JSON.parse(LS.getItem("
   if(c&&Date.now()-c.at<55*60000)return;if(WX["_busy"+k])return;WX["_busy"+k]=1;
   fetch("https://api.open-meteo.com/v1/forecast?latitude="+pl.lat+"&longitude="+pl.lon+"&hourly=temperature_2m,cloud_cover,precipitation_probability,precipitation&timezone=Europe%2FPrague&forecast_days=16")
    .then(function(r){return r.ok?r.json():null;}).then(function(j){WX["_busy"+k]=0;if(!j||!j.hourly)return;var H=j.hourly,m={};H.time.forEach(function(t,i){m[t]=[Math.round(H.temperature_2m[i]),H.cloud_cover[i],H.precipitation_probability[i],H.precipitation[i]];});
-     WX[k]={at:Date.now(),h:m};try{LS.setItem("nd.wx."+k,JSON.stringify(WX[k]));}catch(_){}var el=document.getElementById("wxStrip");if(el)el.outerHTML=wxHTML(day());})
+     WX[k]={at:Date.now(),h:m};try{LS.setItem("nd.wx."+k,JSON.stringify(WX[k]));}catch(_){}if(!ui.sheet&&!ui.drag)render();else{var el=document.getElementById("wxStrip");if(el)el.outerHTML=wxHTML(day());}})
    .catch(function(){WX["_busy"+k]=0;});}
+function wxRowHTML(r){if(!wxOn()||!r.from)return "";var d=day();if(!d||!d.date)return "";var c=WX[wxKey(sunPlace(d))];if(!c)return "";
+  var f=toMin(r.from),t=toMin(r.to||r.from);if(f==null)return "";if(t==null||t<f)t=f;var cl=0,rp=0,mm=0,n=0;
+  for(var h=Math.floor(f/60);h<=Math.floor(Math.max(f,t-1)/60);h++){var v=c.h[d.date+"T"+pad(h)+":00"];if(!v)continue;n++;cl+=v[1];rp=Math.max(rp,v[2]);mm+=v[3];}
+  if(!n)return "";cl=Math.round(cl/n);mm=Math.round(mm*10)/10;
+  return '<span class="wxrow" title="Počasí '+esc(r.from)+'–'+esc(r.to||"")+': oblačnost '+cl+' %, déšť '+rp+' %'+(mm?', '+mm+' mm':'')+'"><span class="wxrb"><em style="height:'+Math.max(2,Math.round(cl*0.16))+'px"></em><em class="rn" style="height:'+Math.max(rp?2:0,Math.round(rp*0.16))+'px"></em></span><span class="wxrt"><s>'+cl+'%</s><s class="r">'+rp+'%'+(mm||rp?' · '+mm.toFixed(1)+' mm':'')+'</s></span></span>';}
 function wxHTML(d){if(!wxOn()||!d||!d.date)return "";var pl=sunPlace(d),k=wxKey(pl);wxLoad(pl);var c=WX[k];
   var f=toMin(d.shiftFrom||"07:00"),t=toMin(d.shiftTo||"19:00");if(f==null)f=420;if(t==null||t<=f)t=f+720;var h0=Math.floor(f/60),h1=Math.ceil(t/60)-1;
   var nw=new Date(),nowH=d.date===todayISO()?nw.getHours():-1,cells="",any=false;
@@ -831,7 +841,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 16:20";
+var APP_BUILD="19. 11. 16:25";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1162,7 +1172,7 @@ function rowHTML(r){
   else if(canEdit&&locked) state='<span class="stav s-none locked" title="Nejdřív uzavřete předchozí obraz"><span>STAV</span><span class="t">po předchozím</span></span>';
   else state=r.status?'<span class="stav s-'+r.status+'">'+inner+'</span>':'<span class="wait">čeká</span>';
   return '<li class="row shot'+(r.status==="rolling"?' current':'')+(r.status==="done"?' done':'')+(r.status==="moved"?' moved':'')+(r.status==="partial"?' partial':'')+'" data-id="'+r.id+'">'+h+
-    '<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+(time||"—")+'</span>'+(spanMin(r.from,r.to)!=null?'<span class="dur">'+fmtDur(spanMin(r.from,r.to))+'</span>':'')+paceHTML(r)+planLine(r)+'</span>'+
+    '<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+(time||"—")+'</span>'+(spanMin(r.from,r.to)!=null?'<span class="dur">'+fmtDur(spanMin(r.from,r.to))+'</span>':'')+wxRowHTML(r)+paceHTML(r)+planLine(r)+'</span>'+
     '<span class="no'+(String(r.scene||"").length>6?' sz-l':String(r.scene||"").length>4?' sz-m':'')+'"'+tapAttr+'><small>OBRAZ</small>'+esc(r.scene||"–")+'</span>'+
     infoHTML(r,tapAttr)+
     '<span class="mr"><span class="motif"'+tapAttr+'>'+esc(r.motif||"")+(r.note?'<span class="memo">'+esc(r.note)+'</span>':'')+
