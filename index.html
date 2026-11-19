@@ -761,6 +761,11 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 #pdfPages.seltext .txtl{pointer-events:auto;-webkit-user-select:text;user-select:text}#pdfPages.seltext .txtl span{-webkit-user-select:text;user-select:text}
 #pdfPages:not(.seltext) .pgwrap,.pgwrap{-webkit-user-select:none;user-select:none}
 .bplbl{display:block;font-size:13px;color:#6E665C;margin:0 0 4px}.bpvar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.bpvar .bpv{min-height:36px;font-size:15px;background:#fff;color:#1B1F22;border-color:#C9C2B6}.bpvar .bpv.on{border-color:#F4C631;background:#FFF6D6}.bpvar small{color:#8A8378;font-size:11px;margin-left:4px}
+/* kompaktní složka */
+.brkpages .bkcard{zoom:.7}.bksheet .bkcard{zoom:.85}
+.bkcard .bkc{padding:6px 10px}.bkcard .bkc small{margin-bottom:2px}.bkcard .bkhd{padding:8px 10px}
+.brkpages .bkgrid{grid-template-columns:repeat(6,1fr)}.brkpages .bkc.w3{grid-column:span 3}.brkpages .bkc.w6{grid-column:span 6}.brkpages .bkgrid.b2{grid-template-columns:1fr 1fr}
+.bkcard .bkdej p{line-height:1.35}.bkcard .bkrole{margin:1px 0}.bkcard .bktabs{padding:8px 10px;gap:6px}.bkcard .bktab{padding:5px 10px}.bkcard .bkpanel{padding:6px 10px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -778,7 +783,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 11:00";
+var APP_BUILD="19. 11. 11:00b";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
