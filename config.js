@@ -1,5 +1,7 @@
 // Natáčecí den – připojení k Supabase (Project URL a anon public klíč)
 window.ND_CONFIG = {
+  // složky obrazů převedené z PDF „Marika – složky pro aplikaci“ (02/11/2026)
+  slozkyData: "slozky-marika.json",
   url: "https://ykjmtuazrfbgsvxzwykh.supabase.co",
   anonKey: "sb_publishable_VwUxE-EIwIorscAG3NSpfg_OCufq1DQ",
   // veřejný klíč pro upozornění (Web Push); soukromý klíč je jen v Supabase Secrets

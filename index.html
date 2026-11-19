@@ -733,6 +733,9 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .brkpages .bkcard{border-radius:6px;overflow:hidden}.brkpages .bkgrid{grid-template-columns:repeat(3,1fr)}.brkpages .bkc.w3{grid-column:span 3}.brkpages .bkc.w6{grid-column:span 3}.brkpages .bkgrid.b2{grid-template-columns:1fr 1fr}.brkpages .bkpanels{grid-template-columns:1fr}
 @media (max-width:700px){.bkgrid{grid-template-columns:repeat(3,1fr)}.bkc.w3,.bkc.w6{grid-column:span 3}.bkgrid.b2{grid-template-columns:1fr 1fr}.bkpanels{grid-template-columns:1fr}.bkhd .bkie{font-size:18px}}
 .bkhd .btn svg{filter:invert(1) brightness(1.2)}
+.bkhd .bkrez{background:#3A332B;color:#F3EEE4;border-radius:5px;padding:3px 8px;font-size:13px;font-weight:700}
+.bkc.bklist small{display:flex;align-items:center;gap:6px}.bkc.bklist .bkit{font-size:15px;padding:2px 0;line-height:1.3}.bkplus.sm{min-width:26px;min-height:24px;padding:0;font-size:15px;margin-left:auto}
+.bkmap{display:inline-block;margin-top:4px;font-weight:700;color:#2E6FB8}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -750,7 +753,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 7:55";
+var APP_BUILD="19. 11. 8:15";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1632,28 +1635,34 @@ var DK={script:{list:"scripts",field:"pages",auto:"pagesAuto",title:"Scénáře 
 var assetsNs=null, pdfLibP=null;
 function scripts(){if(!Array.isArray(S.scripts)){S.scripts=S.script?[S.script]:[];}if(S.script){var sid=S.script.id;S.days.forEach(function(d){d.rows.forEach(function(r){if(r.pages&&!r.pages.sid)r.pages.sid=sid;});});delete S.script;}return S.scripts;}
 /* ===== Složka obrazu (breakdown karta) – data v plánu: S.brk[obraz] ===== */
-var BRK_CATS=[["Rekvizity","#9B59D0"],["Kostýmy","#3B7BE0"],["Masky","#E37AA6"],["Auta","#2BA3A0"],["Zvířata","#5DA04A"],["Kamera","#22344F"],["Zvuk","#8C969E"],["Stavba","#A8743A"],["SFX","#F08A24"],["Poznámky","#BBBBBB"],["Dotazy","#5B8DEF"]];
-function brkData(sc){S.brk=S.brk||{};var k=String(sc||"");return S.brk[k]||{c:{}};}
-function brkPut(sc,b){S.brk=S.brk||{};S.brk[String(sc)]=b;}
+var BRK_CATS=[["Rekvizity","#9B59D0"],["Rekvizity - webstránky atd","#9B59D0"],["Rekvizity - Haniny obrazy","#9B59D0"],["Fotky - vyrobené dopředu","#9B59D0"],["Kostýmy","#3B7BE0"],["Masky","#E37AA6"],["Auta","#2BA3A0"],["Zvířata","#5DA04A"],["Kamera","#22344F"],["Světla/plošiny","#22344F"],["Zvuk","#8C969E"],["SFX","#F08A24"],["Zbraně","#B5352B"],["Stavba","#A8743A"],["štáb","#6E665C"],["Lock-up","#6E665C"],["Produkce - videomateriály","#6E665C"],["Lokace - uzavírky","#2BA3A0"],["Poznámky","#BBBBBB"],["Dotazy","#5B8DEF"]];
+var BRK_CELLS=["Kaskadéři","Kompars","Epizody"],BRK_BASE=null;
+function brkKey(sc){return String(sc||"").toLowerCase().replace(/\s+/g,"");}
+function brkBase(sc){return BRK_BASE&&BRK_BASE[brkKey(sc)]||null;}
+(function(){var u=window.ND_CONFIG&&window.ND_CONFIG.slozkyData;if(!u)return;fetch(u).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j){BRK_BASE={};Object.keys(j).forEach(function(k){BRK_BASE[brkKey(k)]=j[k];});try{render();}catch(_){}}}).catch(function(){});})();
+function brkData(sc){S.brk=S.brk||{};var k=brkKey(sc),own=S.brk[k];if(own)return own;var bs=brkBase(sc);return bs?{c:JSON.parse(JSON.stringify(bs.cats||{})),zab:""}:{c:{}};}
+function brkPut(sc,b){S.brk=S.brk||{};S.brk[brkKey(sc)]=b;}
 function brkCatList(){var L=BRK_CATS.map(function(c){return c[0];});(S.brkCats||[]).forEach(function(c){if(L.indexOf(c)<0)L.push(c);});return L;}
 function brkColor(c){for(var i=0;i<BRK_CATS.length;i++)if(BRK_CATS[i][0]===c)return BRK_CATS[i][1];return "#7A8590";}
 function brkOpenList(){try{return JSON.parse(LS.getItem("nd.brkopen")||'["Rekvizity"]');}catch(_){return ["Rekvizity"];}}
-function brkCardHTML(r,pane){var b=brkData(r.scene),C=b.c||{},op=brkOpenList(),tod=String(r.tod||"").split("/"),ie=(tod[0]||"").trim(),dn=(tod[1]||"").trim(),dil=(String(r.scene||"").match(/^\d+/)||[""])[0];dil=dil.length>=3?dil.slice(0,dil.length-2):"";
+function brkCardHTML(r,pane){var b=brkData(r.scene),C=b.c||{},op=brkOpenList(),bs=brkBase(r.scene)||{},tod=String(r.tod||bs.ie||"").split("/"),ie=(tod[0]||"").trim(),dn=(tod[1]||"").trim(),dil=(String(r.scene||"").match(/^\d+/)||[""])[0];dil=dil.length>=3?dil.slice(0,dil.length-2):"";
   var ed=canEdit,E=ui.brkEdit||{},cell=function(lbl,val,fld,cls){var editing=ed&&fld&&E.sc===String(r.scene)&&E.f===fld;
       return '<div class="bkc '+(cls||"")+'"'+(ed&&fld&&!editing?' data-act="brkfld" data-f="'+fld+'" data-sc="'+esc(r.scene)+'"':'')+'><small>'+lbl+'</small>'+(editing?'<input id="brkIn" data-f="'+fld+'" value="'+esc(b[fld]||"")+'">':'<b>'+(val?esc(val):'–')+'</b>')+'</div>';};
-  var roles=String(r.roles||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
-  var cats=brkCatList(),shown=cats.filter(function(c){return (C[c]&&C[c].length)||op.indexOf(c)>=0;}),tabs=cats.filter(function(c){return shown.indexOf(c)<0;});
+  var roles=String(r.roles||"").split(",").map(function(x){return x.trim();}).filter(Boolean);if(!roles.length&&bs.roles)roles=bs.roles.map(function(x){return x.replace(/^R(\d+)\s*-\s*/,"$1. ");});var mapU=((bs.lok||[]).join(" ").match(/https?:\/\/\S+/)||[])[0];
+  var listCell=function(c){var L=C[c]||[],adding=E.sc===String(r.scene)&&E.c===c;return '<div class="bkc bklist"><small>'+(c==="Kompars"?"Komparz":c)+(ed?'<button class="btn bkplus sm" data-act="brkadd" data-c="'+esc(c)+'" data-sc="'+esc(r.scene)+'" aria-label="Přidat">+</button>':'')+'</small>'+
+      (L.length?L.map(function(it,i){var editing=E.sc===String(r.scene)&&E.c===c&&E.i===i;return editing?'<input id="brkIn" data-c="'+esc(c)+'" data-i="'+i+'" value="'+esc(it)+'">':'<div class="bkit"'+(ed?' data-act="brkitem" data-c="'+esc(c)+'" data-i="'+i+'" data-sc="'+esc(r.scene)+'"':'')+'>'+esc(it)+'</div>';}).join(""):(adding?'':'<b>–</b>'))+(adding&&E.i==null?'<input id="brkIn" data-c="'+esc(c)+'" placeholder="Nová položka">':'')+'</div>';};
+  var cats=brkCatList().filter(function(c){return BRK_CELLS.indexOf(c)<0;}),shown=cats.filter(function(c){return (C[c]&&C[c].length)||op.indexOf(c)>=0;}),tabs=cats.filter(function(c){return shown.indexOf(c)<0;});
   var d=day(),SH=d?d.rows.filter(function(x){return x.type==="shot";}):[],ix=SH.indexOf(r);
   return '<div class="bkcard">'+
-   '<div class="bkhd"><span class="bkno">'+esc(r.scene||"")+'</span><b class="bkie">'+esc(ie||"")+(dn?' · '+esc(dn):'')+'</b><span class="bkmeta">'+(dil?'díl '+esc(dil)+' · ':'')+(r.len?esc(r.len)+' str.':'')+'</span><span class="bksp"></span>'+
+   '<div class="bkhd"><span class="bkno">'+esc(r.scene||"")+'</span>'+(bs.rezie?'<span class="bkrez">'+esc(bs.rezie)+'</span>':'')+'<b class="bkie">'+esc(ie||"")+(dn?' · '+esc(dn):'')+'</b><span class="bkmeta">'+(dil?'díl '+esc(dil)+' · ':'')+(r.len?esc(r.len)+' str.':'')+'</span><span class="bksp"></span>'+
      (!pane&&ix>=0?'<button class="btn bknav" data-act="brknav" data-id="'+(SH[ix-1]||{}).id+'"'+(ix>0?'':' disabled')+' aria-label="Předchozí obraz">‹</button><button class="btn bknav" data-act="brknav" data-id="'+(SH[ix+1]||{}).id+'"'+(ix<SH.length-1?'':' disabled')+' aria-label="Další obraz">›</button>':'')+
      (!pane&&hasDoc(r,"script")?'<button class="btn" data-act="book" data-id="'+r.id+'" title="Scénář">'+BOOK+'</button>':'')+
      (hasDoc(r,"brk")?'<button class="btn bkpdf" data-act="brkpdf" data-id="'+r.id+'" title="PDF složky">PDF</button>':(ed&&!pane&&docList("brk").length?'<button class="btn bkpdf" data-act="brkpdfset" data-id="'+r.id+'" title="Přiřadit PDF složky">+PDF</button>':''))+
      (!pane?'<button class="btn" data-act="close" aria-label="Zavřít">✕</button>':'')+'</div>'+
-   '<div class="bkgrid">'+cell("Motiv",r.motif,"","w3")+cell("Lokace",rowLoc(r),"","w3")+cell("Díl",dil,"","")+cell("Denní doba",dn,"","hl")+cell("Int / Ext",ie,"","")+cell("Den děje",String(r.den||"").replace(/^Den\s*/i,""),"","")+cell("Počet stran",r.len,"","")+cell("Záběry",b.zab,"zab","")+
-     '<div class="bkc w6 bkdej"><small>Popis děje</small><p>'+esc(rowDesc(r)||"–")+'</p></div></div>'+
+   '<div class="bkgrid">'+cell("Motiv",r.motif||bs.motif,"","w3")+'<div class="bkc w3"><small>Lokace</small><b>'+esc(rowLoc(r)||(bs.lok||[]).join(" ").replace(/https?:\/\/\S+/,"").trim()||"–")+'</b>'+(mapU?'<a class="bkmap" href="'+esc(mapU)+'" target="_blank" rel="noopener">Mapa ↗</a>':'')+'</div>'+cell("Díl",dil,"","")+cell("Denní doba",dn,"","hl")+cell("Int / Ext",ie,"","")+cell("Den děje",String(r.den||bs.den||"").replace(/^Den\s*/i,""),"","")+cell("Počet stran",r.len||bs.str,"","")+cell("Záběry",b.zab,"zab","")+
+     '<div class="bkc w6 bkdej"><small>Popis děje</small><p>'+esc(rowDesc(r)||bs.desc||"–")+'</p></div></div>'+
    '<div class="bkgrid b2"><div class="bkc"><small>Herci</small>'+(roles.length?roles.map(function(x){var m=x.match(/^(\d+)\.\s*(.*)$/);return '<div class="bkrole">'+(m?'<i>'+esc(m[1])+'</i>'+esc(m[2]):esc(x))+'</div>';}).join(""):'<b>–</b>')+'</div>'+
-     cell("Epizody",b.ep,"ep","")+cell("Kaskadéři",b.ks,"ks","")+cell("Komparz",b.kp,"kp","")+'</div>'+
+     BRK_CELLS.map(function(c){return listCell(c);}).join("")+'</div>'+
    (tabs.length||ed?'<div class="bktabs">'+tabs.map(function(c){return '<button class="bktab" style="--bc:'+brkColor(c)+'" data-act="brktab" data-c="'+esc(c)+'">'+esc(c)+'</button>';}).join("")+(ed?'<button class="bktab add" data-act="brkcatadd">+ Další</button>':'')+'</div>':'')+
    '<div class="bkpanels">'+shown.map(function(c){var L=C[c]||[],adding=E.sc===String(r.scene)&&E.c===c;
      return '<div class="bkpanel"><div class="bkph"><i style="background:'+brkColor(c)+'"></i>'+esc(c)+' <span>'+L.length+'</span><span class="bksp"></span>'+(ed?'<button class="btn bkplus" data-act="brkadd" data-c="'+esc(c)+'" data-sc="'+esc(r.scene)+'" aria-label="Přidat">+</button>':'')+(!L.length?'<button class="btn bkplus" data-act="brktab" data-c="'+esc(c)+'" aria-label="Skrýt">–</button>':'')+'</div>'+
@@ -1665,7 +1674,7 @@ function brkCommit(inp,keep){var E=ui.brkEdit;if(!E)return;var b=brkData(E.sc),v
   if(E.f){b[E.f]=v;ui.brkEdit=null;}
   else{var L=b.c[E.c]=b.c[E.c]||[];if(E.i!=null){if(v)L[E.i]=v;else L.splice(E.i,1);ui.brkEdit=null;}else if(v){L.push(v);if(!keep)ui.brkEdit=null;}else ui.brkEdit=null;}
   brkPut(E.sc,b);changed();brkRefresh();}
-document.addEventListener("keydown",function(e){var t=e.target;if(t&&t.id==="brkIn"){if(e.key==="Enter"){e.preventDefault();brkCommit(t,true);}else if(e.key==="Escape"){ui.brkEdit=null;brkRefresh();}}});
+document.addEventListener("keydown",function(e){var t=e.target;if(t&&t.id==="brkIn"){if(e.key==="Enter"){e.preventDefault();brkCommit(t,true);}else if(e.key==="Escape"){e.preventDefault();e.stopPropagation();ui.brkEdit=null;brkRefresh();}}},true);
 document.addEventListener("focusout",function(e){var t=e.target;if(t&&t.id==="brkIn"&&ui.brkEdit){setTimeout(function(){if(document.activeElement&&document.activeElement.id==="brkIn")return;if(t.isConnected)brkCommit(t,false);},120);}});
 function docList(k){if(k==="script")return scripts();if(!Array.isArray(S.slozky))S.slozky=[];return S.slozky;}
 function docById(k,id){var l=docList(k);for(var i=0;i<l.length;i++)if(l[i].id===id)return l[i];return null;}
@@ -2938,7 +2947,7 @@ function act(a,id,el){
       var dl3=docList(dk3), ds=dl3[di], F3=DK[dk3].field, A3=DK[dk3].auto; if(ds){dl3.splice(di,1);if(WEB&&SB)SB.storage.from("docs").remove([ds.id+".pdf"]).catch(function(){}); S.days.forEach(function(dd){dd.rows.forEach(function(r){if(r[F3]&&r[F3].sid===ds.id){delete r[F3];delete r[A3];}});});}
       ui.sheet.summary=""; changed(); toast("Soubor odebrán"); break;}
     case "mynote": if(x)openMyNote(x.r); break;
-    case "lupa":{ui.brkEdit=null;ui.sheet={kind:"brk",id:id};render();break;}
+    case "lupa":{ui.brkEdit=null;var xl=rowById(id);if(xl&&hasDoc(xl.r,"script")&&window.innerWidth>=700){try{LS.setItem("nd.pdfsplit","1");LS.setItem("nd.pdfwide","1");}catch(_){}showPdf(xl.r,"script");}else{ui.sheet={kind:"brk",id:id};render();}break;}
     case "brknav":{if(id&&id!=="undefined"){ui.brkEdit=null;ui.sheet={kind:"brk",id:id};render();}break;}
     case "brkpdf":{var xb=rowById(id);if(xb){ui.sheet=null;render();showPdf(xb.r,"brk");}break;}
     case "brkpdfset":{docList("brk");ui.sheet={kind:"pages",id:id,dk:"brk"};render();break;}
