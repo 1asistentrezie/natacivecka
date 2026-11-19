@@ -793,7 +793,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 12:30";
+var APP_BUILD="19. 11. 15:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -972,12 +972,16 @@ function keepRecent(d,h){d.rows.forEach(function(r){if(h[r.id]&&recentDone(d,r))
 function hiddenRows(d){
   var rows=d.rows, last=-1, h={};
   for(var i=0;i<rows.length;i++)if(rows[i].type==="shot"&&fin(rows[i]))last=i;
-  if(last<0){for(var k=0;k<rows.length&&rows[k].type==="note"&&fin(rows[k]);k++)h[rows[k].id]=1;keepCommits(d,h);keepRecent(d,h);return h;}
+  if(last<0){for(var k=0;k<rows.length&&rows[k].type==="note"&&fin(rows[k]);k++)h[rows[k].id]=1;keepCommits(d,h);keepRecent(d,h);aeHide(d,h);return h;}
   var j=last+1; while(j<rows.length&&rows[j].type==="note"&&fin(rows[j]))j++;
   for(var m=0;m<j;m++)if(rows[m].status!=="rolling"&&rows[m].status!=="partial")h[rows[m].id]=1;
-  keepCommits(d,h);keepRecent(d,h);
+  keepCommits(d,h);keepRecent(d,h);aeHide(d,h);
   return h;
 }
+/* poznámka Skončil herec: bez času a stavu, za 15 min po čase konce se sama schová do Hotové */
+function aeHide(d,h){var today=todayISO(),nw=new Date(),nm=nw.getHours()*60+nw.getMinutes();
+  d.rows.forEach(function(r){if(r.type!=="note"||!isActorEnd(r.kind))return;var t=toMin(r.from);if(r.actors&&r.actors.length&&r.actorTimes){var ts=r.actors.map(function(a){return toMin(endTime(r,a));}).filter(function(x){return x!=null;});if(ts.length)t=Math.max.apply(null,ts);}
+    if((d.date&&d.date<today)||(t!=null&&(!d.date||d.date===today)&&nm>=t+15))h[r.id]=1;});}
 function keepCommits(d,h){var ended=null;d.rows.forEach(function(r){if(!isCommit(r)||!h[r.id])return;ended=ended||endedActors(d,null);
   var rl=commitRoles(d,r); if(!rl.length||rl.some(function(a){return !ended[fold(a)];}))delete h[r.id];});}
 function doneSummary(d,h){
@@ -1105,9 +1109,9 @@ function rowHTML(r){
     var NL={"":"STAV",rolling:"PROBÍHÁ",done:"SKONČENO",moved:"ZRUŠENO / PŘESUNUTO"};
     var nin='<span>'+NL[r.status||""]+'</span>'+(fin(r)&&r.doneAt?'<span class="t">'+esc(r.doneAt)+'</span>':'');
     var ns=canEdit?'<button class="stav s-'+(r.status||"none")+'" data-act="state" data-id="'+r.id+'">'+nin+'</button>':(r.status?'<span class="stav s-'+r.status+'">'+nin+'</span>':'<span class="wait">—</span>');
-    if(r.noState)ns='';
-    var nd=r.noTime?null:spanMin(r.from,r.to); if(r.noTime)time="";
-    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+'" data-id="'+r.id+'">'+h+'<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+(r.noTime?"":(time||"—"))+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+(r.noTime?'':paceHTML(r)+planLine(r))+'</span>'+
+    var aeN=isActorEnd(r.kind);if(r.noState||aeN)ns='';
+    var nd=(r.noTime||aeN)?null:spanMin(r.from,r.to); if(r.noTime||aeN)time="";
+    return '<li class="row note'+(r.kind===ALERT_KIND?' alert':'')+(r.status==="done"?' done':'')+(r.status==="rolling"?' current':'')+(r.status==="moved"?' moved':'')+(aeN?' aend':'')+'" data-id="'+r.id+'">'+h+'<span class="time'+paceCls(r)+'"'+tapAttr+'><span>'+((r.noTime||aeN)?"":(time||"—"))+'</span>'+(nd!=null?'<span class="dur">'+fmtDur(nd)+'</span>':'')+(r.noTime?'':paceHTML(r)+planLine(r))+'</span>'+
       '<span class="kind"'+tapAttr+'><b>'+esc(r.kind)+'</b>'+(isActorEnd(r.kind)&&r.actors&&r.actors.length?r.actors.map(function(a){var t=endTime(r,a);return '<span class="role endrole">'+esc(a)+(t?'<small>skončil '+esc(t)+'</small>':'')+'</span>';}).join(""):'')+'<span>'+esc(r.text)+'</span>'+lunchCd(r)+'</span>'+mvHTML(r)+'<span class="state">'+ns+'</span></li>';
   }
   var rd=day(), roles=sortRoles((r.roles||"").split(",").map(function(x){return x.trim();}).filter(Boolean)).map(function(x){return roleChip(x,rd,r);}).join("");
