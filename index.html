@@ -768,9 +768,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .bkcard .bkdej p{line-height:1.35}.bkcard .bkrole{margin:1px 0}.bkcard .bktabs{padding:8px 10px;gap:6px}.bkcard .bktab{padding:5px 10px}.bkcard .bkpanel{padding:6px 10px}
 /* kategorie a vyplněné kategorie menší, štítky až na konci */
 .bkcard .bktabs{gap:4px;padding:8px 10px;border-top:1px solid #D9D4CB;border-bottom:0}
-.bkcard .bktab{font-size:11px;padding:3px 7px;border-left-width:3px;border-radius:5px;letter-spacing:.04em}
-.bkcard .bkph{font-size:11px;margin-bottom:2px}.bkcard .bkph .bkplus{min-width:24px;min-height:22px;font-size:13px}
-.bkcard .bkitems{gap:0 12px}.bkcard .bkit{font-size:13px;padding:1px 0;line-height:1.3}.bkcard .bkpanel{padding:5px 10px}
+.bkcard .bkitems{gap:2px 14px}
 .pdfpanel.wide.hassplit{width:100vw;max-width:100vw;left:0;right:0;border-left:0}
 .pdfsplitbox{position:relative}.splitdrag{flex:none;width:16px;margin:0 -6px;z-index:5;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center;position:relative}
 .splitdrag i{width:6px;height:64px;border-radius:3px;background:#F4C631;box-shadow:0 0 0 2px rgba(0,0,0,.35)}.splitdrag.on i{height:120px;background:#FFD84D}
@@ -794,7 +792,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 11:35";
+var APP_BUILD="19. 11. 11:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
