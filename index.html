@@ -766,6 +766,11 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .bkcard .bkc{padding:6px 10px}.bkcard .bkc small{margin-bottom:2px}.bkcard .bkhd{padding:8px 10px}
 .brkpages .bkgrid{grid-template-columns:repeat(6,1fr)}.brkpages .bkc.w3{grid-column:span 3}.brkpages .bkc.w6{grid-column:span 6}.brkpages .bkgrid.b2{grid-template-columns:1fr 1fr}
 .bkcard .bkdej p{line-height:1.35}.bkcard .bkrole{margin:1px 0}.bkcard .bktabs{padding:8px 10px;gap:6px}.bkcard .bktab{padding:5px 10px}.bkcard .bkpanel{padding:6px 10px}
+/* kategorie a vyplněné kategorie menší, štítky až na konci */
+.bkcard .bktabs{gap:4px;padding:8px 10px;border-top:1px solid #D9D4CB;border-bottom:0}
+.bkcard .bktab{font-size:11px;padding:3px 7px;border-left-width:3px;border-radius:5px;letter-spacing:.04em}
+.bkcard .bkph{font-size:11px;margin-bottom:2px}.bkcard .bkph .bkplus{min-width:24px;min-height:22px;font-size:13px}
+.bkcard .bkitems{gap:0 12px}.bkcard .bkit{font-size:13px;padding:1px 0;line-height:1.3}.bkcard .bkpanel{padding:5px 10px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -783,7 +788,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 11:00b";
+var APP_BUILD="19. 11. 11:20";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1693,11 +1698,11 @@ function brkCardHTML(r,pane){var b=brkData(r.scene),C=b.c||{},op=brkOpenList(),b
      '<div class="bkc w6 bkdej"><small>Popis děje</small><p>'+esc(rowDesc(r)||bs.desc||"–")+'</p></div></div>'+
    '<div class="bkgrid b2"><div class="bkc"><small>Herci</small>'+(roles.length?roles.map(function(x){var m=x.match(/^(\d+)\.\s*(.*)$/);return '<div class="bkrole">'+(m?'<i>'+esc(m[1])+'</i>'+esc(m[2]):esc(x))+'</div>';}).join(""):'<b>–</b>')+'</div>'+
      BRK_CELLS.map(function(c){return listCell(c);}).join("")+'</div>'+
-   (tabs.length||ed?'<div class="bktabs">'+tabs.map(function(c){return '<button class="bktab" style="--bc:'+brkColor(c)+'" data-act="brktab" data-c="'+esc(c)+'">'+esc(c)+'</button>';}).join("")+(ed?'<button class="bktab add" data-act="brkcatadd">+ Další</button>':'')+'</div>':'')+
    '<div class="bkpanels">'+shown.map(function(c){var L=C[c]||[],adding=E.sc===String(r.scene)&&E.c===c;
      return '<div class="bkpanel"><div class="bkph"><i style="background:'+brkColor(c)+'"></i>'+esc(c)+' <span>'+L.length+'</span><span class="bksp"></span>'+(ed?'<button class="btn bkplus" data-act="brkadd" data-c="'+esc(c)+'" data-sc="'+esc(r.scene)+'" aria-label="Přidat">+</button>':'')+(!L.length?'<button class="btn bkplus" data-act="brktab" data-c="'+esc(c)+'" aria-label="Skrýt">–</button>':'')+'</div>'+
        '<div class="bkitems">'+L.map(function(it,i){var editing=E.sc===String(r.scene)&&E.c===c&&E.i===i;return editing?'<input id="brkIn" data-c="'+esc(c)+'" data-i="'+i+'" value="'+esc(it)+'">':'<div class="bkit"'+(ed?' data-act="brkitem" data-c="'+esc(c)+'" data-i="'+i+'" data-sc="'+esc(r.scene)+'"':'')+'>'+esc(it)+'</div>';}).join("")+
-       (adding&&E.i==null?'<input id="brkIn" data-c="'+esc(c)+'" placeholder="Nová položka – Enter uloží">':'')+(!L.length&&!adding?'<div class="bkit mut">'+(ed?'Klepni na + a přidej':'Nic')+'</div>':'')+'</div></div>';}).join("")+'</div></div>';}
+       (adding&&E.i==null?'<input id="brkIn" data-c="'+esc(c)+'" placeholder="Nová položka – Enter uloží">':'')+(!L.length&&!adding?'<div class="bkit mut">'+(ed?'Klepni na + a přidej':'Nic')+'</div>':'')+'</div></div>';}).join("")+'</div>'+
+   (tabs.length||ed?'<div class="bktabs">'+tabs.map(function(c){return '<button class="bktab" style="--bc:'+brkColor(c)+'" data-act="brktab" data-c="'+esc(c)+'">'+esc(c)+'</button>';}).join("")+(ed?'<button class="bktab add" data-act="brkcatadd">+ Další</button>':'')+'</div>':'')+'</div>';}
 
 /* ===== Slovo ze scénáře / složky → kategorie složky ===== */
 function annTextPick(P,pa,pb){if(!P||!P.items)return "";
