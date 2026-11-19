@@ -802,6 +802,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .wxrow .wxrb{display:flex;gap:2px;align-items:flex-end;height:16px}.wxrow .wxrb em{display:block;width:5px;border-radius:1px;background:#9AA1A8}.wxrow .wxrb em.rn{background:#378ADD}
 .wxrow .wxrt{display:flex;flex-direction:column;gap:1px}.wxrow s{text-decoration:none;font-size:10px;font-weight:700;color:var(--muted)}.wxrow s.r{color:#2E7FD6}
 .wxrow .wxrt{flex-direction:row;gap:5px;align-items:baseline}.wxrow s{font-size:11px}.wxrow{padding:2px 7px}
+.wxrow{align-items:flex-end;gap:4px}.wxrow em.b{display:block;width:6px;border-radius:1px;background:#9AA1A8;align-self:flex-end;margin-bottom:2px}.wxrow em.b.rn{background:#378ADD;margin-left:-2px}.wxrow s.mm{margin-left:3px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -829,7 +830,7 @@ function wxRowHTML(r){if(!wxOn()||!r.from)return "";var d=day();if(!d||!d.date)r
   var f=toMin(r.from),t=toMin(r.to||r.from);if(f==null)return "";if(t==null||t<f)t=f;var cl=0,rp=0,mm=0,n=0;
   for(var h=Math.floor(f/60);h<=Math.floor(Math.max(f,t-1)/60);h++){var v=c.h[d.date+"T"+pad(h)+":00"];if(!v)continue;n++;cl+=v[1];rp=Math.max(rp,v[2]);mm+=v[3];}
   if(!n)return "";cl=Math.round(cl/n);mm=Math.round(mm*10)/10;
-  return '<span class="wxrow" title="Počasí '+esc(r.from)+'–'+esc(r.to||"")+': oblačnost '+cl+' %, déšť '+rp+' %'+(mm?', '+mm+' mm':'')+'"><span class="wxrb"><em style="height:'+Math.max(2,Math.round(cl*0.16))+'px"></em><em class="rn" style="height:'+Math.max(rp?2:0,Math.round(rp*0.16))+'px"></em></span><span class="wxrt"><s>'+cl+'%</s><s class="r">'+rp+'%'+(mm||rp?' · '+mm.toFixed(1)+' mm':'')+'</s></span></span>';}
+  return '<span class="wxrow" title="Počasí '+esc(r.from)+'–'+esc(r.to||"")+': oblačnost '+cl+' %, déšť '+rp+' %'+(mm?', '+mm+' mm':'')+'"><s>'+cl+'%</s><em class="b" style="height:'+Math.max(2,Math.round(cl*0.16))+'px"></em><em class="b rn" style="height:'+Math.max(rp?2:0,Math.round(rp*0.16))+'px"></em><s class="r">'+rp+'%</s>'+(mm||rp?'<s class="r mm">'+mm.toFixed(1)+' mm</s>':'')+'</span>';}
 function wxHTML(d){if(!wxOn()||!d||!d.date)return "";var pl=sunPlace(d),k=wxKey(pl);wxLoad(pl);var c=WX[k];
   var f=toMin(d.shiftFrom||"07:00"),t=toMin(d.shiftTo||"19:00");if(f==null)f=420;if(t==null||t<=f)t=f+720;var h0=Math.floor(f/60),h1=Math.ceil(t/60)-1;
   var nw=new Date(),nowH=d.date===todayISO()?nw.getHours():-1,cells="",any=false;
@@ -841,7 +842,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 16:25";
+var APP_BUILD="19. 11. 16:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
