@@ -793,7 +793,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 12:20";
+var APP_BUILD="19. 11. 12:30";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2529,10 +2529,19 @@ function smkInit(r,k,sc,from,to){SMK_CUR=k==="script"?{doc:sc.id,scene:String(r.
       toast(v?"Obraz "+C.scene+(v==="partial"?" označen jako natočený částečně":" označen jako natočený"):"Označení obrazu "+C.scene+" zrušeno");};
     setTimeout(function(){document.addEventListener("pointerdown",function cl(ev){if(!mn.contains(ev.target)&&ev.target!==b){mn.remove();}document.removeEventListener("pointerdown",cl,true);},true);},0);};}
 var BRK={key:null};
+document.addEventListener("gesturestart",function(e){if(e.target&&e.target.closest&&e.target.closest("#pdfPanel"))e.preventDefault();},{passive:false});
+document.addEventListener("touchmove",function(e){if(e.touches.length>1&&e.target&&e.target.closest&&e.target.closest("#brkPane"))e.preventDefault();},{passive:false});
 function pdfZoom(){var z=+(LS.getItem("nd.pzoom")||1);return z>=0.5&&z<=3?z:1;}
 function pzCtl(box,r,k,full){var par=box.parentNode,old=par.querySelector(".pzctl");if(old)old.remove();var c=document.createElement("div");c.className="pzctl";
   c.innerHTML='<button class="btn" data-pz="-" aria-label="Zmenšit scénář">−</button><span>'+Math.round(pdfZoom()*100)+' %</span><button class="btn" data-pz="+" aria-label="Zvětšit scénář">+</button>';
   par.appendChild(c);c.style.top=(box.offsetTop+8)+"px";c.style.left=(box.offsetLeft+10)+"px";
+  if(!box._pinch){box._pinch=1;var st=null,dd=function(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);};
+    box.addEventListener("touchstart",function(e){if(e.touches.length===2){e.preventDefault();var R=box.getBoundingClientRect();st={d0:dd(e.touches),z0:pdfZoom(),s:1,ox:(e.touches[0].clientX+e.touches[1].clientX)/2-R.left+box.scrollLeft,oy:(e.touches[0].clientY+e.touches[1].clientY)/2-R.top+box.scrollTop};}},{passive:false});
+    box.addEventListener("touchmove",function(e){if(st&&e.touches.length===2){e.preventDefault();st.s=Math.max(0.5/st.z0,Math.min(3/st.z0,dd(e.touches)/st.d0));
+      [].forEach.call(box.children,function(ch){ch.style.transformOrigin=st.ox+"px "+(st.oy-ch.offsetTop)+"px";ch.style.transform="scale("+st.s+")";});}},{passive:false});
+    var fin=function(){if(!st)return;var z=Math.round(st.z0*st.s*20)/20,ch=Math.abs(st.s-1)>0.04;st=null;[].forEach.call(box.children,function(x){x.style.transform="";});
+      if(ch){z=Math.max(0.5,Math.min(3,z));try{LS.setItem("nd.pzoom",String(z));}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);}};
+    box.addEventListener("touchend",function(e){if(e.touches.length<2)fin();});box.addEventListener("touchcancel",fin);}
   c.onclick=function(e){var b=e.target.closest("[data-pz]");if(!b)return;var z=pdfZoom(),st=[0.5,0.6,0.75,0.9,1,1.15,1.3,1.5,1.75,2,2.5,3],i=st.indexOf(z);if(i<0)i=4;i=Math.max(0,Math.min(st.length-1,i+(b.getAttribute("data-pz")==="+"?1:-1)));
     try{LS.setItem("nd.pzoom",String(st[i]));}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};}
 function brkSplit(r,sc,full){var box=document.getElementById("pdfPages");if(!box)return;var wr=document.createElement("div");wr.className="pdfsplitbox";box.parentNode.insertBefore(wr,box);wr.appendChild(box);
