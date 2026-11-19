@@ -736,6 +736,16 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .bkhd .bkrez{background:#3A332B;color:#F3EEE4;border-radius:5px;padding:3px 8px;font-size:13px;font-weight:700}
 .bkc.bklist small{display:flex;align-items:center;gap:6px}.bkc.bklist .bkit{font-size:15px;padding:2px 0;line-height:1.3}.bkplus.sm{min-width:26px;min-height:24px;padding:0;font-size:15px;margin-left:auto}
 .bkmap{display:inline-block;margin-top:4px;font-weight:700;color:#2E6FB8}
+/* složka vedle scénáře: oba sloupce se scrollují; karta vždy tmavé písmo na světlém */
+#pdfPanel .pdfsplitbox{flex:1 1 0;min-height:0;overflow:hidden}
+#pdfPanel .pdfsplitbox>#pdfPages{min-height:0;height:100%;overflow:auto}
+#pdfPanel .brkpane{min-height:0;height:100%}#pdfPanel .brkpages{flex:1 1 0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.bkcard{background:#FFFFFF;color:#1B1F22}.bkcard .bkc b,.bkcard .bkc p,.bkcard .bkit,.bkcard .bkrole{color:#1B1F22}
+.bkcard .bkc small,.bkcard .bkph{color:#6E665C}.bkcard .bkit.mut{color:#9A948A}.bkcard .bkdej{background:#F3F1EC}.bkcard .bkc.hl{background:#F2DC86}
+.bkcard .bkc,.bkcard .bkgrid,.bkcard .bkpanel,.bkcard .bktabs{border-color:#D9D4CB}
+.bkcard .bkph .bkplus,.bkcard .bkplus.sm{background:#fff;color:#1B1F22;border:1px solid #C9C2B6}
+.bkcard .bkrole i{background:#1E1A16;color:#F4C631}.bkcard input{background:#fff;color:#1B1F22}
+#pdfPanel .brkpages>*{flex:none}#pdfPanel .pdfsplitbox>#pdfPages>*{flex:none}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -753,7 +763,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 8:15";
+var APP_BUILD="19. 11. 8:05";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
