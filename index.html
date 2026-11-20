@@ -780,7 +780,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .wxc{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:3px;border-radius:4px;font-variant-numeric:tabular-nums;line-height:1;
   background:color-mix(in srgb,#8C969E calc(var(--cl)*55%),transparent);box-shadow:inset 0 calc(-1 * var(--rb,0px)) 0 #378ADD;overflow:hidden}
 .wxc i{font-style:normal;font-size:9px;color:var(--muted)}.wxc b{font-size:12px;font-weight:800}.wxc u{text-decoration:none;font-size:9px;font-weight:800;color:#378ADD}
-.wxc.now{outline:2px solid #F4C631;outline-offset:-2px}.wxna{font-size:12px;color:var(--muted);align-self:center}
+.wxc.now{outline:2px solid #F4C631;outline-offset:-2px}.wxna{font-size:12px;color:var(--muted);align-self:center}.wxage{padding:0 10px;white-space:nowrap;font-weight:600}
 .wxtog{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:15px}.wxtog input{width:20px;height:20px}
 .wxstrip{height:auto;gap:3px;margin:4px 0 6px;padding:5px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .wxc{flex-direction:column;justify-content:flex-end;gap:2px;padding:3px 0 2px;background:none;box-shadow:none;border-radius:6px}
@@ -834,7 +834,7 @@ function wxToggle(){return '<label class="wxtog"><input type="checkbox" data-act
 function wxOn(){return LS.getItem("nd.wx")==="1";}
 function wxKey(pl){return pl.lat.toFixed(2)+","+pl.lon.toFixed(2);}
 function wxLoad(pl){var k=wxKey(pl),c=WX[k];if(!c){try{c=JSON.parse(LS.getItem("nd.wx."+k)||"null");}catch(_){c=null;}if(c)WX[k]=c;}
-  if(c&&Date.now()-c.at<55*60000)return;if(WX["_busy"+k])return;WX["_busy"+k]=1;
+  if(c&&Date.now()-c.at<55*60000)return;if(WX["_busy"+k])return;if(navigator.onLine===false)return;WX["_busy"+k]=1;
   fetch("https://api.open-meteo.com/v1/forecast?latitude="+pl.lat+"&longitude="+pl.lon+"&hourly=temperature_2m,cloud_cover,precipitation_probability,precipitation&timezone=Europe%2FPrague&forecast_days=16")
    .then(function(r){return r.ok?r.json():null;}).then(function(j){WX["_busy"+k]=0;if(!j||!j.hourly)return;var H=j.hourly,m={};H.time.forEach(function(t,i){m[t]=[Math.round(H.temperature_2m[i]),H.cloud_cover[i],H.precipitation_probability[i],H.precipitation[i]];});
      WX[k]={at:Date.now(),h:m};try{LS.setItem("nd.wx."+k,JSON.stringify(WX[k]));}catch(_){}if(!ui.sheet&&!ui.drag)render();else{var el=document.getElementById("wxStrip");if(el)el.outerHTML=wxHTML(day());}})
@@ -855,7 +855,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="20. 11. 20:00";
+var APP_BUILD="20. 11. 20:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2064,17 +2064,18 @@ function pdfjsCdn(){
 var pdfDocCache={};
 /* offline: uložit scénáře a složky do zařízení (cache v service workeru) */
 var OFF={done:0,total:0,busy:false,at:null};
-function offlineDocs(){if(!WEB||!("caches" in window))return;if(OFF.busy)return;var ids=[];docList("script").concat(docList("brk")).forEach(function(x){if(x&&x.id&&ids.indexOf(x.id)<0)ids.push(x.id);});
-  if(!ids.length)return;OFF.busy=true;OFF.total=ids.length;OFF.done=0;
+function offlineDocs(){if(!WEB||!("caches" in window))return;if(OFF.busy)return;if(navigator.onLine===false)return;var ids=[];docList("script").concat(docList("brk")).forEach(function(x){if(x&&x.id&&ids.indexOf(x.id)<0)ids.push(x.id);});
+  var imgs=[];if(typeof imgSrc==="function"&&S.locImg&&S.locImg.path)imgs.push(imgSrc(S.locImg));if(typeof imgSrc==="function")Object.keys(S.sceneImg||{}).forEach(function(q){var o=S.sceneImg[q];if(o&&o.path)imgs.push(imgSrc(o));});
+  if(!ids.length&&!imgs.length)return;OFF.busy=true;OFF.total=ids.length+imgs.length;OFF.done=0;
   caches.open(DOCS_CACHE).then(function(c){
-    var urls=ids.map(blobUrl),chain=Promise.resolve();
+    var urls=ids.map(blobUrl).concat(imgs),chain=Promise.resolve();
     urls.forEach(function(u){chain=chain.then(function(){return c.match(u).then(function(hit){if(hit){OFF.done++;return;}
       return fetch(u,{cache:"no-store"}).then(function(r){if(r.ok){OFF.done++;return c.put(u,r);}}).catch(function(){});});});});
     return chain.then(function(){return c.keys();}).then(function(ks){return Promise.all(ks.filter(function(k){return urls.indexOf(k.url)<0;}).map(function(k){return c.delete(k);}));});
   }).then(function(){OFF.busy=false;OFF.at=nowHM();if(ui.sheet&&ui.sheet.kind==="menu")render();},function(){OFF.busy=false;});}
 function offlineInfo(){if(!WEB)return "";if(!("caches" in window))return "Offline uložení není v tomto prohlížeči k dispozici.";
   if(OFF.busy)return "Ukládám scénáře a složky pro offline… "+OFF.done+"/"+OFF.total;
-  if(OFF.total)return (OFF.done===OFF.total?"✓ ":"")+"Offline k dispozici: "+OFF.done+" z "+OFF.total+" souborů (scénáře a složky)"+(OFF.at?" · "+OFF.at:"");return "";}
+  if(OFF.total)return (OFF.done===OFF.total?"✓ ":"")+"Offline k dispozici: "+OFF.done+" z "+OFF.total+" souborů (scénáře, složky, obrázky)"+(OFF.at?" · "+OFF.at:"");return "";}
 function openPdf(src){
   var key=typeof src==="string"?src:null;
   if(key&&pdfDocCache[key])return pdfDocCache[key];
@@ -3255,7 +3256,7 @@ function act(a,id,el){
         ui.sheet=null;toast("Nové heslo uloženo");return checkEditor(r.data.user).then(function(ok){if(ok)becomeEditor(r.data.user);else render();});},
         function(e){ui.sheet.busy=false;ui.sheet.err=String(e&&e.message||e);render();});break;}
     case "dologin": webLogin(val("fEmail"),(document.getElementById("fPass")||{}).value||""); break;
-    case "logout": SB.auth.signOut().then(function(){location.reload();}); break;
+    case "logout": try{LS.removeItem("nd.editor");}catch(_){} SB.auth.signOut().then(function(){location.reload();}); break;
     case "reload": if(saveTimer!=null||saveMsg==="Ukládám…"){toast("Ukládám změny, za chvíli obnovím…");setTimeout(function(){act("reload");},1500);break;} location.reload(); break;
     case "close": case "veil": if(ui.sheet&&ui.sheet.kind==="basepr"){act("basen");break;} ui.sheet=null; ui.arm=null; if(ui.actQ){ui.sheet={kind:"actors",hl:ui.actQ};ui.actQ=null;} render(); if(saveTimer==null&&saveMsg==="Neuloženo")queueSave(); break;
   }
@@ -3348,11 +3349,14 @@ function flush(){
   if(ui.sheet||ui.drag){saveTimer=setTimeout(flush,700);return;}
   ss(false,{dayId:ui.dayId,y:window.scrollY});
   S.savedAt=Date.now();
+  if(WEB){cacheSave();try{LS.setItem("nd.unsynced","1");}catch(_){}}
+  if(WEB&&navigator.onLine===false){setSave("Offline – uloženo v zařízení, odešle se po připojení");return;}
   (WEB?webSave():pushLive().then(function(){return art.publish(buildDoc());})).then(function(){setSave("Uloženo");upstreamRetried=false;},function(err){
     var c=err&&err.code;
     if(c==="conflict"){toast("Někdo uložil dřív – načítám aktuální program");}
     else if(c==="not_writer"||c==="not_granted"||c==="consent_required"||c==="not_declared"||c==="capability_disabled"||c==="capability_removed"){canEdit=false;setSave("");render();toast("Tento program můžete jen prohlížet");}
     else if(c==="rate_limited"){setSave("Ukládám…");saveTimer=setTimeout(flush,5000);}
+    else if(WEB&&(navigator.onLine===false||netErr(err&&err.message))){setSave("Offline – uloženo v zařízení, odešle se po připojení");}
     else if(!upstreamRetried){upstreamRetried=true;saveTimer=setTimeout(flush,1000+Math.random()*1500);}
     else {setSave("Neuloženo");toast("Uložení se nepovedlo. Zkuste další změnu za chvíli.");}
   });
@@ -3447,7 +3451,7 @@ function webSave(){
   var now=S.savedAt||Date.now();
   return SB.from("plan").upsert([{id:PID_MAIN,json:S,saved_at:now,updated_at:new Date().toISOString()},{id:PID_PUB,json:publicState(),saved_at:now,updated_at:new Date().toISOString()}]).then(function(r){
     if(r.error){var e=new Error(r.error.message);e.code=/row-level security|permission/i.test(r.error.message)?"not_writer":"upstream";throw e;}
-    cacheSave(); lastLive=Date.now(); liveInd();
+    cacheSave(); try{LS.removeItem("nd.unsynced");}catch(_){} lastLive=Date.now(); liveInd();
   });
 }
 function snapOf(rec){return {exists:!!rec,hasPendingWrites:false,data:function(){return {json:JSON.stringify(rec.json),savedAt:+rec.saved_at||0};}};}
@@ -3473,14 +3477,19 @@ function webSubscribe(){
   webFetch(); startPoll();
 }
 function becomeEditor(user){
+  try{LS.setItem("nd.editor",user.id);}catch(_){}
   sbUser=user; canEdit=true; liveRow=PID_MAIN; ui.sheet=null; mnInit();
   assetsNs={upload:function(file){var id=(crypto.randomUUID?crypto.randomUUID():uid()+Date.now()).replace(/-/g,"");
     return SB.storage.from("docs").upload(id+".pdf",file,{contentType:"application/pdf",upsert:false}).then(function(r){if(r.error){var e=new Error(r.error.message);e.code="upload";throw e;}return {id:id};});}};
   cacheLoad(); render(); webSubscribe();
 }
+/* offline (iPad bez signálu): editor, který se tu už přihlásil, zůstane editorem – ověří se, až bude internet */
+function edRemembered(user){try{return !!user&&LS.getItem("nd.editor")===user.id;}catch(_){return false;}}
+function netErr(m){return /fetch|network|load failed|offline|timed? ?out|internet/i.test(String(m||""));}
 function checkEditor(user){
   if(!user)return Promise.resolve(false);
-  return SB.rpc("is_editor").then(function(r){return !r.error&&r.data===true;},function(){return false;});
+  if(navigator.onLine===false)return Promise.resolve(edRemembered(user));
+  return SB.rpc("is_editor").then(function(r){if(r.error)return netErr(r.error.message)?edRemembered(user):false;return r.data===true;},function(){return edRemembered(user);});
 }
 function webLogin(email,pass){
   if(!email||!pass){ui.sheet.err="Vyplňte e-mail i heslo.";render();return;}
@@ -3494,16 +3503,22 @@ function webLogin(email,pass){
   },function(e){ui.sheet.busy=false;ui.sheet.err="Přihlášení se nepovedlo: "+(e&&e.message||e);render();});
 }
 function webConnect(){
-  if(!window.supabase||!window.supabase.createClient){cacheLoad();render();liveState="off";liveInd();return;}
+  if(!window.supabase||!window.supabase.createClient){
+    var rid=null;try{rid=LS.getItem("nd.editor");}catch(_){}
+    if(rid&&navigator.onLine===false){canEdit=true;liveRow=PID_MAIN;window.addEventListener("online",function(){location.reload();});}
+    cacheLoad();render();liveState="off";liveInd();return;}
+  var offEd=function(){var id=null;try{id=LS.getItem("nd.editor");}catch(_){}return navigator.onLine===false&&id?{id:id}:null;};
   var isRecovery=/type=recovery/.test(location.hash||"");
   SB=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   try{SB.auth.onAuthStateChange(function(ev){if(ev==="PASSWORD_RECOVERY"||(isRecovery&&ev==="SIGNED_IN")){isRecovery=false;setTimeout(function(){ui.sheet={kind:"newpass"};render();},300);}});}catch(_){}
   cacheLoad(); render();
   SB.auth.getSession().then(function(r){var u=r.data&&r.data.session&&r.data.session.user;
+    if(!u&&offEd()){becomeEditor(offEd());return;}
     return checkEditor(u).then(function(ok){if(ok)becomeEditor(u);else{liveRow=PID_PUB;webSubscribe();if(/[?&]login\b/.test(location.search))act("login");}});
-  },function(){webSubscribe();});
+  },function(){if(offEd()){becomeEditor(offEd());return;}webSubscribe();});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&SB)webFetch();});
-  window.addEventListener("online",function(){if(SB)webSubscribe();});
+  window.addEventListener("online",function(){if(SB){webSubscribe();if(canEdit&&LS.getItem("nd.unsynced")==="1"&&saveTimer==null)queueSave();}});
+  window.addEventListener("offline",function(){liveState="off";liveInd();render();});
 }
 if("serviceWorker" in navigator&&WEB){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
 if(standalone)goStandalone(); else if(WEB)webConnect(); else connect(0);

@@ -1,5 +1,5 @@
 /* Natáčecí den – offline cache. App files: network first (updates arrive at once), libraries: cache first. Supabase data is never cached here, except script/breakdown PDFs (cache nd-docs) for offline use. */
-const CACHE = "nd-v136";
+const CACHE = "nd-v137";
 const SHELL = ["./", "index.html", "config.js", "slozky-marika.json", "manifest.webmanifest", "marika-klapka-192.png", "marika-klapka-512.png", "marika-klapka-180.png", "lib/pdf.min.mjs", "lib/pdf.worker.min.mjs"];
 const DOCS = "nd-docs";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
@@ -20,7 +20,15 @@ self.addEventListener("fetch", e => {
     return;
   }
   if (u.origin === location.origin) {
-    e.respondWith(fetch(req, {cache: "no-store"}).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; }).catch(() => caches.match(req).then(hit => hit || caches.match("index.html"))));
+    // síť napřed (aktualizace hned), ale při slabém signálu nejvýš 3 s – pak uložená kopie (aplikace funguje i offline)
+    const net = fetch(req, {cache: "no-store"}).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; });
+    const fallback = () => caches.match(req, {ignoreSearch: true}).then(hit => hit || caches.match("index.html"));
+    e.respondWith(new Promise(resolve => {
+      let done = false;
+      const t = setTimeout(() => { fallback().then(hit => { if (!done && hit) { done = true; resolve(hit); } }); }, 3000);
+      net.then(res => { if (!done) { done = true; clearTimeout(t); resolve(res); } })
+         .catch(() => fallback().then(hit => { if (!done) { done = true; clearTimeout(t); resolve(hit || Response.error()); } }));
+    }));
   }
 });
 
