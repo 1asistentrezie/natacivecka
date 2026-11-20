@@ -815,6 +815,7 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
   .row.shot .mr>.dej-out.open{height:auto;min-height:0;-webkit-mask-image:none;mask-image:none}}
 .row.shot .roles{gap:3px}.row.shot .role{font-size:13px;padding:0 6px;line-height:1.35}
 .wxrow{border:1px solid #F4C631}
+.role.commit{border-color:#B3261E!important;color:#fff!important;background:#D93025!important}.role.commit small{color:#FFE7A3!important;font-weight:800}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -854,7 +855,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="19. 11. 17:40";
+var APP_BUILD="20. 11. 20:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
