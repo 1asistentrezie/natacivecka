@@ -816,6 +816,11 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .row.shot .roles{gap:3px}.row.shot .role{font-size:13px;padding:0 6px;line-height:1.35}
 .wxrow{border:1px solid #F4C631}
 .role.commit{border-color:#B3261E!important;color:#fff!important;background:#D93025!important}.role.commit small{color:#FFE7A3!important;font-weight:800}
+.acttab th.acmh{color:#E5483D}.acttab td.acm{white-space:nowrap}.acttab td.acm span{display:inline-block;background:#D93025;color:#fff;font-weight:800;font-size:13px;border-radius:5px;padding:2px 8px}
+.cmbtn{background:#F4C631;color:#1E1A06;border-color:#D9A800;font-weight:800}
+.cmlist{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.cmrow{display:flex;gap:8px;align-items:center}.cmrow .cmT{flex:1 1 auto;min-width:0;font-size:16px;padding:8px 10px}
+.cmrow .cmr{font-size:13px;color:#E5483D;font-weight:700;white-space:nowrap}.cmh{margin:12px 0 4px;font-size:15px}
+.cmadd{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.cmadd select,.cmadd input{font-size:16px;padding:8px}.cmadd #cmX{flex:1 1 220px}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -855,7 +860,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="22. 11. 7:50";
+var APP_BUILD="22. 11. 9:50";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1545,6 +1550,7 @@ function sheetHTML(){
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="brk"){var xk=rowById(s.id);if(!xk){ui.sheet=null;return "";}return '<div class="veil" data-act="veil"><div class="sheet wide bksheet" role="dialog" aria-modal="true">'+brkCardHTML(xk.r,false)+'</div></div>';}
+  if(s.kind==="commits"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+commitsHTML(day())+'</div></div>';}
   if(s.kind==="actors"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+actorsHTML(day(),s.hl)+'</div></div>';}
   if(s.kind==="actend"){var ro=s.roles||[];
     b='<h2>'+(ro.length>1?'Herci už dnes nemají žádný obraz':'Role už dnes nemá žádný obraz')+'</h2><p style="margin:0">'+ro.map(function(a){return '<b>'+esc(a)+'</b>';}).join(", ")+' – všechny '+(ro.length>1?'jejich':'její')+' obrazy jsou natočené. Skončil'+(ro.length>1?'i':'')+' herec'+(ro.length>1?'i':'')+'?</p>'+
@@ -1702,12 +1708,22 @@ function actorsDone(d){var E=endedActors(d),A=d.actAsk||{};return dayActors(d).f
 function actorsHTML(d,hl){hl=hl||[];var E=endedActors(d),R=dayActors(d),fd=actorsDone(d),SH=d.rows.filter(function(r){return r.type==="shot";}),max=SH.length;
   var stc=function(r){return r.status==="done"?"d":r.status==="partial"?"p":r.status==="rolling"?"r":r.status==="moved"?"m":"";};
   var hlNow=hl.filter(function(a){return fd.indexOf(a)>=0;});
-  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(hlNow.length?'<p class="acthl">'+hlNow.map(function(a){return '<b>'+esc(a)+'</b>';}).join(", ")+(hlNow.length>1?' už dnes nemají žádný obraz.':' už dnes nemá žádný obraz.')+' Skončil'+(hlNow.length>1?'i':'')+'? Potvrď v tabulce a zapíše se to do plánu.</p>':'')+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th>'+SH.map(function(r){return '<th class="ash '+stc(r)+'">'+esc(r.scene||"–")+'</th>';}).join("")+'<th>Na place</th><th>Stav</th></tr></thead><tbody>'+
+  return '<h2>Herci – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+(hlNow.length?'<p class="acthl">'+hlNow.map(function(a){return '<b>'+esc(a)+'</b>';}).join(", ")+(hlNow.length>1?' už dnes nemají žádný obraz.':' už dnes nemá žádný obraz.')+' Skončil'+(hlNow.length>1?'i':'')+'? Potvrď v tabulce a zapíše se to do plánu.</p>':'')+(R.length?'<div class="actwrap"><table class="acttab"><thead><tr><th>Role</th><th class="acmh">Závazek</th>'+SH.map(function(r){return '<th class="ash '+stc(r)+'">'+esc(r.scene||"–")+'</th>';}).join("")+'<th>Na place</th><th>Stav</th></tr></thead><tbody>'+
     R.map(function(a){var sh=roleShots(d,a),e=E[fold(a)],fin=fd.indexOf(a)>=0,t0=sh.length?sh[0].from:"",t1=sh.length?(sh[sh.length-1].to||""):"";
-      return '<tr class="'+(e?'ended':fin?'fin':'')+(fin&&hl.indexOf(a)>=0?' hl':'')+'"><td class="ar">'+esc(a)+'</td>'+SH.map(function(r){return sh.indexOf(r)<0?'<td class="as e"></td>':'<td class="as '+stc(r)+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
+      return '<tr class="'+(e?'ended':fin?'fin':'')+(fin&&hl.indexOf(a)>=0?' hl':'')+'"><td class="ar">'+esc(a)+'</td>'+(function(){var cm=commitFor(a,d),lm=limitFor(a,d.date);return '<td class="acm">'+(cm?'<span>'+esc(cm.short)+'</span>':'')+(lm&&!cm?'<span>do '+esc(lm)+'</span>':'')+'</td>';})()+SH.map(function(r){return sh.indexOf(r)<0?'<td class="as e"></td>':'<td class="as '+stc(r)+'" title="'+esc((r.motif||"")+" "+(r.from||"")+"–"+(r.to||""))+'">'+esc(r.scene||"–")+'</td>';}).join("")+'<td class="at">'+esc(t0)+(t1?'–'+esc(t1):'')+'</td><td class="ast">'+
         (e?'<span class="aend">skončil'+(e.t?' '+esc(e.t):'')+'</span>':fin?'<span class="aends"><button class="btn primary ablink" data-act="actendok" data-role="'+esc(a)+'">✓ Skončil – zapsat</button><button class="btn" data-act="actendno1" data-role="'+esc(a)+'">Ne</button></span>':'<span class="amut">točí</span>')+'</td></tr>';}).join("")+
     '</tbody></table></div><p class="memo2 actleg"><i class="as d"></i> natočeno <i class="as p"></i> částečně <i class="as r"></i> probíhá</p>':'<p class="memo2">V tomto dni nejsou u obrazů zadané role.</p>')+
-    '<div class="actions"><div class="grp"></div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';}
+    '<div class="actions"><div class="grp">'+(canEdit?'<button class="btn cmbtn" data-act="commits">Závazky</button>':'')+'</div><div class="grp"><button class="btn" data-act="close">Zavřít</button></div></div>';}
+function commitsHTML(d){var C=d.rows.filter(isCommit),A=dayActors(d),opt=function(sel){return A.map(function(a){return '<option'+(a===sel?' selected':'')+'>'+esc(a)+'</option>';}).join("");};
+  var L=[];A.forEach(function(a){var c=castByName(bareRole(a))||castByName(a);if(!c)return;(c.limits||[]).forEach(function(l,j){if(l.date===d.date)L.push({a:a,c:c,j:j,until:l.until});});});
+  return '<h2>Závazky herců – '+esc(d.label||"")+(d.date?' · '+esc(fmtDate(d.date)):'')+'</h2>'+
+   '<div class="cmlist">'+(C.length?C.map(function(r){var cr=commitRoles(d,r);return '<div class="cmrow"><input class="cmT" data-id="'+r.id+'" value="'+esc(commitText(r))+'"><span class="cmr">'+(cr.length?cr.map(esc).join(", "):'<i>role nepoznána</i>')+'</span><button class="btn" data-act="cmdel" data-id="'+r.id+'" aria-label="Smazat závazek">🗑</button></div>';}).join(""):'<p class="memo2">Tento den nejsou žádné závazky.</p>')+'</div>'+
+   (L.length?'<h3 class="cmh">Herec na place do</h3><div class="cmlist">'+L.map(function(x,i){return '<div class="cmrow"><b class="cmr">'+esc(x.a)+'</b><span>do</span><input type="time" class="cmL" data-i="'+i+'" value="'+esc(x.until)+'"><button class="btn" data-act="cmldel" data-i="'+i+'" aria-label="Smazat">🗑</button></div>';}).join("")+'</div>':'')+
+   '<h3 class="cmh">Přidat závazek</h3><div class="cmadd"><select id="cmA">'+opt("")+'</select><select id="cmK"><option value="do">na place do</option><option value="od">na place od</option></select><input type="time" id="cmTm" value="13:00"><input id="cmX" placeholder="Popis (např. Cina – VP Praha)"><button class="btn primary" data-act="cmadd">Přidat</button></div>'+
+   '<div class="actions"><div class="grp"><button class="btn" data-act="actors">‹ Herci</button></div><div class="grp"><button class="btn primary" data-act="cmsave">Uložit</button></div></div>';}
+function cmCollect(d){[].forEach.call(document.querySelectorAll(".cmT"),function(i){var r=d.rows.filter(function(x){return x.id===i.getAttribute("data-id");})[0];if(r&&commitText(r)!==i.value.trim())r.text=i.value.trim();});
+  var A=dayActors(d),L=[];A.forEach(function(a){var c=castByName(bareRole(a))||castByName(a);if(!c)return;(c.limits||[]).forEach(function(l,j){if(l.date===d.date)L.push(l);});});
+  [].forEach.call(document.querySelectorAll(".cmL"),function(i){var l=L[+i.getAttribute("data-i")];if(l&&i.value)l.until=i.value;});return L;}
 function isActorEnd(k){var f=fold(k||"");return f===fold(ACTOR_END)||f===fold("Herec končí");}
 function dayActors(d){var seen={},out=[];d.rows.forEach(function(r){if(r.type!=="shot"||!r.roles)return;r.roles.split(",").forEach(function(x){x=x.trim();var k=fold(x);if(x&&!seen[k]){seen[k]=1;out.push(x);}});});return sortRoles(out);}
 function endTime(r,a){var t=r.actorTimes||{};return t[fold(a)]||r.from||"";}
@@ -3020,6 +3036,14 @@ function act(a,id,el){
       d.rows.splice(ix2,0,{id:uid(),type:"note",kind:ACTOR_END,actors:[ra],from:tn,to:tn,text:"",status:"",doneAt:""});
       if(ui.sheet&&ui.sheet.kind!=="actors")ui.sheet={kind:"actors",hl:[]};changed();toast("Zapsáno do plánu: skončil herec – "+ra+" ("+tn+")");break;}
     case "actendno1":{d.actAsk=d.actAsk||{};d.actAsk[fold(el.getAttribute("data-role"))]=1;changed();break;}
+    case "commits": ui.sheet={kind:"commits"}; render(); break;
+    case "cmsave": cmCollect(d); ui.sheet={kind:"actors"}; changed(); toast("Závazky uloženy do plánu"); break;
+    case "cmdel": cmCollect(d); d.rows=d.rows.filter(function(x){return x.id!==id;}); changed(); break;
+    case "cmldel":{var LL=cmCollect(d),lx=LL[+el.getAttribute("data-i")];if(lx)castList().forEach(function(c){c.limits=(c.limits||[]).filter(function(l){return l!==lx;});});changed();break;}
+    case "cmadd":{cmCollect(d);var ra=(document.getElementById("cmA")||{}).value,kk=(document.getElementById("cmK")||{}).value,tm=(document.getElementById("cmTm")||{}).value,tx=((document.getElementById("cmX")||{}).value||"").trim();
+      if(!ra){toast("Vyber herce");break;}var rn=(/^\s*(\d+[A-Z]?)\.\s*(.*)$/.exec(ra)),rl=rn?"R"+rn[1]+" - "+rn[2]:ra;
+      var txt=(tx?tx+" - ":"")+(tm?kk+" "+tm+" - ":"")+rl;var ix=0;while(ix<d.rows.length&&isCommit(d.rows[ix]))ix++;
+      d.rows.splice(ix,0,{id:uid(),type:"note",kind:"Závazek",text:txt,len:0,commit:true,status:"",from:"",to:""});changed();toast("Závazek přidán do plánu");break;}
     case "actendask": ui.sheet={kind:"actend",roles:[el.getAttribute("data-role")],back:"actors"}; render(); break;
     case "actendno":{var sa=ui.sheet;d.actAsk=d.actAsk||{};(sa.roles||[]).forEach(function(a){d.actAsk[fold(a)]=1;});ui.sheet=sa.back?{kind:"actors"}:null;changed();break;}
     case "actendyes":{var sy=ui.sheet,ro2=sy.roles||[],pl3=curAnchor(d)?"cur":"end",t3=nowHM();
