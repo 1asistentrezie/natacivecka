@@ -855,7 +855,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="20. 11. 20:55";
+var APP_BUILD="22. 11. 7:50";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -2597,20 +2597,22 @@ function smkInit(r,k,sc,from,to){SMK_CUR=k==="script"?{doc:sc.id,scene:String(r.
       toast(v?"Obraz "+C.scene+(v==="partial"?" označen jako natočený částečně":" označen jako natočený"):"Označení obrazu "+C.scene+" zrušeno");};
     setTimeout(function(){document.addEventListener("pointerdown",function cl(ev){if(!mn.contains(ev.target)&&ev.target!==b){mn.remove();}document.removeEventListener("pointerdown",cl,true);},true);},0);};}
 var BRK={key:null};
+function cvFree(el){if(!el)return;[].forEach.call(el.querySelectorAll("canvas"),function(c){c.width=0;c.height=0;});}
 document.addEventListener("gesturestart",function(e){if(e.target&&e.target.closest&&e.target.closest("#pdfPanel"))e.preventDefault();},{passive:false});
 document.addEventListener("touchmove",function(e){if(e.touches.length>1&&e.target&&e.target.closest&&e.target.closest("#brkPane"))e.preventDefault();},{passive:false});
-function pdfZoom(){var z=+(LS.getItem("nd.pzoom")||1);return z>=0.5&&z<=3?z:1;}
+function pdfZoom(){var z=+(LS.getItem("nd.pzoom")||1);return z>=0.5&&z<=2.5?z:(z>2.5?2.5:1);}
 function pzCtl(box,r,k,full){var par=box.parentNode,old=par.querySelector(".pzctl");if(old)old.remove();var c=document.createElement("div");c.className="pzctl";
   c.innerHTML='<button class="btn" data-pz="-" aria-label="Zmenšit scénář">−</button><span>'+Math.round(pdfZoom()*100)+' %</span><button class="btn" data-pz="+" aria-label="Zvětšit scénář">+</button>';
   par.appendChild(c);c.style.top=(box.offsetTop+8)+"px";c.style.left=(box.offsetLeft+10)+"px";
   if(!box._pinch){box._pinch=1;var st=null,dd=function(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);};
     box.addEventListener("touchstart",function(e){if(e.touches.length===2){e.preventDefault();var R=box.getBoundingClientRect();st={d0:dd(e.touches),z0:pdfZoom(),s:1,ox:(e.touches[0].clientX+e.touches[1].clientX)/2-R.left+box.scrollLeft,oy:(e.touches[0].clientY+e.touches[1].clientY)/2-R.top+box.scrollTop};}},{passive:false});
     box.addEventListener("touchmove",function(e){if(st&&e.touches.length===2){e.preventDefault();st.s=Math.max(0.5/st.z0,Math.min(3/st.z0,dd(e.touches)/st.d0));
-      [].forEach.call(box.children,function(ch){ch.style.transformOrigin=st.ox+"px "+(st.oy-ch.offsetTop)+"px";ch.style.transform="scale("+st.s+")";});}},{passive:false});
+      if(!st.raf)st.raf=requestAnimationFrame(function(){if(!st)return;st.raf=0;var top=box.scrollTop,hh=box.clientHeight;
+        [].forEach.call(box.children,function(ch){if(ch.offsetTop+ch.offsetHeight<top-200||ch.offsetTop>top+hh+200)return;ch.style.transformOrigin=st.ox+"px "+(st.oy-ch.offsetTop)+"px";ch.style.transform="scale("+st.s+")";});});}},{passive:false});
     var fin=function(){if(!st)return;var z=Math.round(st.z0*st.s*20)/20,ch=Math.abs(st.s-1)>0.04;st=null;[].forEach.call(box.children,function(x){x.style.transform="";});
-      if(ch){z=Math.max(0.5,Math.min(3,z));try{LS.setItem("nd.pzoom",String(z));}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);}};
+      if(ch){z=Math.max(0.5,Math.min(2.5,z));try{LS.setItem("nd.pzoom",String(z));}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);}};
     box.addEventListener("touchend",function(e){if(e.touches.length<2)fin();});box.addEventListener("touchcancel",fin);}
-  c.onclick=function(e){var b=e.target.closest("[data-pz]");if(!b)return;var z=pdfZoom(),st=[0.5,0.6,0.75,0.9,1,1.15,1.3,1.5,1.75,2,2.5,3],i=st.indexOf(z);if(i<0)i=4;i=Math.max(0,Math.min(st.length-1,i+(b.getAttribute("data-pz")==="+"?1:-1)));
+  c.onclick=function(e){var b=e.target.closest("[data-pz]");if(!b)return;var z=pdfZoom(),st=[0.5,0.6,0.75,0.9,1,1.15,1.3,1.5,1.75,2,2.5],i=st.indexOf(z);if(i<0)i=4;i=Math.max(0,Math.min(st.length-1,i+(b.getAttribute("data-pz")==="+"?1:-1)));
     try{LS.setItem("nd.pzoom",String(st[i]));}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};}
 function brkSplit(r,sc,full){var box=document.getElementById("pdfPages");if(!box)return;var wr=document.createElement("div");wr.className="pdfsplitbox";box.parentNode.insertBefore(wr,box);wr.appendChild(box);
   var pnl=document.getElementById("pdfPanel");if(pnl)pnl.classList.add("hassplit");var sr=+(LS.getItem("nd.splitr")||0.6);if(!(sr>=0.25&&sr<=0.8))sr=0.6;box.style.flex="0 0 "+(sr*100)+"%";
@@ -2670,23 +2672,27 @@ function showPdf(r,k,full){PDF_ROW=r;
   document.getElementById("pdfWide").onclick=function(){try{LS.setItem("nd.pdfwide",wide?"0":"1");}catch(_){}PDF_RESUME=pdfPos();PDF_RESUME.on=AS.on;showPdf(r,k,full);};
   PDF_FROM=from;
   openPdf(url).then(function(doc){ANN.pdf=doc;
-    var box=document.getElementById("pdfPages"); if(!box)return; box.innerHTML="";
-    var PZ=pdfZoom(),w=(box.clientWidth-24)*PZ, dpr=Math.min(window.devicePixelRatio||1,2)*(PZ>1?Math.min(1.5,PZ):1);pzCtl(box,r,k,full);
+    var box=document.getElementById("pdfPages"); if(!box)return; cvFree(box); box.innerHTML="";
+    var PZ=pdfZoom(),w=(box.clientWidth-24)*PZ, dpr=Math.min(window.devicePixelRatio||1,2);pzCtl(box,r,k,full);
     var a=full?1:from, b=full?doc.numPages:Math.min(to,doc.numPages);
     return doc.getPage(Math.min(from,doc.numPages)).then(function(p0){
       var v0=p0.getViewport({scale:1}), ratio=v0.height/v0.width;
       var slots=[], io=null, busy={};
       function renderSlot(pg,wrap){if(busy[pg])return;busy[pg]=1;
         return doc.getPage(pg).then(function(page){
-          var vv=page.getViewport({scale:1}), sc2=w/vv.width*dpr, v=page.getViewport({scale:sc2});
+          var vv=page.getViewport({scale:1}), sc2=w/vv.width*dpr;
+          /* iPad: velké plátno shodí stránku – max ~4 Mpx na stranu (ostrost stačí, zoom je CSS) */
+          var px=vv.width*vv.height*sc2*sc2;if(px>4e6)sc2=sc2*Math.sqrt(4e6/px);var v=page.getViewport({scale:sc2});
           var c=document.createElement("canvas");c.width=v.width;c.height=v.height;c.setAttribute("aria-label","Strana "+pg);
           var ov=document.createElement("canvas");ov.className="ann";ov.width=v.width;ov.height=v.height;ov.setAttribute("data-pg",pg);
-          wrap.innerHTML="";wrap.style.height="";if(PZ!==1)c.style.width=w+"px";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);txtLayer(wrap,pg);smkPaint(wrap,pg);
+          if(!wrap.isConnected){busy[pg]=0;return;}cvFree(wrap);wrap.innerHTML="";wrap.style.height=Math.round(w*vv.height/vv.width)+"px";c.style.width=w+"px";c.style.height="100%";ov.style.width="100%";ov.style.height="100%";wrap.appendChild(c);wrap.appendChild(ov);srchPaint(wrap,pg);txtLayer(wrap,pg);smkPaint(wrap,pg);
           return page.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){annDraw(ov);});});}
       for(var pg=a;pg<=b;pg++){var wrap=document.createElement("div");wrap.className="pgwrap"+(full&&pg>=from&&pg<=to?" cur":"");wrap.setAttribute("data-page",pg);
         wrap.style.height=Math.round((w)*ratio)+"px";if(PZ!==1){wrap.style.width=w+"px";wrap.style.alignSelf="flex-start";}if(full)wrap.innerHTML='<span class="pgno">str. '+pg+'</span>';box.appendChild(wrap);slots.push(wrap);}
       if(full&&"IntersectionObserver" in window){
-        io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var pg=+e.target.getAttribute("data-page");renderSlot(pg,e.target);io.unobserve(e.target);}});},{root:box,rootMargin:"1200px 0px"});
+        io=new IntersectionObserver(function(es){es.forEach(function(e){var pg=+e.target.getAttribute("data-page");
+          if(e.isIntersecting)renderSlot(pg,e.target);
+          else if(busy[pg]&&e.target.querySelector("canvas")){busy[pg]=0;cvFree(e.target);e.target.innerHTML='<span class="pgno">str. '+pg+'</span>';}});},{root:box,rootMargin:"1500px 600px"});
         slots.forEach(function(s){io.observe(s);});
         var cur=box.querySelector('[data-page="'+from+'"]'); if(cur)box.scrollTop=cur.offsetTop-box.offsetTop-8; pdfResume(box);
         if(PSR&&PSR.doc===sc.id&&PSR.q){var pend=PSR.pending;PSR.pending=false;if(pend||!PSR.hits.length){document.getElementById("pdfQn").textContent="Hledám…";srchRun(doc,sc.id,PSR.q).then(function(h){PSR.hits=h;PSR.idx=h.length?0:-1;srchUI();srchPaintAll();if(h.length)srchGo(0);});}else{srchUI();srchPaintAll();}}
