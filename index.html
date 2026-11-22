@@ -860,7 +860,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="22. 11. 9:50";
+var APP_BUILD="22. 11. 9:55";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1665,7 +1665,7 @@ function commitRoles(d,r){
 function commitFor(name,d){
   if(!d)return null; var k=fold(bareRole(name)), hit=null;
   d.rows.forEach(function(r){if(hit||!isCommit(r))return; if(commitRoles(d,r).some(function(a){return fold(bareRole(a))===k;})){
-    var t=commitText(r), m=/\b(do|od)\s*(\d{1,2}[:.]\d{2})/i.exec(t); hit={text:t,short:m?m[1].toLowerCase()+" "+m[2].replace(".",":"):"závazek"};}});
+    var t=commitText(r), m=/\b(do|od)\s*(\d{1,2}[:.]\d{2})/i.exec(t); var m2=m?null:/\b(\d{1,2})[:.](\d{2})\b/.exec(t);hit={text:t,short:m?m[1].toLowerCase()+" "+m[2].replace(".",":"):m2?m2[1]+":"+m2[2]:"závazek"};}});
   return hit;
 }
 function roleChip(name,d,r){
