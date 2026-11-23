@@ -821,6 +821,12 @@ button.shi{cursor:pointer}@media (max-width:640px){.shi{grid-template-columns:64
 .cmlist{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.cmrow{display:flex;gap:8px;align-items:center}.cmrow .cmT{flex:1 1 auto;min-width:0;font-size:16px;padding:8px 10px}
 .cmrow .cmr{font-size:13px;color:#E5483D;font-weight:700;white-space:nowrap}.cmh{margin:12px 0 4px;font-size:15px}
 .cmadd{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.cmadd select,.cmadd input{font-size:16px;padding:8px}.cmadd #cmX{flex:1 1 220px}
+.dpsheet{max-width:min(1200px,98vw)}.dphd{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.dphd h2{margin:0}.dphd select{font-size:16px;padding:6px 8px}.dpsub{margin:4px 0 8px;color:var(--muted)}
+.dpscroll{max-height:64vh;overflow:auto}.dptab{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:14px}.dptab th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:5px 6px;border-bottom:2px solid var(--line)}
+.dptab td{border-bottom:1px solid var(--line);padding:5px 6px;vertical-align:top}.dptab small{color:var(--muted)}.dps{background:rgba(47,168,98,.10)}.dpn td{background:rgba(242,165,74,.25);font-weight:700}.dpc td{color:#D93025}
+.dpo{font:900 20px var(--f-display,inherit)}.dpo2{text-align:center;font-weight:800;width:44px}.dpk{font-size:12px}.dpk i{font-style:normal;font-weight:800;text-decoration:underline}
+.dpth{text-align:right!important}.dpt{text-align:right;white-space:nowrap}.dpt input{font-size:16px;padding:4px}.dpt.ov input{border:2px solid #F4C631}.dpA{width:150px;font-size:14px;padding:4px 6px}
+@media print{body.printdisp>*:not(.veil){display:none!important}body.printdisp .veil{position:static;background:none}body.printdisp .sheet{max-width:none;box-shadow:none}body.printdisp .dpscroll{max-height:none;overflow:visible}body.printdisp .actions,body.printdisp .dphd select{display:none}}
 </style>
 <div id="app"><p style="padding:24px 0">Načítám program…</p></div>
 <script type="application/json" id="state">{"project":"","days":[{"id":"d0","label":"","date":"","location":"","shiftFrom":"","shiftTo":"","sunCity":"auto","sunCoords":"","rows":[]}],"savedAt":0}</script>
@@ -835,6 +841,51 @@ var RESET = ":root{color-scheme:light;box-sizing:border-box;padding-top:env(safe
 var THEMES=[["a","Grafit",["#0B0D0E","#0D1012","#161B1E","#F4C631"]],["b","Papír",["#0B0D0E","#E9E6DF","#FFFFFF","#F4C631"]],["c","Noční modrá",["#000","#0A1120","#14203A","#F4C631"]],["d","Espresso",["#000","#12100D","#211C17","#F4C631"]],["e","Kontrast",["#000","#000","#121212","#F4C631"]],["f","Lesní",["#000","#0C1411","#15221D","#F4C631"]]];
 /* ---------- počasí (Open-Meteo, hodinově přes směnu) ---------- */
 var WX={};
+
+/* ===== Dispozice (callsheet na další den) ===== */
+function dispDay(){var cur=day(),t=cur&&cur.date||todayISO(),L=S.days.filter(function(x){return x.date;}).slice().sort(function(a,b){return a.date<b.date?-1:1;});
+  var nx=L.filter(function(x){return x.date>t;})[0];return nx||cur;}
+function dispIsLunch(r){return r.type==="note"&&/obed/.test(fold((r.kind||"")+" "+(r.text||"")));}
+function dispDefaults(d){var R=d.rows,shots=R.filter(function(r){return r.type==="shot"&&r.from;}),first=shots[0],out={};
+  dayActors(d).forEach(function(a){var sh=roleShots(d,a).filter(function(r){return r.from;});if(!sh.length)return;var fs=sh[0],ix=R.indexOf(fs),t;
+    if(first&&fs===first)t=first.from;
+    else{var lunch=null;for(var i=0;i<ix;i++)if(dispIsLunch(R[i])&&R[i].from)lunch=R[i];
+      var fl=first?R.indexOf(first):0,afterLunch=lunch&&R.indexOf(lunch)>fl&&!roleShots(d,a).some(function(x){return R.indexOf(x)<R.indexOf(lunch);});
+      t=afterLunch?lunch.from:hm(toMin(fs.from)-30);}
+    out[a]=t;});return out;}
+function dispExtras(d){var E={};d.rows.forEach(function(r){if(r.type!=="shot")return;var c=(brkData(r.scene).c)||{};["Kompars","Epizody","Auta"].forEach(function(k){(c[k]||[]).forEach(function(it){var key=k+"|"+it;if(!E[key])E[key]={k:k,it:it,t:r.from?hm(toMin(r.from)-30):""};});});});
+  var fr=d.rows.filter(function(r){return r.type==="shot"&&r.from;})[0];Object.keys(E).forEach(function(k){if(E[k].k==="Auta"&&d.shiftFrom)E[k].t=d.shiftFrom;else if(fr&&toMin(E[k].t)<toMin(fr.from))E[k].t=fr.from;});return E;}
+function dispData(d){d.disp=d.disp||{calls:{},ex:{}};var D=dispDefaults(d),X=dispExtras(d);return {d:d,calls:D,ex:X,ov:d.disp};}
+function dispActor(a){S.dispActors=S.dispActors||{};return S.dispActors[fold(bareRole(a))]||"";}
+function dispHTML(id){var d=(id&&S.days.filter(function(x){return x.id===id;})[0])||dispDay();if(!d)return "";var X=dispData(d),ed=canEdit,R=d.rows;
+  var shots=R.filter(function(r){return r.type==="shot";}),A=dayActors(d);
+  var prog=R.map(function(r){if(isCommit(r))return '<tr class="dpc"><td colspan="6"><b>ZÁVAZEK</b> '+esc(commitText(r))+'</td></tr>';
+    if(r.type!=="shot")return '<tr class="dpn"><td>'+esc(r.from||"")+(r.to&&r.to!==r.from?'–'+esc(r.to):'')+'</td><td colspan="5">'+esc(r.kind||r.text||"")+(r.kind&&r.text?' – '+esc(r.text):'')+'</td></tr>';
+    var c=(brkData(r.scene).c)||{},cats=Object.keys(c).filter(function(k){return c[k]&&c[k].length;});
+    return '<tr class="dps"><td><b>'+esc(r.from||"")+(r.to?'–'+esc(r.to):'')+'</b></td><td class="dpo">'+esc(r.scene||"")+'</td><td>'+esc(r.tod||"")+'<br><small>'+esc(r.len?r.len+" str.":"")+(r.den?' · '+esc(r.den):'')+'</small></td><td><b>'+esc(r.motif||"")+'</b><br><small>'+esc(rowDesc(r)||"")+'</small></td><td>'+esc(r.roles||"").replace(/,\s*/g,"<br>")+'</td><td class="dpk">'+cats.map(function(k){return '<i>'+esc(k)+':</i> '+c[k].map(esc).join(", ");}).join("<br>")+'</td></tr>';}).join("");
+  var tm=function(key,val,cls){return ed?'<input type="time" class="'+cls+'" data-k="'+esc(key)+'" value="'+esc(val||"")+'">':'<b>'+esc(val||"–")+'</b>';};
+  var cast=A.map(function(a){var sh=roleShots(d,a),v=X.ov.calls[a]||X.calls[a]||"";return '<tr><td><b>'+esc(a)+'</b></td><td>'+(ed?'<input class="dpA" data-k="'+esc(a)+'" value="'+esc(dispActor(a))+'" placeholder="herec">':esc(dispActor(a)))+'</td>'+shots.map(function(r){return '<td class="dpo2">'+(sh.indexOf(r)>=0?esc(r.scene):'')+'</td>';}).join("")+'<td class="dpt'+(X.ov.calls[a]?' ov':'')+'">'+tm(a,v,"dpT")+'</td></tr>';}).join("");
+  var exk=Object.keys(X.ex),ex=["Kompars","Epizody","Auta"].map(function(k){var L=exk.filter(function(x){return X.ex[x].k===k;});if(!L.length)return "";
+    return '<table class="dptab"><tr><th>'+(k==="Kompars"?"Komparz":k)+'</th><th class="dpth">Na place</th></tr>'+L.map(function(x){var v=X.ov.ex[x]||X.ex[x].t;return '<tr><td>'+esc(X.ex[x].it)+'</td><td class="dpt'+(X.ov.ex[x]?' ov':'')+'">'+tm(x,v,"dpE")+'</td></tr>';}).join("")+'</table>';}).join("");
+  var opts=S.days.filter(function(x){return x.date;}).slice().sort(function(a,b){return a.date<b.date?-1:1;}).map(function(x){return '<option value="'+x.id+'"'+(x===d?' selected':'')+'>'+esc(x.label||"")+' – '+esc(fmtDate(x.date))+'</option>';}).join("");
+  return '<div class="dphd"><h2>Dispozice – '+esc(S.project||"")+'</h2><select id="dpDay">'+opts+'</select></div>'+
+    '<div class="dpsub"><b>'+esc(d.label||"")+' · '+esc(fmtDate(d.date))+'</b>'+(d.shiftFrom?' · '+esc(d.shiftFrom)+'–'+esc(d.shiftTo||""):'')+(d.loc?' · '+esc(d.loc):'')+'</div>'+
+    '<div class="dpscroll"><table class="dptab dpprog"><tr><th>Čas</th><th>Obraz</th><th>Int/Ext</th><th>Motiv · děj</th><th>Role</th><th>Složka</th></tr>'+prog+'</table>'+
+    '<table class="dptab"><tr><th>Role</th><th>Herec</th>'+shots.map(function(r){return '<th class="dpo2">'+esc(r.scene)+'</th>';}).join("")+'<th class="dpth">Na place</th></tr>'+cast+'</table>'+ex+'</div>'+
+    '<div class="actions"><div class="grp">'+(ed?'<button class="btn" data-act="dpreset">Výchozí časy</button>':'')+'<button class="btn" data-act="dpprint">Tisk / PDF</button></div><div class="grp"><button class="btn" data-act="close">Zavřít</button><button class="btn primary" data-act="dpshare" data-id="'+d.id+'">WhatsApp</button></div></div>';}
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.classList&&(t.classList.contains("dpT")||t.classList.contains("dpE")||t.classList.contains("dpA"))&&ui.sheet&&ui.sheet.kind==="disp"){var d=S.days.filter(function(x){return x.id===ui.sheet.did;})[0];dispCollect(d);changed();}});
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.id==="dpDay"&&ui.sheet&&ui.sheet.kind==="disp"){ui.sheet.did=t.value;render();}});
+function dispCollect(d){if(!canEdit||!d)return;d.disp=d.disp||{calls:{},ex:{}};var X=dispData(d);
+  [].forEach.call(document.querySelectorAll(".dpT"),function(i){var k=i.getAttribute("data-k");if(i.value&&i.value!==X.calls[k])d.disp.calls[k]=i.value;else delete d.disp.calls[k];});
+  [].forEach.call(document.querySelectorAll(".dpE"),function(i){var k=i.getAttribute("data-k");if(i.value&&X.ex[k]&&i.value!==X.ex[k].t)d.disp.ex[k]=i.value;else delete d.disp.ex[k];});
+  S.dispActors=S.dispActors||{};[].forEach.call(document.querySelectorAll(".dpA"),function(i){var k=fold(bareRole(i.getAttribute("data-k")));if(i.value.trim())S.dispActors[k]=i.value.trim();else delete S.dispActors[k];});}
+function dispText(d){var X=dispData(d),R=d.rows,o=[];o.push("*Dispozice – "+(S.project||"")+"*");o.push("*"+(d.label||"")+" · "+fmtDate(d.date)+"*"+(d.shiftFrom?" · "+d.shiftFrom+"–"+(d.shiftTo||""):""));if(d.loc)o.push("📍 "+d.loc);
+  var cm=R.filter(isCommit);if(cm.length){o.push("");cm.forEach(function(r){o.push("⚠️ Závazek: "+commitText(r));});}
+  o.push("","*Program*");R.forEach(function(r){if(isCommit(r))return;var t=(r.from||"")+(r.to&&r.to!==r.from?"–"+r.to:"");if(r.type!=="shot"){o.push(t+"  _"+(r.kind||r.text||"")+"_");return;}
+    o.push(t+"  *"+(r.scene||"")+"* "+(r.tod||"")+" – "+(r.motif||"")+(r.roles?" ("+r.roles+")":""));});
+  o.push("","*Herci – na place*");dayActors(d).forEach(function(a){var v=X.ov.calls[a]||X.calls[a]||"";o.push((v||"--:--")+"  "+a+(dispActor(a)?" ("+dispActor(a)+")":"")+" – "+roleShots(d,a).map(function(r){return r.scene;}).join(", "));});
+  ["Kompars","Epizody","Auta"].forEach(function(k){var L=Object.keys(X.ex).filter(function(x){return X.ex[x].k===k;});if(!L.length)return;o.push("","*"+(k==="Kompars"?"Komparz":k)+"*");L.forEach(function(x){o.push((X.ov.ex[x]||X.ex[x].t||"")+"  "+X.ex[x].it);});});
+  return o.join("\n");}
 function wxToggle(){return '<label class="wxtog"><input type="checkbox" data-act="wxtoggle"'+(wxOn()?' checked':'')+'> Počasí – hodinový pruh přes směnu (teplota, oblačnost, déšť)</label>';}
 function wxOn(){return LS.getItem("nd.wx")==="1";}
 function wxKey(pl){return pl.lat.toFixed(2)+","+pl.lon.toFixed(2);}
@@ -860,7 +911,7 @@ var PALETTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 
 function curTheme(){var t="b";try{t=LS.getItem("nd.theme")||"b";}catch(_){}return t;}
 function applyTheme(t){try{if(t&&t!=="b")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(_){}}
 applyTheme(curTheme());
-var APP_BUILD="22. 11. 9:55";
+var APP_BUILD="23. 11. 18:00";
 var ALERT_KIND="POZOR ZMĚNA PROGRAMU:";
 var MARTINI_KIND="MARTINI SHOT!", KONEC_KIND="KONEC NATÁČENÍ, DĚKUJI VŠEM!";
 var KINDS = ["Cestovní čas","Příprava","Stěhování","Oběd","Likvidace","Skončil herec",MARTINI_KIND,KONEC_KIND,ALERT_KIND,"Závazek","Jiné"];
@@ -1212,7 +1263,7 @@ function render(){zoomApply();
   var tools=(canEdit||standalone?'<span class="daynav"><button class="btn dnav" data-act="dayprev" aria-label="Předchozí den"'+(di>0?'':' disabled')+'>‹</button><select id="daySel" aria-label="Natáčecí den">'+opts+'</select><button class="btn dnav" data-act="daynext" aria-label="Další den"'+(di<DS.length-1?'':' disabled')+'>›</button></span>':'<span class="dayname">'+esc((d.label||"Natáčecí den")+" – "+(d.date?fmtDate(d.date):""))+'</span>')+
     (d.planVer||(S.plan&&S.plan.version)?'<span class="planver" title="Verze natáčecího plánu">Plán: '+esc(d.planVer||S.plan.version)+'</span>':'')+
     (standalone?'<span class="offline">Offline kopie</span>':'')+(canEdit?'<span class="planwrap"><button class="btn planbtn'+(ui.planMenu?' open':'')+'" data-act="planmenu" aria-expanded="'+(ui.planMenu?'true':'false')+'">Plán <span class="car">▾</span></button>'+
-      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="shotlist" role="menuitem">Natočené obrazy</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
+      (ui.planMenu?'<span class="planveil" data-act="planclose"></span><span class="planmenu" role="menu"><button data-act="chrono" role="menuitem">Chronologie</button><button data-act="shotlist" role="menuitem">Natočené obrazy</button><button data-act="disp" role="menuitem">Dispozice</button><button data-act="editday" role="menuitem">Upravit den</button><button data-act="newday" role="menuitem">+ Nový den</button><button data-act="planupdopen" role="menuitem">Aktualizovat podle nové verze<small>vložit aktuální plán (PDF)</small></button></span>':'')+'</span>'+
       '<button class="btn planbtn herbtn'+(actorsDone(d).length?' blink':'')+'" data-act="actors" title="Herci a jejich obrazy">Herci</button>'+
       '<span class="planwrap"><button class="btn planbtn timebtn'+(ui.timeMenu?' open':'')+'" data-act="timemenu" aria-label="Čas" aria-expanded="'+(ui.timeMenu?'true':'false')+'">'+CLOCK+'<span class="tl">Čas</span> <span class="car">▾</span></button>'+
       (ui.timeMenu?'<span class="planveil" data-act="timeclose"></span><span class="planmenu" role="menu"><button data-act="setbase" role="menuitem">Nastavit výchozí čas'+(d.baseAt?'<small>nastaveno '+esc(d.baseAt)+'</small>':'<small>zatím nenastaveno</small>')+'</button><button data-act="recalcnow" role="menuitem">Přepočítat čas<small>podle aktuálního stavu</small></button><button data-act="resetbase" role="menuitem">Resetovat vše podle výchozího nastavení<small>'+(d.baseAt?'vrátí časy z '+esc(d.baseAt):'výchozí čas zatím nenastaven')+'</small></button></span>':'')+'</span>'+
@@ -1550,6 +1601,7 @@ function sheetHTML(){
     return '<div class="veil" data-act="veil"><div class="sheet" role="dialog" aria-modal="true">'+b+'</div></div>';
   }
   if(s.kind==="brk"){var xk=rowById(s.id);if(!xk){ui.sheet=null;return "";}return '<div class="veil" data-act="veil"><div class="sheet wide bksheet" role="dialog" aria-modal="true">'+brkCardHTML(xk.r,false)+'</div></div>';}
+  if(s.kind==="disp"){return '<div class="veil" data-act="veil"><div class="sheet wide dpsheet" role="dialog" aria-modal="true">'+dispHTML(s.did)+'</div></div>';}
   if(s.kind==="commits"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+commitsHTML(day())+'</div></div>';}
   if(s.kind==="actors"){return '<div class="veil" data-act="veil"><div class="sheet wide" role="dialog" aria-modal="true">'+actorsHTML(day(),s.hl)+'</div></div>';}
   if(s.kind==="actend"){var ro=s.roles||[];
@@ -3037,6 +3089,11 @@ function act(a,id,el){
       if(ui.sheet&&ui.sheet.kind!=="actors")ui.sheet={kind:"actors",hl:[]};changed();toast("Zapsáno do plánu: skončil herec – "+ra+" ("+tn+")");break;}
     case "actendno1":{d.actAsk=d.actAsk||{};d.actAsk[fold(el.getAttribute("data-role"))]=1;changed();break;}
     case "commits": ui.sheet={kind:"commits"}; render(); break;
+    case "disp": ui.planMenu=false; var dd0=dispDay(); ui.sheet={kind:"disp",did:dd0&&dd0.id}; render(); break;
+    case "dpreset":{var dr=S.days.filter(function(x){return x.id===ui.sheet.did;})[0];if(dr){dr.disp={calls:{},ex:{}};changed();}break;}
+    case "dpprint":{var dp0=S.days.filter(function(x){return x.id===ui.sheet.did;})[0];dispCollect(dp0);changed();document.body.classList.add("printdisp");setTimeout(function(){window.print();setTimeout(function(){document.body.classList.remove("printdisp");},500);},300);break;}
+    case "dpshare":{var dp=S.days.filter(function(x){return x.id===ui.sheet.did;})[0];if(!dp)break;dispCollect(dp);var txt=dispText(dp);changed();
+      if(navigator.share){navigator.share({text:txt}).catch(function(){});}else{window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank");}break;}
     case "cmsave": cmCollect(d); ui.sheet={kind:"actors"}; changed(); toast("Závazky uloženy do plánu"); break;
     case "cmdel": cmCollect(d); d.rows=d.rows.filter(function(x){return x.id!==id;}); changed(); break;
     case "cmldel":{var LL=cmCollect(d),lx=LL[+el.getAttribute("data-i")];if(lx)castList().forEach(function(c){c.limits=(c.limits||[]).filter(function(l){return l!==lx;});});changed();break;}
@@ -3313,7 +3370,7 @@ document.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]"); if(!el)return;
   var a=el.getAttribute("data-act");
   if(a==="veil"&&e.target!==el)return;
-  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","wxtoggle","pushon","pushoff","forgot","setnewpass","book","lupa","brknav","brkpdf","brktab","zoomin","zoomout","zoomreset","login","dologin"].indexOf(a)<0)return;
+  if(!canEdit&&["close","veil","refresh","track","toggledone","dej","loc","themesheet","theme","wxtoggle","disp","dpshare","dpprint","pushon","pushoff","forgot","setnewpass","book","lupa","brknav","brkpdf","brktab","zoomin","zoomout","zoomreset","login","dologin"].indexOf(a)<0)return;
   act(a,el.getAttribute("data-id"),el);
 });
 document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="fFileName"){e.preventDefault();act("dosave");}if(e.key==="Enter"&&(e.target.id==="fPass"||e.target.id==="fEmail")){e.preventDefault();act("dologin");}});
@@ -3472,7 +3529,7 @@ function publicState(){
   if(!ds.length){var all=S.days.filter(function(d){return d.date;}).sort(function(a,b){return a.date<b.date?-1:1;});ds=all.slice(-1);}
   if(!ds.length)ds=S.days.slice(0,1);
   ds=ds.map(function(d){var c=JSON.parse(JSON.stringify(d));c.rows.forEach(function(r){if(r.type!=="shot")return;var de=rowDesc(r),lo=rowLoc(r);if(de)r.desc=de;if(lo)r.loc=lo;});return c;});
-  return {project:S.project||"",plan:S.plan||null,cast:castList(),scripts:scripts(),slozky:docList("brk"),scriptMarks:S.scriptMarks||{},brk:S.brk||{},brkCats:S.brkCats||[],days:ds,savedAt:S.savedAt};
+  return {project:S.project||"",plan:S.plan||null,cast:castList(),scripts:scripts(),slozky:docList("brk"),scriptMarks:S.scriptMarks||{},dispActors:S.dispActors||{},brk:S.brk||{},brkCats:S.brkCats||[],days:ds,savedAt:S.savedAt};
 }
 function cacheKey(){return "nd.cache."+liveRow;}
 function cacheSave(){try{LS.setItem(cacheKey(),JSON.stringify(S));}catch(_){}}
